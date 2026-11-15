@@ -50,7 +50,7 @@ ${lines(FOR_CATALOGUE, (k, v) => `    Header set ${k} "${v}"`)}
   </Files>
 </IfModule>
 `;
-export const CLOUDFLARE_HEADERS = `# Written by house-ads tools/publish-cloudflare.mjs: don't edit, it's rewritten at each publish.
+export const CLOUDFLARE_HEADERS = `# Written by house-ads publish-cloudflare.mjs: don't edit, it's rewritten at each publish.
 /*
 ${lines(FOR_ALL, (k, v) => `  ${k}: ${v}`)}
 /catalogue.json

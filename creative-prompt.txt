@@ -1,0 +1,33 @@
+I want a video ad for my mobile game, to run on an indie developers' ad exchange. Please cut it from the video of my game: the footage I give you, or the preview videos on its store pages.
+
+My game: <PASTE YOUR APP STORE LINK, YOUR GOOGLE PLAY LINK, OR BOTH>
+Gameplay footage, if I have any: <A PATH TO A VIDEO FILE, OR "none">
+
+Where it will play
+The ad plays full-screen inside another indie game, to a player who chose to watch it for a reward, or between two levels. The network's own player shows the whole video, never cropped, and draws a close button (top left) and a countdown ring (top right) over it. When the video ends it shows its own end card: my game's icon, name, one line of text and the store button. So the video should be all game. No "Download now", no store badges, no logo, title or end card of its own.
+
+What to make
+- One ad, in two cuts: portrait, 1080x1920 (9:16), and landscape, 1920x1080 (16:9). It's the same ad for both stores. Make both cuts even if my material only suits one shape, and tell me which is the weaker.
+- 15 seconds: 450 frames at 30 fps.
+- MP4: H.264 (yuv420p, 30 fps), an AAC audio track (silent if there's no audio of mine to use), moov atom at the front (+faststart). Phones download it ahead of time, so size comes first: under 4 MB, which is 1.5 to 2 Mbps.
+- The frame at 1.0 s is taken as the poster players see before the video starts. Make it a strong, clean picture of the game: not a fade from black, not a cross-fade, not a caption.
+- One line for the end card: plain words about what you do in the game, 140 characters at most, from my store description. Not press quotes, awards or numbers.
+
+How to build it
+1. Find the video. The ad is cut from moving gameplay; stills are the last resort, for a game with no video anywhere.
+   Footage I gave you comes first, if I gave any.
+   App Store: fetch the store page itself. My app's preview videos are in its HTML as https://apptrailers.itunes.apple.com/....m3u8 addresses, usually 30 seconds each; take them all. Try ffmpeg on one, and check the length of what you got: on some builds it stops after a few seconds without saying so. If it's short, read the playlist, pick the variant with the largest RESOLUTION, and download that variant's own file with curl (its address with .mp4 in place of .m3u8); the same for the audio playlist, then join the two.
+   Google Play: the page may hold a clip as https://play-games.googleusercontent.com/vp/mp4/....mp4, which downloads as it is. It's a short, silent teaser of my YouTube trailer. Don't download the trailer from YouTube: tell me it's there, so I can give you the file.
+   https://itunes.apple.com/lookup?id=<the number in the App Store link>&country=us gives the game's name and description, for the end card's line.
+   With video from more than one place, use the larger and longer.
+2. Cut the ad from the video: the 15 seconds that show the game best, in two to five cuts of your own, from one video or several. Leave out logos, title cards, award cards, end frames, flashes between scenes, and any shot with words laid over it. For sound, lay one unbroken 15 second stretch of the video's own audio under the whole cut, if it has one that works; otherwise make it silent.
+   If the video there is runs short of 15 seconds of usable gameplay (Google Play's teaser alone, say), use all of it that's good, at its own speed, and only then fill what's left with screenshots, after the video rather than between its shots. Tell me, so I can give you more footage.
+3. Only if there is no video at all, build it from screenshots, and say so first thing in your answer, since an ad of stills is the weaker ad. The lookup above gives screenshotUrls and ipadScreenshotUrls: they are thumbnails, so replace the last part of each (like /406x228bb.png) with /5000x5000bb.png for the original. Google Play's are play-lh.googleusercontent.com images (end each URL with =w2560), but its page shows other games' pictures too: look at what you download, and keep only mine. Use the 5 or 6 that best show the game being played, each on screen about 2.5 to 3 seconds, joined by quick cross-fades, and never still: a slow push in to about 105% on each, where losing a sliver of the edges is fine and better than a border.
+4. Fill the frame where you fairly can: if cropping up to 10% off two sides of a picture or video makes it fit the cut, crop it. Past that, it isn't stretched and isn't cropped: put it whole, as wide as the frame, over a blurred copy of itself that fills the rest, dimmed but never so dark it reads as black bars.
+5. Keep what matters out of the top 12% of the frame, where the close button and countdown sit. That goes for any caption you add and for the moment a shot is about. The game's own interface showing there is fine.
+6. Words on screen are optional, and an ad cut from video rarely wants any. A caption already on a store screenshot counts as that shot's caption: add nothing to it. If you add your own, at most one short one a shot, taken from my store description, large enough to read on a phone. If your ffmpeg can't draw text, make the ad without captions rather than installing anything.
+7. Use ffmpeg. Then check your work: ffprobe each file for its length, size, dimensions and codecs; pull the frame at 1 s, and the first and last frame of every shot; look at them, and fix what's wrong (black bars, a stretched picture, a flash or half a cross-fade at a cut, words left in from the source, a caption cut off or too small).
+
+Use only what's mine: what's on my store pages, and what I give you. No music or art from anywhere else.
+
+When you're done, tell me the files with each one's length, dimensions and size, what you cut them from (which video, and which seconds of it), the line for the end card, and anything you weren't sure of. You can't watch them in motion, so I will before I upload them in the network's admin under Creatives.

@@ -2,9 +2,16 @@
 
 Every release of house-ads: the whole repository, not only the Unity package. It lives here because this is where Unity's Package Manager looks for it.
 
-The repository has one version, [Semantic Versioning](https://semver.org), and a release is the tag `vX.Y.Z` (a Unity game takes it as `…/house-ads.git?path=/unity#vX.Y.Z`). Before 1.0.0 a minor version may break a game that takes it, and a patch may not. `npm test` fails if the packages' versions differ or the newest entry here isn't that version.
+The repository has one version, [Semantic Versioning](https://semver.org), and a release is the tag `vX.Y.Z` (a Unity game takes it as `…/sdk.git?path=/unity#vX.Y.Z`). Before 1.0.0 a minor version may break a game that takes it, and a patch may not. `npm test` fails if the packages' versions differ or the newest entry here isn't that version.
 
 Two numbers are not this one, and change only when a format does: `VERSION` in `core/wire.js` (what games send the ingest) and the catalogue's `version`. Games already released go on sending and reading the old ones.
+
+## [Unreleased]
+
+### Changed
+- **The SDK has a repository of its own: `https://github.com/Indie-Ad-Network/sdk`.** It begins at 0.3.5, as released; the releases before it are below. The network's server (the admin, the catalogue, the counts) is kept apart, and [The server](../SERVER.md) says what a game asks of it. **A Unity game changes its package's URL** to `https://github.com/Indie-Ad-Network/sdk.git?path=/unity#<tag>`.
+- **The Unity package is `com.indieadnetwork.sdk`**, where it was `com.thevoxelagents.house-ads`: **remove the old package from `Packages/manifest.json` and add the new one.** Its Android side is `com.indieadnetwork.sdk` too, the Capacitor plugin's with it: **a minified Android build keeps `com.indieadnetwork.sdk.**`** where it kept `com.thevoxelagents.houseads.**`.
+- What a playable's page says of itself is read by `playable-kit/tools/page-says.js`, and the prompt that cuts a video from a trailer is `creative-prompt.txt`: both were the server's files.
 
 ## [0.3.5] - 2026-11-14
 

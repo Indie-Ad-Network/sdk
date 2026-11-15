@@ -1,4 +1,4 @@
-package com.thevoxelagents.houseads;
+package com.indieadnetwork.sdk;
 
 import android.content.Context;
 import android.content.Intent;

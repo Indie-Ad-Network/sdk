@@ -16,7 +16,7 @@ Rewarded ads and interstitials for our own and our friends' games, for any game 
 | Make a video or a playable for your game | [Creatives](CREATIVES.md) |
 | Build a playable with a narrator | [The playable kit](playable-kit/README.md) |
 | Run these playables in another ad player | [Hosting a playable](PLAYABLE_HOST.md) |
-| Host the network: admin, catalogue, analytics | [The server](ingest/README.md) |
+| Know what a game asks of the network's server | [The server](SERVER.md) |
 | See what changed in a release | [Changelog](unity/CHANGELOG.md) |
 
 ## Use
@@ -144,7 +144,7 @@ Each goes to `onEvent` as `{ event, host, placement, creative, app, kind, t, …
 
 `report` is a player's report of the ad, from the ⓘ beside its "Ad" label, with `message` (what they typed, or nothing). With an ingest it also goes to the dashboard's Reports, with the ad, the placement, the language and this release.
 
-With `ingest: '<url>'` they also go to the package's own analytics, so creatives can be compared across every game: `ingest/` is a Cloudflare Worker and database you host on your own account ([the server](ingest/README.md)), with a report page. It keeps daily counts and nothing about a player. Call `ads.offered(placement)` when a placement's button is put in front of the player: shows over offers is the opt-in rate.
+With `ingest: '<url>'` they also go to the package's own analytics, so creatives can be compared across every game: the network's server ([what it's sent](SERVER.md)) keeps daily counts and nothing about a player. Call `ads.offered(placement)` when a placement's button is put in front of the player: shows over offers is the opt-in rate.
 
 A player's report of an ad (the ⓘ on it) goes to `/flag` beside the ingest, or to `reports: '<url>'` if given: a development build that counts nothing can name it and see its reports arrive. One from a test showing (`test()`) is sent marked as a test, and the dashboard keeps it apart from players' reports.
 
@@ -158,15 +158,14 @@ Create it at boot and it downloads the creatives likeliest to be shown (each pla
 
 The catalogue and its creatives are static files: host them anywhere that answers with `Access-Control-Allow-Origin: *` (an app's web view is another origin) and doesn't cache `catalogue.json`.
 
-- **On Cloudflare, from its admin** ([the server](ingest/README.md)): studios sign in at the Worker's `/dashboard` (Cloudflare Access), upload creatives and read a dashboard; the Worker keeps the catalogue and answers `catalogue.json` itself. Nothing to publish.
-- **On Cloudflare, with the analytics** ([the server](ingest/README.md)): the ingest Worker serves the catalogue's folder too, so one deploy is the whole server: `node tools/publish-cloudflare.mjs path/to/catalogue.json -c path/to/wrangler.jsonc`.
+- **From the network's admin**: studios sign in, upload creatives and read a dashboard; the network's server keeps the catalogue and answers `catalogue.json` itself. Nothing to publish. That server is kept apart from this repository; [the server](SERVER.md) says what a game asks of it, for anyone who would answer in its place.
 - **By FTPS**: `node tools/publish.mjs path/to/catalogue.json ftp://host/dir/ --upload` sends the catalogue and every file it names (credentials from `~/.netrc`), files first and the catalogue last, with an `.htaccess` for Apache that sets both headers.
 
 Don't put "ads" in the hostname: network ad blockers refuse it.
 
 ## Rules to keep
 
-- **https, and nothing else.** The catalogue, the ingest, the mix, and every file, picture and tracking link a catalogue names: one that's `http://` isn't asked for (but for `localhost`, a developer's own). With `signedBy: '<the network's public key>'` the server's catalogue is used only if the network signed it ([the server](ingest/README.md#reports-and-the-catalogues-signature)), so nobody between a player and the server can serve ads of their own.
+- **https, and nothing else.** The catalogue, the ingest, the mix, and every file, picture and tracking link a catalogue names: one that's `http://` isn't asked for (but for `localhost`, a developer's own). With `signedBy: '<the network's public key>'` the server's catalogue is used only if the network signed it ([the server](SERVER.md#the-catalogue)), so nobody between a player and the server can serve ads of their own.
 
 - **Reward watching, never installing or tapping the store button.** Both stores forbid incentivised installs.
 - **Ads must suit the host's age rating**: set `rating`, and give each app its own in the catalogue.

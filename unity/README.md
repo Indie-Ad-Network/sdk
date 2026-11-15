@@ -7,12 +7,12 @@ The package's player (`core/`, as one page: `Runtime/Resources/HouseAdsPlayer.ht
 Add the package by its git URL. In Unity: Window → Package Manager → **+** → *Add package from git URL…*, and paste:
 
 ```
-https://bitbucket.org/thevoxelagents/house-ads.git?path=/unity#v0.3.5
+https://github.com/Indie-Ad-Network/sdk.git?path=/unity#v0.3.5
 ```
 
 What follows the `#` is the release (`CHANGELOG.md` has each): it's how a game stays on the version it was tested with. Then:
 
-1. If the Android build is minified, keep the web view's Java side, which is reached by name: `-keep class com.thevoxelagents.houseads.** { *; }` in `proguard-user.txt`.
+1. If the Android build is minified, keep the web view's Java side, which is reached by name: `-keep class com.indieadnetwork.sdk.** { *; }` in `proguard-user.txt`.
 2. Ship a copy of the catalogue as `Resources/house-ads-catalogue.json`. It's what a first run with no server shows, and what the build reads for the games to ask Android about: `Editor/HouseAdsBuildProcessor` adds each package to the manifest's `<queries>`, so a game the player has isn't advertised to them. iOS isn't asked which games are installed (Apple's review guidelines, 5.1.2 iv), and nothing is added to its `Info.plist`.
 
 ## Use

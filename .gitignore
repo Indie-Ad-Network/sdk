@@ -5,10 +5,3 @@ node_modules/
 capacitor/android/build/
 capacitor/.build/
 capacitor/ios/.build/
-
-# the ingest: its tools, its local database, its secrets
-ingest/node_modules/
-ingest/.wrangler/
-.wrangler/
-ingest/.dev.vars
-ingest/wrangler.jsonc

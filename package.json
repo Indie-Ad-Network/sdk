@@ -10,8 +10,6 @@
   "scripts": {
     "test": "node --test",
     "validate": "node tools/validate-catalogue.mjs",
-    "build:player": "node tools/build-player.mjs",
-    "deploy": "node tools/deploy.mjs",
-    "check:live": "node tools/deploy.mjs --check"
+    "build:player": "node tools/build-player.mjs"
   }
 }

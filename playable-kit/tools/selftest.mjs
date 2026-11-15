@@ -23,7 +23,7 @@ try {
   await page.shot(join(OUT, 'alone.png'));
   if (!st) st = await page.eval('window.__ad ? { done: __ad.done, steps: __ad.steps, events: __ad.events, T: __ad.T } : null');
   check(!!st && st.done, `it reaches its end (T ${st?.T?.toFixed(1)})`);
-  check(st && st.steps.join(' ') === '1_shown 2_pushed 3_there 4_end', 'the steps, in order: ' + st?.steps.join(' '));
+  check(st && st.steps.join(' ') === '1_pushed 2_there 3_end', 'the steps, in order: ' + st?.steps.join(' '));
   const said = (st?.events || []).filter(e => e.includes(' say ')).map(e => e.split(' ')[2]), order = ['hook', 'hook2', 'moved', 'close', 'there', 'next'];
   check(said[0] === 'hook', 'the hook is said first: ' + said.join(' '));
   check(said.every((k, i) => !i || order.indexOf(k) > order.indexOf(said[i - 1])) && said.slice(-2).join(' ') === 'there next', 'a fast player skips lines and never hears one out of order; the payoff and the last line are said');
@@ -37,7 +37,7 @@ try {
   st = await page.eval('({ events: __ad.events, steps: __ad.steps })');
   const idle = st.events.filter(e => e.includes(' say ')).map(e => e.split(' ')[2]);
   check(idle.includes('stall_1') && idle.includes('stall_2') && idle.indexOf('stall_1') > idle.indexOf('hook2'), 'after the hook, a stall line each time nothing is done: ' + idle.join(' '));
-  check(st.steps.join(' ') === '1_shown', 'and no step claimed that was not reached: ' + st.steps.join(' '));
+  check(st.steps.join(' ') === '', 'and no step claimed that the player did not reach: ' + (st.steps.join(' ') || 'none'));
   await page.close();
 
   console.log('\n== in house-ads\' player, finishEarly, a finger holding the stick right');
@@ -50,7 +50,7 @@ try {
   await page.touch('touchEnd'); await sleep(400); await page.shot(join(OUT, 'harness.png'));
   const got = ev || await page.eval('window.__events.map(e => e[0] + (e[1].step ? ":" + e[1].step : ""))');
   check(got.includes('first_touch'), 'the first touch was reported');
-  check(['step:1_shown', 'step:2_pushed', 'step:3_there', 'step:4_end'].every(s => got.includes(s)), 'every step reached the player: ' + got.join(' '));
+  check(['step:1_pushed', 'step:2_there', 'step:3_end'].every(s => got.includes(s)), 'every step reached the player: ' + got.join(' '));
   check(got.includes('complete') && got.includes('reward') && !got.includes('fail'), 'the page said it was done and the reward was given early');
   if (page.logs.length) console.log(page.logs.join('\n'));
   await page.close();

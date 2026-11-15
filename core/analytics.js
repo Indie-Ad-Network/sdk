@@ -1,6 +1,6 @@
 // ---------- the package's own analytics ----------
-// Every event the player emits, sent to an ingest (ingest/, a Cloudflare Worker anyone can
-// host for themselves) so creatives can be compared across every game that shows them. The
+// Every event the player emits, sent to an ingest (the network's server: SERVER.md)
+// so creatives can be compared across every game that shows them. The
 // host game's own analytics hears the same events through `onEvent`; this is beside that.
 //
 // What's sent is the event and what it was about (wire.js): the placement, the creative, the

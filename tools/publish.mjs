@@ -2,7 +2,7 @@
 /**
  * Publishes a catalogue and its files by FTPS to an Apache server: the catalogue, each
  * creative, poster, icon and art it names, and an .htaccess with the headers they must be
- * served with (lib.mjs). For a server on Cloudflare, publish-cloudflare.mjs instead.
+ * served with (lib.mjs).
  *
  * The files go up first and the catalogue last, so it never names a file that isn't there.
  * Over FTPS only, credentials from ~/.netrc (curl -n).

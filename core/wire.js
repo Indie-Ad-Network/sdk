@@ -1,8 +1,7 @@
 // ---------- what goes from a game to the ingest ----------
 // The one definition of it, read by both ends: core/analytics.js, which sends, and
-// ingest/src/rollup.js, which counts. A new event is added here, to the ingest's table
-// (ingest/migrations, a column of the same name; test/ingest.test.mjs checks they agree),
-// and nowhere else.
+// the server's rollup, which counts (SERVER.md). A new event is added here, to the server's table
+// (a column of the same name; its tests check they agree), and nowhere else.
 //
 //   { v: VERSION, host, os, events: [{ event, placement, creative, app, kind, secs? }] }
 //
@@ -14,7 +13,7 @@
 //
 //   { v: VERSION, sdk: SDK, host, os, lang, placement, creative, app, kind, secs, message, test? }
 //
-// kept as it is said (ingest/src/flags.js), for the dashboard: the one thing sent that a player typed. `test`: from a
+// kept as it is said, for the dashboard: the one thing sent that a player typed. `test`: from a
 // developer's test showing (createHouseAds test()), kept apart from players' reports on the dashboard.
 
 export const VERSION = 1;

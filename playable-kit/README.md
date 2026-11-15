@@ -155,14 +155,52 @@ The ad is shown in whatever shape the host game is, so it must work in both.
 
 ## The funnel
 
-`host.step('name')` counts how far each showing got. The dashboard shows them as a funnel.
+`host.step('name')` counts how far each showing got. The dashboard shows them as a funnel: Impressions, Touched it, your steps in the order they were reached on average, then Tapped the store.
 
 - At most 12 names an ad. Letters, digits, `.` `-` `_`; 32 characters.
 - Each is counted once a showing, with the second it was reached.
-- Number them in order so they sort: `1_walk`, `2_freeze`, `3_rewind`, `4_end`.
-- Put one at each point a player could give up: first move, each new idea understood, the end.
 
 The player adds `show`, `first_touch`, `complete`, `reward` and `store_open` itself.
+
+### A funnel you can read
+
+A good funnel is a staircase: every row is smaller than the one above, and the biggest drop tells you which moment of the ad to fix. Five rules get you there.
+
+- **A step is something the player did.** If the narrator, a demo or a timer can reach it with nobody touching, it counts people who weren't playing, and the row comes out bigger than "Touched it". Fire steps only from the player's own input, or only once they have touched.
+- **Each step can only be reached through the one before.** Then each row is a part of the row above and the percentages read as "of those who got this far". An ad with one path gives this for free. One with branches needs steps on the trunk, not the branches.
+- **One step for each idea understood, in the order the ad teaches them.** First move, the twist, using the twist, the payoff, the end. Four to seven is plenty; a step every few seconds is about right.
+- **Number them**: `1_walk`, `2_freeze`, `3_rewind`, `4_end`. The dashboard orders rows by when they were reached, so the numbers don't sort anything, but they show at a glance when a row is out of place, which means a step isn't measuring what you thought.
+- **Leave out what the player already counts.** No step for the ad appearing or the first touch: those are the top two rows.
+
+Mistakes, hints and help are not steps. "Made a wrong move" or "the narrator stepped in" happen to some players and not others, at any point, so as rows they break the staircase. If you want them, give them a prefix that sets them apart (`x_wrong_move`, `x_helped`) and read each as a rate of its own, not as a stage.
+
+A funnel that reads:
+
+| Step | Reached | |
+|---|---|---|
+| Impressions | 177 | |
+| Touched it | 101 | 57% |
+| `1_walk` | 89 | 50% |
+| `2_freeze` | 66 | 37% |
+| `4_rewind` | 31 | 18% |
+| `7_end` | 13 | 7% |
+
+Half the players who see the freeze never work out the rewind: that is the moment to make clearer.
+
+One that doesn't:
+
+| Step | Reached | |
+|---|---|---|
+| Touched it | 50 | 52% |
+| `played` | 49 | 51% |
+| `solved_1` | 83 | 86% |
+| `refused` | 25 | 26% |
+| `helped` | 1 | 1% |
+| `solved_2` | 63 | 66% |
+
+`solved_1` is bigger than "Touched it" because the narrator solves the first puzzle while nobody is playing. `played` repeats the first touch. `refused` and `helped` are things that happened along the way, not stages. Nothing here says where players give up.
+
+Check it before you upload: play the ad once without touching it and it should reach no step at all (`tools/selftest.mjs` checks the template this way), then play it through and the steps should come in number order.
 
 ## The creative's flags
 

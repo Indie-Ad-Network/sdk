@@ -9,7 +9,7 @@
 // Whose catalogue it is. Everything is asked for over https and nothing over http (`secure`): the
 // catalogue, and each file, picture and link it names. And a game that knows the network's public
 // key (`signedBy`) takes a catalogue from the server only with the network's signature on it (the
-// ingest's, in the header SIGNATURE: ingest/src/store.js), so whoever can stand between a player
+// ingest's, in the header SIGNATURE), so whoever can stand between a player
 // and the server, false certificate and all, still can't hand the game ads of their own: what
 // isn't signed is as if the server hadn't answered. The catalogue names each creative's file by
 // its sha256 (cache.js checks it), so the signature covers those too.

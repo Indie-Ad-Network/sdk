@@ -24,7 +24,7 @@
 // The debt is between studios: another studio's games showing ours puts us in theirs, and our
 // games showing theirs pays it off. So a studio that has been shown more than it has shown is
 // asked for more of its slots until it's square. The count is the ingest's (it has every
-// game's showings; ingest/src/worker.js answers GET /mix?host=…), which is why this is pure:
+// game's showings; it answers GET /mix?host=…), which is why this is pure:
 // the ingest runs mix() over its rows, and a game with no ingest to ask runs it over none,
 // which gives `share`.
 //

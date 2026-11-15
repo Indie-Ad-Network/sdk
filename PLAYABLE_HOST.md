@@ -31,7 +31,7 @@ The creative's record carries, beside the file:
 ### Settings from the page
 
 The house-ads admin has a box for each of `finishEarly` and `keepPlaying`, and fills them in when a file is
-picked from what the page says and does (`ingest/src/page-says.js`). The page may say what it wants in its head:
+picked from what the page says and does (`playable-kit/tools/page-says.js`). The page may say what it wants in its head:
 
 ```html
 <meta name="house-ads" content='{"secs":60,"finishEarly":true,"keepPlaying":false}'>

@@ -143,14 +143,17 @@ test("a game on neither store stands if it has a page of its own, https; a page 
 });
 
 test('a signed catalogue: the server signs, the game checks, and what is not the network\'s is as no answer', async () => {
-  const { sign, publicKey } = await import('../ingest/src/store.js');
+  // as the network's server signs (SERVER.md): r and s over the text, base64url; and the public point of a secret
+  const ECDSA = { name: 'ECDSA', namedCurve: 'P-256' }, secretOf = s => crypto.subtle.importKey('pkcs8', Buffer.from(s, 'base64'), ECDSA, true, ['sign']);
+  const sign = async (secret, text) => Buffer.from(await crypto.subtle.sign({ name: 'ECDSA', hash: 'SHA-256' }, await secretOf(secret), new TextEncoder().encode(text))).toString('base64url');
+  const publicKey = async secret => { const { d, ...open } = await crypto.subtle.exportKey('jwk', await secretOf(secret)); return Buffer.from(await crypto.subtle.exportKey('raw', await crypto.subtle.importKey('jwk', { ...open, key_ops: ['verify'] }, ECDSA, true, ['verify']))).toString('base64url'); };
   const { signedBy, loadCatalogue, SIGNATURE } = await import('../core/catalogue.js');
   const { memoryStorage } = await import('../core/history.js');
   const pair = async () => { const p = await crypto.subtle.generateKey({ name: 'ECDSA', namedCurve: 'P-256' }, true, ['sign', 'verify']); return Buffer.from(await crypto.subtle.exportKey('pkcs8', p.privateKey)).toString('base64'); };
   const secret = await pair(), key = await publicKey(secret), other = await publicKey(await pair());
   const cat = name => JSON.stringify({ apps: { a: { name, ios: { id: 1 } } }, creatives: [{ id: 'one', app: 'a', kind: 'video', secs: 15, src: 'one.mp4' }] });
   const ours = cat('Ours'), sig = await sign(secret, ours);
-  assert.equal(key.length, 87); assert.equal(await sign('', ours), null); assert.equal(await publicKey(''), null);
+  assert.equal(key.length, 87);
   assert.equal(await signedBy(key, ours, sig), true);
   for (const [k, t, s] of [[key, cat('Theirs'), sig], [other, ours, sig], [key, ours, ''], [key, ours, 'not a signature'], ['', ours, sig]]) assert.equal(await signedBy(k, t, s), false);
 

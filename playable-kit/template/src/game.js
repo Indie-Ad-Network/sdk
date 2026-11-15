@@ -17,7 +17,6 @@
         caption(c) { capEl.textContent = c ? c.text : capEl.textContent; capEl.classList.toggle('on', !!c); } });
       stick = pkStick({ root: document.getElementById('ui'), onDown() { audio.wake(); }, onInput() { narrator.did(); } });
       narrator.say('hook'); narrator.say('hook2', { keep: true });   // the cold open, and a second line straight behind it
-      host.step('1_shown');
       last = performance.now(); requestAnimationFrame(frame);
     },
     onPause(on) { audio.setPaused(on); last = performance.now(); },
@@ -32,12 +31,12 @@
     const push = AUTO ? (T > 1 ? 1 : 0) : stick.x;
     if (!won) {
       x = Math.max(0, Math.min(1, x + push * dt * .35));
-      if (push > .2 && !pushed) { pushed = true; host.step('2_pushed'); narrator.say('moved'); }   // said once it has happened, not on a timer
+      if (push > .2 && !pushed) { pushed = true; host.step('1_pushed'); narrator.say('moved'); }   // said once it has happened, not on a timer
       if (x > .6) narrator.say('close');
-      if (x >= 1) { won = T; host.step('3_there'); narrator.say('there', { cut: true }); narrator.say('next', { keep: true }); }
+      if (x >= 1) { won = T; host.step('2_there'); narrator.say('there', { cut: true }); narrator.say('next', { keep: true }); }
       else narrator.stall('stall');
       stick.hint(pushed ? 0 : 1);
-    } else if (T - won > 3.4 && !narrator.busy()) { host.step('4_end'); host.done(); }
+    } else if (T - won > 3.4 && !narrator.busy()) { host.step('3_end'); host.done(); }
     stick.frame(dt); narrator.tick(); draw();
   }
 

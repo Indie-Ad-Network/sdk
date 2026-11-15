@@ -54,8 +54,8 @@ A creative can be for some languages only. Upload each language's cut as its own
 
 Sign in to the admin, open **Creatives**, and add one for your game: the file, its kind, its length in seconds, the flags and the line. Watch it once in the admin's preview before it goes live.
 
-A playable that is live can be tried in any browser at `/play/<your game's id>`: the newest one, whatever build it is. It's a link to share; it runs outside the player, so with no countdown or end card.
+A playable that is live can be tried in any browser at `/play/<your game's id>`: the newest one, whatever build it is. It's a link to share: it runs in the network's own player, with the countdown and the end card, and where it's posted it shows the game's art and "A playable ad for your game on the Indie Ad Network". Nothing is counted there.
 
 ## The video prompt
 
-Fill in the first two lines. The text is [`ingest/src/creative-prompt.txt`](ingest/src/creative-prompt.txt) in the repository.
+Fill in the first two lines. The text is [`creative-prompt.txt`](creative-prompt.txt) in the repository.

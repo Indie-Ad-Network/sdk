@@ -118,7 +118,7 @@ namespace HouseAdsNetwork
 			using (AndroidJavaClass player = new AndroidJavaClass("com.unity3d.player.UnityPlayer"))
 			using (AndroidJavaObject activity = player.GetStatic<AndroidJavaObject>("currentActivity"))
 			{
-				native = new AndroidJavaObject("com.thevoxelagents.houseads.NativeWebView", activity, gameObject.name, LogConsole);
+				native = new AndroidJavaObject("com.indieadnetwork.sdk.NativeWebView", activity, gameObject.name, LogConsole);
 			}
 		}
 		void DestroyNative() { native.Call("destroy"); native.Dispose(); native = null; }

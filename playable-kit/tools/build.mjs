@@ -5,7 +5,7 @@ import { execFileSync, spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, extname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { pageSays } from '../../ingest/src/page-says.js';
+import { pageSays } from './page-says.js';
 
 const KIT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const run = (cmd, args) => execFileSync(cmd, args, { stdio: ['ignore', 'pipe', 'pipe'] }).toString();
@@ -67,7 +67,7 @@ export function voice({ lines, recorded, cache, scratch = null, words: other = n
 
 // What house-ads asks of a playable (../PLAYABLE_HOST.md), checked on the finished page.
 // Gives { errors, warnings, size, steps, says }: an error is something the admin or the player would refuse.
-// `says` is what the admin will make of the page's settings (ingest/src/page-says.js).
+// `says` is what the admin will make of the page's settings (page-says.js).
 export function check(html, { maxMB = 8 } = {}) {
   const errors = [], warnings = [], size = Buffer.byteLength(html);
   if (size > maxMB * 1e6) errors.push(`the page is ${(size / 1e6).toFixed(2)} MB: ${maxMB} MB at most`);

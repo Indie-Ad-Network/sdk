@@ -22,11 +22,11 @@ test('the release the player says it is (core/wire.js SDK) is this version', asy
 });
 
 test("the git URL the Unity README gives is this version's tag", () => {
-  assert.equal(read('unity/README.md').match(/house-ads\.git\?path=\/unity#(v[\w.-]+)/)?.[1], `v${version}`, 'unity/README.md: the package URL names another release');
+  assert.equal(read('unity/README.md').match(/sdk\.git\?path=\/unity#(v[\w.-]+)/)?.[1], `v${version}`, 'unity/README.md: the package URL names another release');
 });
 
 test("the changelog's newest entry is this version", () => {
-  const newest = read('unity/CHANGELOG.md').match(/^## \[([^\]]+)\]/m)?.[1];
+  const newest = read('unity/CHANGELOG.md').match(/^## \[(?!Unreleased\])([^\]]+)\]/m)?.[1];   // what's written up before its release is under [Unreleased]
   assert.equal(newest, version, 'add a "## [version] - date" entry to unity/CHANGELOG.md');
 });
 
