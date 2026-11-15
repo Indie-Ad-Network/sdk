@@ -1,0 +1,12 @@
+{
+  "name": "house-ads-capacitor",
+  "version": "0.3.5",
+  "license": "MIT",
+  "description": "house-ads' native side for a Capacitor app: the App Store sheet, whether a game is installed (Android), whether the network is metered.",
+  "type": "module",
+  "main": "index.js",
+  "private": true,
+  "files": ["index.js", "Package.swift", "ios/Sources", "android/build.gradle", "android/src/main"],
+  "capacitor": { "ios": { "src": "ios" }, "android": { "src": "android" } },
+  "peerDependencies": { "@capacitor/core": ">=8.0.0" }
+}

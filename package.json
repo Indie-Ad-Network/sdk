@@ -1,0 +1,17 @@
+{
+  "name": "house-ads",
+  "version": "0.3.5",
+  "license": "MIT",
+  "description": "Rewarded house ads for our own games: 15/30 s videos and MRAID playables, a countdown and an exit, one store-link format for iOS and Android. No dependencies.",
+  "type": "module",
+  "private": true,
+  "exports": { ".": "./core/index.js", "./core/*": "./core/*" },
+  "files": ["core", "schema"],
+  "scripts": {
+    "test": "node --test",
+    "validate": "node tools/validate-catalogue.mjs",
+    "build:player": "node tools/build-player.mjs",
+    "deploy": "node tools/deploy.mjs",
+    "check:live": "node tools/deploy.mjs --check"
+  }
+}

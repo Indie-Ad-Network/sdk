@@ -1,0 +1,12 @@
+{
+  "loading": "A carregar…",
+  "earned": "Ganhaste: {reward}",
+  "miss": "Vais perder: {reward}",
+  "missPlain": "Vais perder a tua recompensa",
+  "keep": "Continuar a ver",
+  "keepPlaying": "Continuar a jogar",
+  "preorder": "Pré-encomendar",
+  "preregister": "Pré-registar",
+  "signUp": "Registe-se",
+  "playtest": "Participe no playtest"
+}

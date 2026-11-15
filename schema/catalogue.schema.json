@@ -1,0 +1,120 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "house-ads catalogue",
+  "description": "The games that can be advertised and their creatives. Relative paths are read against the catalogue's own URL. core/catalogue.js enforces this at run time, dropping a bad entry rather than failing.",
+  "type": "object",
+  "required": ["apps", "creatives"],
+  "properties": {
+    "version": { "type": "integer" },
+    "signedBy": { "description": "The public key of whoever signs this catalogue as it is served (ECDSA P-256, base64url), written by the server. A game believes it only from the copy it shipped with.", "type": "string" },
+    "pt": { "description": "Our App Store provider token, used in campaign links for apps marked own.", "type": ["integer", "string", "null"] },
+    "exchange": {
+      "description": "What share of a host game's ad slots the network asks for, when the host has a paid network to show instead (core/exchange.js). Left out: none.",
+      "type": "object",
+      "properties": {
+        "share": { "description": "Asked of a host whose studio owes no one. 0–1.", "type": "number", "minimum": 0, "maximum": 1 },
+        "max": { "description": "Asked of a host whose studio owes `full` showings or more. 0–1.", "type": "number", "minimum": 0, "maximum": 1 },
+        "full": { "description": "The debt, in showings, at which `max` is reached.", "type": "number", "minimum": 1 },
+        "days": { "description": "How far back showings count.", "type": "integer", "default": 30 },
+        "perDay": { "description": "The most house ads one player is shown in 24 hours in one game, counted on the device. Left out: no limit.", "type": "integer", "minimum": 0 },
+        "fatigue": {
+          "description": "A game whose ads a player has been shown `after` times with no store tap rests (isn't shown to them) for `rest` days, `grow` times longer each time again, at most 180 days. A store tap starts it over. Counted on the device. Left out: after 6, rest 14, grow 2.",
+          "type": "object",
+          "properties": {
+            "after": { "description": "Showings with no store tap. 0: never rests.", "type": "integer", "minimum": 0 },
+            "rest": { "description": "Days, the first time.", "type": "number", "minimum": 0, "maximum": 180 },
+            "grow": { "description": "× each time again.", "type": "number", "minimum": 1, "maximum": 10 }
+          }
+        },
+        "hosts": {
+          "description": "share / max / full / perDay / fatigue for one host, by its id; and `placements`, a share / max per placement of it.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "placements": {
+                "description": "By the placement's id, as the host names it. A placement given a share and no max stays at that share, whatever is owed.",
+                "type": "object",
+                "additionalProperties": { "type": "object", "properties": { "share": { "type": "number", "minimum": 0, "maximum": 1 }, "max": { "type": "number", "minimum": 0, "maximum": 1 } } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "apps": {
+      "description": "One record per game, keyed by its id. A host game's id here is what it passes as `host`.",
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["name"],
+        "anyOf": [{ "required": ["ios"] }, { "required": ["android"] }, { "required": ["web"] }],
+        "properties": {
+          "name": { "type": "string" },
+          "studio": { "description": "The id of the studio whose game it is: what the exchange counts by, and a game is weighted double in the games of its own studio. Never shown.", "type": "string" },
+          "studioName": { "description": "What that studio is called, shown small on the end card. Left out: nothing is shown.", "type": "string" },
+          "own": { "description": "The network's own game: its App Store links carry the catalogue's provider token (pt). A game released before 0.3.2 also weights it double and shows it to players under 13.", "type": "boolean" },
+          "under13": { "description": "May be shown to a player known to be under 13. Left out, it is as own says.", "type": "boolean" },
+          "line": { "description": "One line about the game, for the end card when a creative has none. One string for everyone, or one per language: { \"en\": \"…\", \"fr\": \"…\", \"es-419\": \"…\" }.", "type": ["string", "object"], "additionalProperties": { "type": "string" } },
+          "icon": { "description": "Square icon, 256 px or more.", "type": "string" },
+          "art": { "description": "Key art behind the end card.", "type": "string" },
+          "price": { "enum": ["free", "paid"] },
+          "rating": { "description": "Age rating, the stricter of the two stores': \"4+\", \"9+\", \"13+\"…", "type": "string", "pattern": "^\\d+\\+$" },
+          "status": { "description": "\"preorder\": the button says Pre-order / Pre-register until `release`.", "enum": ["preorder"] },
+          "release": { "type": "string", "format": "date" },
+          "ios": {
+            "type": "object", "required": ["id"],
+            "properties": {
+              "id": { "description": "The App Store's numeric id.", "type": "integer" },
+              "scheme": { "description": "A URL scheme the game registers. Read only by releases before 0.3.0, which asked iOS whether the game was installed; no longer used.", "type": "string" },
+              "pt": { "description": "This app's own provider token, if not ours.", "type": ["integer", "string"] }
+            }
+          },
+          "android": { "type": "object", "required": ["package"], "properties": { "package": { "type": "string" } } },
+          "web": {
+            "description": "The game's own page, where the button goes when the game isn't on the player's store, or on any yet (a prototype, a playtest sign-up). Opened in the browser.",
+            "type": "object", "required": ["url"],
+            "properties": {
+              "url": { "description": "https only. Macros: {host} {campaign} {creative} {placement}.", "type": "string", "pattern": "^https://" },
+              "label": { "description": "What the button says, in the player's language. Default learnMore.", "enum": ["signUp", "playtest", "wishlist", "learnMore"] }
+            }
+          },
+          "tracking": {
+            "description": "The partner's attribution click link, used instead of a store link. Macros: {host} {campaign} {creative} {placement}. One for both stores, or one each.",
+            "oneOf": [{ "type": "string" }, { "type": "null" }, { "type": "object", "properties": { "ios": { "type": "string" }, "android": { "type": "string" } } }]
+          }
+        }
+      }
+    },
+    "creatives": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "app", "kind", "secs", "src"],
+        "properties": {
+          "id": { "type": "string" },
+          "app": { "description": "A key of `apps`.", "type": "string" },
+          "kind": { "enum": ["video", "playable"] },
+          "secs": { "description": "A video's length; how long a playable runs before the reward.", "type": "number", "minimum": 5, "maximum": 60 },
+          "src": { "description": "video: MP4, H.264 + AAC. playable: one self-contained HTML file, MRAID 2/3.", "type": "string" },
+          "poster": { "description": "video: a still, shown before it plays and blurred behind it.", "type": "string" },
+          "aspect": { "description": "video: its shape. Left out, it suits any host.", "enum": ["9:16", "16:9"] },
+          "line": { "description": "One line for the end card. One string, or one per language, as an app's.", "type": ["string", "object"], "additionalProperties": { "type": "string" } },
+          "langs": { "description": "Only for players in these languages (\"en\", \"es\"): for a creative with words in it. Left out: for all.", "type": "array", "items": { "type": "string" } },
+          "finishEarly": { "description": "playable: the reward lands when it calls mraid.close(), if that's before `secs`.", "type": "boolean" },
+          "ownEndCard": { "description": "video: it ends on an end card of its own, so the player's isn't shown over it: the video rests on its last frame, and a tap anywhere on the video, at any time, opens the store.", "type": "boolean" },
+          "keepPlaying": { "description": "playable: when `secs` are up it's paused under the end card (told it isn't viewable, volume 0), which offers Keep playing, for up to 2 minutes more. Only for a page that pauses when told.", "type": "boolean" },
+          "weight": { "type": "number", "default": 1 },
+          "capPerDay": { "description": "Showings per player in 24 hours.", "type": "integer", "default": 2 },
+          "rating": { "description": "If stricter than its app's.", "type": "string", "pattern": "^\\d+\\+$" },
+          "from": { "type": "string", "format": "date" },
+          "to": { "description": "The first day it no longer shows.", "type": "string", "format": "date" },
+          "hosts": { "description": "Only in these host games. Left out: in all.", "type": "array", "items": { "type": "string" } },
+          "campaign": { "description": "The campaign name in store links. Left out: the creative's id.", "type": "string" },
+          "bytes": { "type": "integer" },
+          "sha256": { "type": "string" }
+        }
+      }
+    }
+  }
+}

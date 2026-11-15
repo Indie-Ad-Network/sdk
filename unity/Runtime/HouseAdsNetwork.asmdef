@@ -1,0 +1,9 @@
+{
+	"name": "HouseAdsNetwork",
+	"rootNamespace": "HouseAdsNetwork",
+	"references": [],
+	"includePlatforms": [],
+	"excludePlatforms": [],
+	"allowUnsafeCode": false,
+	"autoReferenced": true
+}

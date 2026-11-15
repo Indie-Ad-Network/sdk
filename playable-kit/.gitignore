@@ -1,0 +1,5 @@
+.cache/
+dist/
+__pycache__/
+# voice samples are personal recordings: never committed
+*.reference.wav
