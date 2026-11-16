@@ -132,7 +132,7 @@ createIndieAds({ …, lang: () => settings.language })   // 'fr', 'es', 'zh-Hant
 
 ## The catalogue
 
-One JSON file on a server, shared by every game, so changing what's shown never needs an app release. `schema/catalogue.schema.json` describes every field; `npm run validate -- path/to/catalogue.json` checks a file the way the player reads it.
+One JSON file on a server, shared by every game, so changing what's shown never needs an app release. A game asks for it with its own id (`catalogue.json?host=<id>`), so a server that keeps the list itself can give each game its own; a plain file is the same for all. `schema/catalogue.schema.json` describes every field; `npm run validate -- path/to/catalogue.json` checks a file the way the player reads it. With `more` (an https address) in it, an ad's ⓘ offers "More indie games from this network": that address with the showing game's id after it, opened outside the game.
 
 ```json
 {

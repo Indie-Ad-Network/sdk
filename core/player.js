@@ -156,6 +156,7 @@ video.go { cursor: pointer; }
 .info small { font-weight: 500; font-size: 11px; opacity: .6; overflow-wrap: anywhere; }
 .info textarea { flex: none; width: 100%; padding: 10px 12px; border: 1px solid #10202f66; border-radius: 12px; background: #fff; color: #10202f; font: 500 16px/1.3 inherit; font-family: inherit; resize: none; user-select: text; -webkit-user-select: text; }
 .info .send { background: #10202f; color: #fff; }
+.info .see { padding: 10px 4px; border-radius: 0; background: none; color: #10202f; font-weight: 800; font-size: 15px; line-height: 1.3; text-decoration: underline; }
 .info em { font-style: normal; font-weight: 800; font-size: 16px; color: #1f7a30; }
 [hidden] { display: none !important; }
 `;
@@ -170,7 +171,7 @@ video.go { cursor: pointer; }
 // stands ended, over the end card or a video's own, and taken away with null.
 // Resolves { granted, watchedSecs, kind }: `kind` is what was shown in the end, 'card' if it came to that;
 // `granted` of an interstitial says only that it stayed up until it could be closed.
-export function play({ creative, app, html, link, ctaText, reward, format = 'rewarded', skipAfter = SKIP_SECS, limit = null, picture = null, muted = false, emit = () => {}, openStore, banner = null, report = null, words = stringsFor('en') }) {
+export function play({ creative, app, html, link, ctaText, reward, format = 'rewarded', skipAfter = SKIP_SECS, limit = null, picture = null, muted = false, emit = () => {}, openStore, banner = null, report = null, more = null, words = stringsFor('en') }) {
   const { t } = words;   // the player's own words, in the player's language (locale.js)
   const doc = document;
   let { kind } = creative;
@@ -198,7 +199,7 @@ export function play({ creative, app, html, link, ctaText, reward, format = 'rew
   </div>
   ${link ? `<button class="store go" hidden>${icon}<span>${esc(app.name)}</span><em>${esc(ctaText)}</em></button>` : ''}
   <div class="ask" hidden><div><b>${esc(t.leaveTitle)}</b><span>${esc(reward ? say(t.miss, { reward }) : t.missPlain)}</span><button class="keep">${esc(t.keep)}</button><button class="leave">${esc(t.leave)}</button></div></div>
-  <div class="info" hidden><div role="dialog" aria-label="${esc(t.about)}"><b>${esc(NETWORK)}</b><span>${esc(t.network)}</span><span>${esc(t.chosen)}</span>
+  <div class="info" hidden><div role="dialog" aria-label="${esc(t.about)}"><b>${esc(NETWORK)}</b><span>${esc(t.network)}</span><span>${esc(t.chosen)}</span>${more ? `<button class="see">${esc(t.seeMore)}</button>` : ''}
     ${report ? `<textarea rows="2" maxlength="${WORDS_MAX}" placeholder="${esc(t.reportAsk)}" aria-label="${esc(t.reportAsk)}"></textarea><button class="send">${esc(t.report)}</button><em hidden>${esc(t.reported)}</em>` : ''}
     <small>${esc([app.name, creative.id, `v${SDK}`].filter(Boolean).join(' · '))}</small><button class="shut">${esc(t.close)}</button></div></div>
 </div>`;
@@ -470,6 +471,7 @@ export function play({ creative, app, html, link, ctaText, reward, format = 'rew
     if (b.matches('.about')) info(true);
     else if (b.matches('.shut')) info(false);
     else if (b.matches('.send')) send(b);
+    else if (b.matches('.see')) more();
     else if (b.matches('.x, .ring, .earned')) ask();   // any way out: free once the reward is earned, asked about before
     else if (b.matches('.go')) store(b.closest('.end') ? 'card' : 'button');
     else if (b.matches('.more')) keepPlaying();

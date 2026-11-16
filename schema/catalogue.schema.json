@@ -7,6 +7,7 @@
   "properties": {
     "version": { "type": "integer" },
     "signedBy": { "description": "The public key of whoever signs this catalogue as it is served (ECDSA P-256, base64url), written by the server. A game believes it only from the copy it shipped with.", "type": "string" },
+    "more": { "description": "The network's page of its games: https, ending in a / (a game's id follows it): what the link to more games behind an ad's \u24d8 opens, with the id of the game showing the ad. Left out: no such link.", "type": ["string", "null"] },
     "pt": { "description": "Our App Store provider token, used in campaign links for apps marked own.", "type": ["integer", "string", "null"] },
     "exchange": {
       "description": "What share of a host game's ad slots the network asks for, when the host has a paid network to show instead (core/exchange.js). Left out: none.",

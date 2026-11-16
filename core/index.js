@@ -89,7 +89,7 @@
 // `ingest`. A game that counts nothing from its own development builds (no `ingest` there) can
 // still name it, and see its test reports arrive.
 import { loadCatalogue, validate, within, secure, filesOf } from './catalogue.js';
-import { pick, eligible, cardFor, wanted } from './pick.js';
+import { pick, eligible, cardFor, wanted, isChild } from './pick.js';
 import { mix as mixOf, believed, shareOf, turn, settings as settingsOf } from './exchange.js';
 import { storeLink, cta } from './storeLinks.js';
 import { openHistory, safeStorage, memoryStorage, forget } from './history.js';
@@ -114,6 +114,10 @@ const WEB = {
   openStore: link => void open(link.fallback ?? link.url, '_blank', 'noopener'),
   metered: () => { const c = navigator.connection; return !!c && (c.saveData || c.type === 'cellular'); },   // where the browser says
 };
+
+// An address of the network's with the game that asks said in it (?host=<id>): the mix's, and the catalogue's, so a
+// server may give each game its own list. It says nothing of the player; a plain file's server takes no notice.
+const asks = (url, host) => host == null ? url : `${url}${url.includes('?') ? '&' : '?'}host=${encodeURIComponent(host)}`;
 
 export function createIndieAds({ host, rating = null, catalogue, placements = {}, onEvent, ingest: ingestAt = null, reports: reportsAt = null, mix: mixFrom = null, signedBy = null, lang = null, os = guessOs(), native = {}, age = () => null, muted = () => false, aspect = () => null,
   test = () => false, consent, cache: wantsCache = true, storage: given, fetch = globalThis.fetch?.bind(globalThis), now = Date.now, rand = Math.random }) {
@@ -145,7 +149,7 @@ export function createIndieAds({ host, rating = null, catalogue, placements = {}
   // The network's key: the game's word, or the one in the catalogue it shipped with (a signed server puts its public key in
   // every catalogue it serves, so a copy taken for shipping brings it). Never the one in a catalogue just fetched: that's the thing in doubt.
   const key = signedBy ?? (typeof fallback?.signedBy === 'string' && fallback.apps ? fallback.signedBy : null);
-  const loaded = catalogue?.apps ? Promise.resolve(validate(catalogue)) : loadCatalogue({ url: String(url), fallback: fallback?.apps ? fallback : fallback && String(fallback), fetch, storage, signedBy: key });
+  const loaded = catalogue?.apps ? Promise.resolve(validate(catalogue)) : loadCatalogue({ url: asks(String(url), host), fallback: fallback?.apps ? fallback : fallback && String(fallback), fetch, storage, signedBy: key });
   loaded.then(cat => cat.dropped.forEach(d => console.warn(`[indie-ads] dropped ${d}`)));
   // beside what a creative plays: what dresses its end card, with the button's picture for this store and not the other's
   const dressing = c => filesOf(c).filter(([field, url]) => url && (field.startsWith('endCard.') || field === `storeButton.${os}`));
@@ -163,7 +167,7 @@ export function createIndieAds({ host, rating = null, catalogue, placements = {}
   async function askMix() {
     const stop = new AbortController(), timer = setTimeout(() => stop.abort(), 4000);
     try {
-      const res = await fetch(`${mixUrl}${String(mixUrl).includes('?') ? '&' : '?'}host=${encodeURIComponent(host)}`, { signal: stop.signal });
+      const res = await fetch(asks(String(mixUrl), host), { signal: stop.signal });
       const answer = res.ok && believed(await res.json());
       if (answer) { try { storage.setItem(MIX_KEY, JSON.stringify({ ...answer, at: now() })); } catch { /* full or private */ } return answer; }
     } catch { /* offline, or no such server: the last answer */ } finally { clearTimeout(timer); }
@@ -249,10 +253,12 @@ export function createIndieAds({ host, rating = null, catalogue, placements = {}
       if (missed) emit('cache_miss');
       const link = storeLink(app, { os, native: inApp, host, campaign: creative.campaign, creative: creative.id, placement, pt: app.own ? cat.pt : null });
       const said = words(), inWords = x => ({ ...x, line: localised(x.line, said.locale) });
+      // the link to more games behind the ⓘ: the network's page of the games this one shows, opened outside the game. Not offered to a child.
+      const games = cat.more && !isChild(who.age) ? cat.more + encodeURIComponent(host) : null, more = games && (() => { try { Promise.resolve(shell.openStore({ via: 'web', url: games, fallback: games })).catch(() => {}); } catch { /* nothing here opens it */ } });   // as a game's own page is opened (storeLinks.js 'web'): no store's sheet, no tap counted
       // as it's on the device: the file it plays, and what dresses its card, each from the cache where it's there
       const here = (field, url) => media?.files?.[field] ?? url;
       const local = { ...creative, ...(media?.src && { src: media.src }), ...(creative.endCard && { endCard: Object.fromEntries(Object.entries(creative.endCard).map(([shape, url]) => [shape, here(`endCard.${shape}`, url)])) }) };
-      const { granted, watchedSecs, kind } = await play({ creative: inWords(local), app: inWords(app), html: page(media), link, ctaText: cta(app, os, now(), said.t, link), reward, format, skipAfter, picture: here(`storeButton.${os}`, creative.storeButton?.[os] ?? null), limit: creative.overrun ? who.placement?.maxSecs : null, muted: muted(), emit, openStore: shell.openStore, banner: shell.banner, report: r => reported(placement, creative, app, said.locale, r), words: said });
+      const { granted, watchedSecs, kind } = await play({ creative: inWords(local), app: inWords(app), html: page(media), link, ctaText: cta(app, os, now(), said.t, link), reward, format, skipAfter, picture: here(`storeButton.${os}`, creative.storeButton?.[os] ?? null), limit: creative.overrun ? who.placement?.maxSecs : null, muted: muted(), emit, more, openStore: shell.openStore, banner: shell.banner, report: r => reported(placement, creative, app, said.locale, r), words: said });
       if (granted && kind !== 'card') history.watched(app.id);
       return { granted: granted && !interstitial, shown: true, via: 'house', creative: creative.id, app: app.id, kind, watchedSecs };
     } finally {

@@ -85,7 +85,7 @@ export async function signedBy(key, text, sig) {
   } catch { return false; }
 }
 
-export const EMPTY = Object.freeze({ version: 0, pt: null, exchange: null, apps: {}, creatives: [], dropped: [] });
+export const EMPTY = Object.freeze({ version: 0, pt: null, more: null, exchange: null, apps: {}, creatives: [], dropped: [] });
 
 // Whose game `id` is: what the exchange counts by, and the pick favours a host's own by. A game with no studio named is its own.
 export const studioOf = (catalogue, id) => catalogue.apps[id]?.studio || id;
@@ -121,7 +121,8 @@ export function validate(raw, base) {
     creatives.push({ ...shown(c, url, (field, reason) => { dropped.push(`creative ${id}: ${field} ${reason}, and is left out`); }), src, poster: url(c.poster) });
   }
   const exchange = raw.exchange && typeof raw.exchange === 'object' ? raw.exchange : null;   // exchange.js reads it, and trusts none of it
-  return { version: raw.version ?? 1, pt: raw.pt ?? null, exchange, apps, creatives, dropped };
+  const more = typeof raw.more === 'string' && /^https:\/\/\S+\/$/.test(raw.more) ? raw.more : null;   // the network's page of its games, for the ⓘ's link to more games (index.js): https, and ending in a / so a game's id after it is a page of that site's and no other's
+  return { version: raw.version ?? 1, pt: raw.pt ?? null, more, exchange, apps, creatives, dropped };
 }
 
 // What `promise` resolves to if it does within `ms`, else null: for an answer worth having but not worth waiting on.

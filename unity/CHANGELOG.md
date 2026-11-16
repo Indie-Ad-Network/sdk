@@ -6,6 +6,14 @@ The repository has one version, [Semantic Versioning](https://semver.org), and a
 
 Two numbers are not this one, and change only when a format does: `VERSION` in `core/wire.js` (what games send the ingest) and the catalogue's `version`. Games already released go on sending and reading the old ones.
 
+## [0.6.1] - 2026-11-16
+
+### Added
+- **"More indie games from this network" behind an ad's ⓘ**, where the network has a page of its games (`more` in the catalogue, an https address): it opens that page for the game showing the ad, outside the game, by the same way a store link is opened. It isn't offered to a player the game has said is under 13, and a catalogue without `more` shows no such line: nothing to do to take it, and nothing changes for a network that doesn't serve one. In every language the player speaks (`seeMore` in `strings/`).
+
+### Changed
+- **A game says which game it is when it asks for the catalogue**: `?host=<its id>` on the catalogue's address, as it already says to the mix. A server can then give each game a list of its own; one that serves a plain file takes no notice. It says nothing about the player. Nothing to do to take it.
+
 ## [0.6.0] - 2026-11-16
 
 The code takes the network's name: `HouseAds` is `IndieAds`. Nothing an ad does has changed, and the old names still work in this release, with a warning, so a game can take it first and rename after. They go in the release after this one. 0.5.1 was never tagged, so what it lists below comes with this release too.

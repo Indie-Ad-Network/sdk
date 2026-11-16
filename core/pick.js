@@ -21,7 +21,9 @@ import { studioOf } from './catalogue.js';
 
 export const DAY = 864e5;
 
-const OWN_BOOST = 2, WRONG_SHAPE = 0.5, CAP_PER_DAY = 2, CHILD = 13;
+const OWN_BOOST = 2, WRONG_SHAPE = 0.5, CAP_PER_DAY = 2;
+const CHILD = 13;
+export const isChild = age => age != null && age < CHILD;   // by the game's own word: only games fit for one, and no way out to the web
 const ageOf = rating => parseInt(rating, 10) || 0;   // '9+' → 9; none → 0, fit for anyone
 
 // a showing counts against the cap for a day
@@ -35,7 +37,7 @@ export const resting = (history, app, now) => (history?.apps?.[app]?.until ?? 0)
 function appOk(app, { host, rating, age, history, now, test = false }) {
   if (!app || (!test && app.id === host)) return false;
   if (rating != null && ageOf(app.rating) > ageOf(rating)) return false;
-  if (age != null && age < CHILD && !app.under13) return false;
+  if (isChild(age) && !app.under13) return false;
   return test || !resting(history, app.id, now);
 }
 

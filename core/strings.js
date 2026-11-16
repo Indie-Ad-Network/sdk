@@ -25,6 +25,7 @@ export const STRINGS = {
   "about": "حول هذا الإعلان",
   "network": "هذا الإعلان من Indie Ad Network: دائرة صغيرة من مطوّري الألعاب المستقلين الذين يعرفون بعضهم ويثقون ببعض، ويتشاركون ألعابًا يفخرون بها.",
   "chosen": "تم اختياره بحسب لغتك والإعلانات التي شاهدتها من قبل في هذه اللعبة. لا تُجمع أي بيانات شخصية.",
+  "seeMore": "ألعاب مستقلة أخرى من هذه الشبكة",
   "reportAsk": "ما المشكلة في هذا الإعلان؟ (اختياري)",
   "report": "الإبلاغ عن هذا الإعلان",
   "reported": "شكرًا لك. سنراجع الأمر."
@@ -54,6 +55,7 @@ export const STRINGS = {
   "about": "Über diese Anzeige",
   "network": "Diese Anzeige kommt vom Indie Ad Network: einem kleinen Kreis unabhängiger Spieleentwickler, die sich kennen und vertrauen und Spiele teilen, auf die sie stolz sind.",
   "chosen": "Sie wurde anhand deiner Sprache und der Anzeigen ausgewählt, die du in diesem Spiel schon gesehen hast. Es werden keine persönlichen Daten erfasst.",
+  "seeMore": "Mehr Indie-Spiele aus diesem Netzwerk",
   "reportAsk": "Was stimmt mit dieser Anzeige nicht? (optional)",
   "report": "Anzeige melden",
   "reported": "Danke. Wir sehen uns das an."
@@ -83,6 +85,7 @@ export const STRINGS = {
   "about": "About this ad",
   "network": "This ad is from the Indie Ad Network: a small circle of independent game developers who know and trust each other, sharing games they're proud of.",
   "chosen": "It was chosen by your language and the ads you've already seen in this game. No personal data is collected.",
+  "seeMore": "More indie games from this network",
   "reportAsk": "What's wrong with this ad? (optional)",
   "report": "Report this ad",
   "reported": "Thank you. We'll take a look."
@@ -119,6 +122,7 @@ export const STRINGS = {
   "about": "Acerca de este anuncio",
   "network": "Este anuncio es de Indie Ad Network: un pequeño círculo de desarrolladores de juegos independientes que se conocen y confían entre sí, y comparten juegos de los que están orgullosos.",
   "chosen": "Se ha elegido según tu idioma y los anuncios que ya has visto en este juego. No se recopila ningún dato personal.",
+  "seeMore": "Más juegos indie de esta red",
   "reportAsk": "¿Qué problema tiene este anuncio? (opcional)",
   "report": "Denunciar este anuncio",
   "reported": "Gracias. Lo revisaremos."
@@ -148,6 +152,7 @@ export const STRINGS = {
   "about": "À propos de cette pub",
   "network": "Cette pub vient de l'Indie Ad Network : un petit cercle de développeurs de jeux indépendants qui se connaissent et se font confiance, et partagent des jeux dont ils sont fiers.",
   "chosen": "Elle a été choisie selon votre langue et les pubs que vous avez déjà vues dans ce jeu. Aucune donnée personnelle n'est collectée.",
+  "seeMore": "Plus de jeux indé de ce réseau",
   "reportAsk": "Quel est le problème avec cette pub ? (facultatif)",
   "report": "Signaler cette pub",
   "reported": "Merci. Nous allons y jeter un œil."
@@ -177,6 +182,7 @@ export const STRINGS = {
   "about": "इस विज्ञापन के बारे में",
   "network": "यह विज्ञापन Indie Ad Network से है: स्वतंत्र गेम डेवलपर्स का एक छोटा समूह, जो एक-दूसरे को जानते हैं और भरोसा करते हैं, और वे गेम साझा करते हैं जिन पर उन्हें गर्व है।",
   "chosen": "इसे आपकी भाषा और इस गेम में आपके पहले देखे गए विज्ञापनों के आधार पर चुना गया है। कोई निजी डेटा एकत्र नहीं किया जाता।",
+  "seeMore": "इस नेटवर्क के और इंडी गेम",
   "reportAsk": "इस विज्ञापन में क्या गड़बड़ है? (वैकल्पिक)",
   "report": "इस विज्ञापन की रिपोर्ट करें",
   "reported": "धन्यवाद। हम इसे देखेंगे।"
@@ -206,6 +212,7 @@ export const STRINGS = {
   "about": "Tentang iklan ini",
   "network": "Iklan ini berasal dari Indie Ad Network: lingkaran kecil pengembang game independen yang saling mengenal dan percaya, berbagi game yang mereka banggakan.",
   "chosen": "Iklan ini dipilih berdasarkan bahasamu dan iklan yang sudah kamu lihat di game ini. Tidak ada data pribadi yang dikumpulkan.",
+  "seeMore": "Game indie lainnya dari jaringan ini",
   "reportAsk": "Apa masalah iklan ini? (opsional)",
   "report": "Laporkan iklan ini",
   "reported": "Terima kasih. Kami akan memeriksanya."
@@ -235,6 +242,7 @@ export const STRINGS = {
   "about": "Informazioni su questo annuncio",
   "network": "Questo annuncio arriva da Indie Ad Network: una piccola cerchia di sviluppatori di giochi indipendenti che si conoscono e si fidano l'uno dell'altro, e condividono giochi di cui vanno fieri.",
   "chosen": "È stato scelto in base alla tua lingua e agli annunci che hai già visto in questo gioco. Non viene raccolto alcun dato personale.",
+  "seeMore": "Altri giochi indie di questa rete",
   "reportAsk": "Cosa non va in questo annuncio? (facoltativo)",
   "report": "Segnala questo annuncio",
   "reported": "Grazie. Daremo un'occhiata."
@@ -264,6 +272,7 @@ export const STRINGS = {
   "about": "この広告について",
   "network": "この広告は Indie Ad Network のものです。互いをよく知り、信頼し合うインディーゲーム開発者の小さな輪で、自信を持っておすすめできるゲームを紹介し合っています。",
   "chosen": "この広告は、お使いの言語と、このゲームでこれまでに表示された広告をもとに選ばれました。個人データは収集されません。",
+  "seeMore": "このネットワークのインディーゲームをもっと見る",
   "reportAsk": "この広告の問題点を教えてください（任意）",
   "report": "この広告を報告",
   "reported": "ありがとうございます。確認いたします。"
@@ -293,6 +302,7 @@ export const STRINGS = {
   "about": "이 광고 정보",
   "network": "이 광고는 Indie Ad Network에서 제공합니다. 서로 알고 신뢰하는 인디 게임 개발자들의 작은 모임으로, 자랑스럽게 만든 게임을 서로 소개합니다.",
   "chosen": "이 광고는 사용 언어와 이 게임에서 이미 본 광고를 기준으로 선택되었습니다. 개인 정보는 수집되지 않습니다.",
+  "seeMore": "이 네트워크의 인디 게임 더 보기",
   "reportAsk": "이 광고에 어떤 문제가 있나요? (선택 사항)",
   "report": "이 광고 신고",
   "reported": "감사합니다. 확인해 보겠습니다."
@@ -322,6 +332,7 @@ export const STRINGS = {
   "about": "O tej reklamie",
   "network": "Ta reklama pochodzi z Indie Ad Network: małego kręgu niezależnych twórców gier, którzy się znają i sobie ufają, i dzielą się grami, z których są dumni.",
   "chosen": "Została wybrana na podstawie twojego języka i reklam, które widziałeś już w tej grze. Nie są zbierane żadne dane osobowe.",
+  "seeMore": "Więcej gier indie z tej sieci",
   "reportAsk": "Co jest nie tak z tą reklamą? (opcjonalnie)",
   "report": "Zgłoś tę reklamę",
   "reported": "Dziękujemy. Przyjrzymy się temu."
@@ -363,6 +374,7 @@ export const STRINGS = {
   "about": "Sobre este anúncio",
   "network": "Este anúncio é da Indie Ad Network: um pequeno círculo de desenvolvedores de jogos independentes que se conhecem e confiam uns nos outros, compartilhando jogos dos quais se orgulham.",
   "chosen": "Ele foi escolhido pelo seu idioma e pelos anúncios que você já viu neste jogo. Nenhum dado pessoal é coletado.",
+  "seeMore": "Mais jogos indie desta rede",
   "reportAsk": "O que há de errado com este anúncio? (opcional)",
   "report": "Denunciar este anúncio",
   "reported": "Obrigado. Vamos dar uma olhada."
@@ -392,6 +404,7 @@ export const STRINGS = {
   "about": "Об этой рекламе",
   "network": "Эта реклама — от Indie Ad Network: небольшого круга независимых разработчиков игр, которые знают друг друга и доверяют друг другу и делятся играми, которыми гордятся.",
   "chosen": "Она выбрана по вашему языку и по рекламе, которую вы уже видели в этой игре. Личные данные не собираются.",
+  "seeMore": "Другие инди-игры этой сети",
   "reportAsk": "Что не так с этой рекламой? (необязательно)",
   "report": "Пожаловаться на рекламу",
   "reported": "Спасибо. Мы разберёмся."
@@ -421,6 +434,7 @@ export const STRINGS = {
   "about": "Om den här annonsen",
   "network": "Den här annonsen kommer från Indie Ad Network: en liten krets av oberoende spelutvecklare som känner och litar på varandra och delar spel de är stolta över.",
   "chosen": "Den valdes utifrån ditt språk och de annonser du redan har sett i det här spelet. Inga personuppgifter samlas in.",
+  "seeMore": "Fler indiespel från det här nätverket",
   "reportAsk": "Vad är fel med den här annonsen? (valfritt)",
   "report": "Anmäl annonsen",
   "reported": "Tack. Vi tittar på det."
@@ -450,6 +464,7 @@ export const STRINGS = {
   "about": "เกี่ยวกับโฆษณานี้",
   "network": "โฆษณานี้มาจาก Indie Ad Network กลุ่มเล็ก ๆ ของนักพัฒนาเกมอิสระที่รู้จักและไว้ใจกัน ซึ่งแบ่งปันเกมที่พวกเขาภูมิใจ",
   "chosen": "โฆษณานี้ถูกเลือกจากภาษาของคุณและโฆษณาที่คุณเคยเห็นในเกมนี้ ไม่มีการเก็บข้อมูลส่วนบุคคล",
+  "seeMore": "เกมอินดี้อื่น ๆ จากเครือข่ายนี้",
   "reportAsk": "โฆษณานี้มีปัญหาอะไร (ไม่บังคับ)",
   "report": "รายงานโฆษณานี้",
   "reported": "ขอบคุณ เราจะตรวจสอบให้"
@@ -479,6 +494,7 @@ export const STRINGS = {
   "about": "Bu reklam hakkında",
   "network": "Bu reklam Indie Ad Network'ten: birbirini tanıyan ve birbirine güvenen, gurur duydukları oyunları paylaşan küçük bir bağımsız oyun geliştiricileri çevresi.",
   "chosen": "Diline ve bu oyunda daha önce gördüğün reklamlara göre seçildi. Hiçbir kişisel veri toplanmaz.",
+  "seeMore": "Bu ağdan daha fazla bağımsız oyun",
   "reportAsk": "Bu reklamda sorun ne? (isteğe bağlı)",
   "report": "Bu reklamı bildir",
   "reported": "Teşekkürler. İnceleyeceğiz."
@@ -508,6 +524,7 @@ export const STRINGS = {
   "about": "Про цю рекламу",
   "network": "Ця реклама — від Indie Ad Network: невеликого кола незалежних розробників ігор, які знають одне одного й довіряють одне одному та діляться іграми, якими пишаються.",
   "chosen": "Її вибрано за вашою мовою та рекламою, яку ви вже бачили в цій грі. Особисті дані не збираються.",
+  "seeMore": "Інші інді-ігри цієї мережі",
   "reportAsk": "Що не так із цією рекламою? (необов'язково)",
   "report": "Поскаржитися на рекламу",
   "reported": "Дякуємо. Ми розберемося."
@@ -537,6 +554,7 @@ export const STRINGS = {
   "about": "关于此广告",
   "network": "此广告来自 Indie Ad Network：一个由彼此熟识、相互信任的独立游戏开发者组成的小圈子，分享他们引以为傲的游戏。",
   "chosen": "它是根据你的语言以及你在本游戏中已看过的广告选出的。不会收集任何个人数据。",
+  "seeMore": "来自此网络的更多独立游戏",
   "reportAsk": "这则广告有什么问题？（选填）",
   "report": "举报此广告",
   "reported": "谢谢。我们会查看。"
@@ -566,6 +584,7 @@ export const STRINGS = {
   "about": "關於此廣告",
   "network": "此廣告來自 Indie Ad Network：一個由彼此熟識、互相信任的獨立遊戲開發者組成的小圈子，分享他們引以為傲的遊戲。",
   "chosen": "它是根據你的語言以及你在本遊戲中已看過的廣告選出的。不會收集任何個人資料。",
+  "seeMore": "來自此網路的更多獨立遊戲",
   "reportAsk": "這則廣告有什麼問題？（選填）",
   "report": "檢舉此廣告",
   "reported": "謝謝。我們會查看。"
