@@ -1,4 +1,4 @@
-# house-ads
+# The Indie Ad Network SDK
 
 Rewarded ads and interstitials for our own and our friends' games, for any game to drop in. No dependencies, no ad SDK, nothing of a third party's running in the game.
 
@@ -22,12 +22,12 @@ Rewarded ads and interstitials for our own and our friends' games, for any game 
 ## Use
 
 ```js
-import { createHouseAds } from './vendor/house-ads/core/index.js';
+import { createHouseAds } from './vendor/sdk/core/index.js';
 
 const ads = createHouseAds({
   host: 'mygame',              // this game's id in the catalogue: it's never advertised to itself
   rating: '9+',                // this game's age rating: nothing rated above it is shown
-  catalogue: 'https://example.com/house-ads/catalogue.json',
+  catalogue: 'https://example.com/network/catalogue.json',
   placements: { saveMe: { maxSecs: 30 }, jobs: { maxSecs: 15 } },
   onEvent: e => console.log(e),
 });

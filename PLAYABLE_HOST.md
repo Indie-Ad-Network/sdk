@@ -1,7 +1,7 @@
-# Hosting a house-ads playable in another ad player
+# Hosting an Indie Ad Network playable in another ad player
 
 For someone adding playable support to their own in-house ad network, so that a playable built
-for house-ads runs in it unchanged. It describes the contract between the playable (one HTML
+for the Indie Ad Network runs in it unchanged. It describes the contract between the playable (one HTML
 page) and the host (the ad player around it): how the page is run, the messages each side
 sends, the two flags a creative carries, and the analytics that come out.
 
@@ -15,7 +15,7 @@ runtime does the playable's side of everything here.
 ## 1. What a playable is
 
 - One self-contained HTML file: scripts, pictures, sound and fonts all inline. It makes no
-  network requests. Under 5 MB is the aim; 8 MB is the most the house-ads admin accepts.
+  network requests. Under 5 MB is the aim; 8 MB is the most the network's admin accepts.
 - Written to MRAID 2/3: it expects a global `mraid` object to exist before its own scripts run.
 - It draws no close button, countdown, or end card of its own. The host draws those.
 
@@ -30,7 +30,7 @@ The creative's record carries, beside the file:
 
 ### Settings from the page
 
-The house-ads admin has a box for each of `finishEarly` and `keepPlaying`, and fills them in when a file is
+The network's admin has a box for each of `finishEarly` and `keepPlaying`, and fills them in when a file is
 picked from what the page says and does (`playable-kit/tools/page-says.js`). The page may say what it wants in its head:
 
 ```html

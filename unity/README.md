@@ -1,4 +1,4 @@
-# house-ads in a Unity game
+# The Indie Ad Network SDK in a Unity game
 
 The package's player (`core/`, as one page: `Runtime/Resources/HouseAdsPlayer.html`) in the package's own web view, with a say in how its ads are mixed with a paid network's.
 

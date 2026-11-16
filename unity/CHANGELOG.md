@@ -1,6 +1,6 @@
 # Changelog
 
-Every release of house-ads: the whole repository, not only the Unity package. It lives here because this is where Unity's Package Manager looks for it.
+Every release of the Indie Ad Network SDK (called house-ads until 0.5.0, and still so in its code): the whole repository, not only the Unity package. It lives here because this is where Unity's Package Manager looks for it.
 
 The repository has one version, [Semantic Versioning](https://semver.org), and a release is the tag `vX.Y.Z` (a Unity game takes it as `…/sdk.git?path=/unity#vX.Y.Z`). Before 1.0.0 a minor version may break a game that takes it, and a patch may not. `npm test` fails if the packages' versions differ or the newest entry here isn't that version.
 
