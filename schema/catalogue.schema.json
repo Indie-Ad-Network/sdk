@@ -112,8 +112,52 @@
           "hosts": { "description": "Only in these host games. Left out: in all.", "type": "array", "items": { "type": "string" } },
           "campaign": { "description": "The campaign name in store links. Left out: the creative's id.", "type": "string" },
           "bytes": { "type": "integer" },
-          "sha256": { "type": "string" }
+          "sha256": { "type": "string" },
+          "endCard": {
+            "description": "Art for the end card, by the screen's shape: either stands in for the other. Left out: the player's own card (icon, name, line). Read from 0.5.0; a release before it shows its own card.",
+            "type": "object",
+            "properties": { "portrait": { "type": "string" }, "landscape": { "type": "string" } }
+          },
+          "storeButton": {
+            "description": "The store button on the end card. Left out: the player's own, in the player's language, where it has always been. Read from 0.5.0.",
+            "type": "object",
+            "properties": {
+              "ios": { "description": "A picture of the button for the App Store (PNG). Left out: the player's own button, in words.", "type": "string" },
+              "android": { "description": "The same, for Google Play.", "type": "string" },
+              "portrait": { "$ref": "#/$defs/place" },
+              "landscape": { "$ref": "#/$defs/place" },
+              "pulse": { "description": "It swells and settles, to be seen: true (once a second, to 1.05 of its size), or how.", "oneOf": [{ "type": "boolean" }, { "type": "object", "properties": { "secs": { "type": "number", "minimum": 0.1, "maximum": 60, "default": 1 }, "scale": { "type": "number", "minimum": 1, "maximum": 2, "default": 1.05 } } }] }
+            }
+          },
+          "loop": {
+            "description": "video: at its end it plays on from `from` seconds, silent, behind the store button, where the end card would stand. Read from 0.5.0.",
+            "type": "object", "required": ["from"],
+            "properties": { "from": { "description": "Seconds in; less than `secs`.", "type": "number", "minimum": 0 } }
+          },
+          "tap": {
+            "description": "video: when a tap opens the store. Each is seconds in, or \"end\": with the end card. Read from 0.5.0.",
+            "type": "object",
+            "properties": {
+              "button": { "description": "When the store button is there. Left out: \"end\".", "oneOf": [{ "type": "number", "minimum": 0 }, { "const": "end" }] },
+              "whole": { "description": "From when a tap anywhere on the video opens the store. Left out: never (but for one marked ownEndCard, where it's always).", "oneOf": [{ "type": "number", "minimum": 0 }, { "const": "end" }] }
+            }
+          },
+          "overrun": { "description": "video: it may be shown in a placement shorter than it (`maxSecs` under its `secs`). The reward comes at the placement's time, and the video plays on: the player may watch to its end or leave by the end card. Read from 0.5.0; a release before it shows the video only where it fits.", "type": "boolean" },
+          "fade": { "description": "video: the seconds at its end over which the end card comes up and the sound goes down. Left out: none, a cut. Read from 0.5.0.", "type": "number", "minimum": 0, "maximum": 5 },
+          "backdrop": { "description": "video: what's behind it where it doesn't fill the screen. \"video\": its own picture, blurred, as it plays. Left out: its poster, blurred. Read from 0.5.0.", "enum": ["poster", "video"] }
         }
+      }
+    }
+  },
+  "$defs": {
+    "place": {
+      "description": "Where the store button is, for a screen of this shape. Lengths are in units of 1/720 of the screen's shorter side, so it's the same on a phone and a tablet.",
+      "type": "object",
+      "properties": {
+        "anchor": { "description": "The edge or corner it's set against.", "enum": ["top-left", "top-center", "top-right", "middle-left", "middle-center", "middle-right", "bottom-left", "bottom-center", "bottom-right"], "default": "bottom-center" },
+        "width": { "type": "number", "minimum": 64, "maximum": 1000, "default": 360 },
+        "x": { "description": "How far in from the anchor's side; from a centre, to the right.", "type": "number", "minimum": -1280, "maximum": 1280, "default": 0 },
+        "y": { "description": "How far in from the anchor's top or bottom; from the middle, down.", "type": "number", "minimum": -1280, "maximum": 1280, "default": 128 }
       }
     }
   }

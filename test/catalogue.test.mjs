@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { validate, loadCatalogue } from '../core/catalogue.js';
 import { withShim, shim } from '../core/mraidShim.js';
 import { openHistory, memoryStorage as memory } from '../core/history.js';
@@ -195,4 +196,50 @@ test('nothing over http: not the catalogue, not a file or link it names, not the
   const went = [], ads = createHouseAds({ host: 'h', catalogue: { apps: {}, creatives: [] }, ingest: 'http://ingest.example/e', mix: 'http://ingest.example/mix', storage: memoryStorage(), cache: false, fetch: async u => { went.push(String(u)); return { ok: false }; } });
   const quiet = console.error; console.error = () => {}; try { ads.offered('p'); await new Promise(r => setTimeout(r, 2200)); } finally { console.error = quiet; }
   assert.deepEqual(went, []);
+});
+
+test("how a creative asks to be shown (0.5.0): read as the player will, its files against the catalogue's URL", () => {
+  const video = { id: 'v', app: 'tcb', kind: 'video', secs: 45, src: 'v.mp4' };
+  const one = more => validate({ apps: good.apps, creatives: [{ ...video, ...more }] }, BASE);
+  const c = one({ endCard: { portrait: 'cards/p.jpg' }, storeButton: { ios: 'b/ios.png', portrait: { anchor: 'bottom-center', width: 420, y: 96, colour: 'red' }, pulse: true },
+    loop: { from: 38.5 }, tap: { button: 5, whole: 'end' }, overrun: true, fade: 2, backdrop: 'video' });
+  assert.deepEqual(c.dropped, []);
+  assert.deepEqual(c.creatives[0].endCard, { portrait: 'https://example.com/house-ads/cards/p.jpg', landscape: null });
+  assert.deepEqual(c.creatives[0].storeButton, { ios: 'https://example.com/house-ads/b/ios.png', android: null, portrait: { anchor: 'bottom-center', width: 420, y: 96 }, pulse: {} });
+  assert.deepEqual([c.creatives[0].loop, c.creatives[0].tap, c.creatives[0].overrun, c.creatives[0].fade, c.creatives[0].backdrop], [{ from: 38.5 }, { button: 5, whole: 'end' }, true, 2, 'video']);
+  // a button with no picture is the player's own, put where it's asked; and a pulse of its own
+  assert.deepEqual(one({ storeButton: { landscape: { anchor: 'middle-right', x: 40 }, pulse: { secs: 2 } } }).creatives[0].storeButton, { ios: null, android: null, landscape: { anchor: 'middle-right', x: 40 }, pulse: { secs: 2 } });
+  // a creative with none of them is as it was
+  assert.deepEqual(Object.keys(one({}).creatives[0]).sort(), ['app', 'id', 'kind', 'poster', 'secs', 'src']);
+});
+
+test("one of them that can't be read is left out and named, and the creative plays without it", () => {
+  const video = { id: 'v', app: 'tcb', kind: 'video', secs: 30, src: 'v.mp4' };
+  const bad = { endCard: [{ portrait: 5 }, { portrait: 'p.jpg', landscape: 'http://plain.example/l.jpg' }, 'card.jpg', {}],
+    storeButton: [{ ios: 'http://plain.example/b.png' }, { portrait: { anchor: 'north' } }, { portrait: { width: 5000 } }, { landscape: { y: 'low' } }, { pulse: { scale: 9 } }, 'big'],
+    loop: [{ from: 30 }, { from: -1 }, { from: '25' }, 25], tap: [{ button: 'soon' }, { whole: -1 }, {}, 5], overrun: ['yes', 1], fade: [9, -1, '2'], backdrop: ['art'] };
+  for (const [field, values] of Object.entries(bad)) for (const value of values) {
+    const cat = validate({ apps: good.apps, creatives: [{ ...video, [field]: value }] }, BASE), what = `${field}: ${JSON.stringify(value)}`;
+    assert.equal(cat.creatives.length, 1, what);
+    assert.equal(field in cat.creatives[0], false, what);
+    assert.deepEqual(cat.dropped, [`creative v: ${field} can't be read, and is left out`], what);
+  }
+  // a video's, on a playable
+  const play = validate({ apps: good.apps, creatives: [{ id: 'p', app: 'tcb', kind: 'playable', secs: 30, src: 'p.html', loop: { from: 20 }, overrun: true, endCard: { landscape: 'l.jpg' } }] }, BASE);
+  assert.deepEqual(play.dropped, ["creative p: loop is a video's, and is left out", "creative p: overrun is a video's, and is left out"]);
+  assert.deepEqual([play.creatives[0].loop, play.creatives[0].overrun, play.creatives[0].endCard.landscape], [undefined, undefined, 'https://example.com/house-ads/l.jpg']);
+  // overrun: false is said, and kept
+  assert.equal(validate({ apps: good.apps, creatives: [{ ...video, overrun: false }] }, BASE).creatives[0].overrun, false);
+});
+
+test("what the schema says of them is what's read: each bound taken, a step past it not, every anchor", () => {
+  const schema = JSON.parse(readFileSync(new URL('../schema/catalogue.schema.json', import.meta.url), 'utf8')), fields = schema.properties.creatives.items.properties, place = schema.$defs.place.properties;
+  const kept = (field, value) => field in validate({ apps: good.apps, creatives: [{ id: 'v', app: 'tcb', kind: 'video', secs: 30, src: 'v.mp4', [field]: value }] }, BASE).creatives[0];
+  const bounds = (name, { minimum, maximum }, wrap, field) => { for (const [n, ok] of [[minimum, true], [maximum, true], [minimum - 0.01, false], [maximum + 0.01, false]]) assert.equal(kept(field, wrap(n)), ok, `${name}: ${n}`); };
+  for (const k of ['width', 'x', 'y']) bounds(`place.${k}`, place[k], n => ({ portrait: { [k]: n } }), 'storeButton');
+  for (const anchor of place.anchor.enum) assert.equal(kept('storeButton', { landscape: { anchor } }), true, anchor);
+  const pulse = fields.storeButton.properties.pulse.oneOf[1].properties;
+  for (const k of ['secs', 'scale']) bounds(`pulse.${k}`, pulse[k], n => ({ pulse: { [k]: n } }), 'storeButton');
+  bounds('fade', fields.fade, n => n, 'fade');
+  for (const backdrop of fields.backdrop.enum) assert.equal(kept('backdrop', backdrop), true, backdrop);
 });

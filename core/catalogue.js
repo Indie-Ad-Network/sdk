@@ -20,6 +20,52 @@ const ASPECTS = ['9:16', '16:9'];
 // one of these as something else is dropped, where it would have stopped, or skewed, every ad.
 const strings = x => Array.isArray(x) && x.every(s => typeof s === 'string'), count = x => Number.isFinite(x) && x >= 0;
 const TYPED = { langs: [strings, 'a list of strings'], hosts: [strings, 'a list of strings'], weight: [count, 'a number, 0 or more'], capPerDay: [count, 'a number, 0 or more'], bytes: [count, 'a number, 0 or more'] };
+// How a creative asks to be shown, beyond the player's own way (0.5.0): endCard, storeButton, and for a video loop,
+// tap, overrun, fade and backdrop, each as schema/catalogue.schema.json describes it (test/catalogue.test.mjs holds
+// these to the schema's bounds). Each is optional, and none is a reason to lose an ad: one that can't be read is left
+// out and named in `dropped`, and the creative plays as it would without it. What's left unsaid is the player's to
+// fill in. A release from before 0.5.0 reads none of them, and plays the creative its own way.
+const BAD = Symbol('bad'), obj = x => !!x && typeof x === 'object' && !Array.isArray(x), between = (v, lo, hi) => Number.isFinite(v) && v >= lo && v <= hi;
+const ANCHOR = /^(top|middle|bottom)-(left|center|right)$/, SHAPES = ['portrait', 'landscape'], STORES = ['ios', 'android'];
+const when = v => v === 'end' || count(v);
+const place = p => obj(p) && (p.anchor == null || ANCHOR.test(p.anchor)) && (p.width == null || between(p.width, 64, 1000)) && ['x', 'y'].every(k => p[k] == null || between(p[k], -1280, 1280));
+const only = (o, keys) => Object.fromEntries(keys.filter(k => o[k] != null).map(k => [k, o[k]]));
+const ANY = {
+  endCard(v, c, file) {
+    if (!obj(v)) return BAD;
+    const art = { portrait: file(v.portrait), landscape: file(v.landscape) };
+    return (art.portrait || art.landscape) && SHAPES.every(s => v[s] == null || art[s]) ? art : BAD;   // one given and unreadable: not half a card
+  },
+  storeButton(v, c, file) {
+    if (!obj(v)) return BAD;
+    const pulse = v.pulse === true ? {} : v.pulse || null, picture = { ios: file(v.ios), android: file(v.android) };
+    if (STORES.some(s => v[s] != null && !picture[s]) || SHAPES.some(s => v[s] != null && !place(v[s]))) return BAD;
+    if (pulse && !(obj(pulse) && (pulse.secs == null || between(pulse.secs, 0.1, 60)) && (pulse.scale == null || between(pulse.scale, 1, 2)))) return BAD;
+    return { ...picture, ...Object.fromEntries(SHAPES.filter(s => v[s]).map(s => [s, only(v[s], ['anchor', 'width', 'x', 'y'])])), ...(pulse && { pulse: only(pulse, ['secs', 'scale']) }) };
+  },
+};
+const VIDEO = {
+  loop: (v, c) => obj(v) && count(v.from) && v.from < c.secs ? { from: v.from } : BAD,
+  tap: v => obj(v) && (v.button != null || v.whole != null) && ['button', 'whole'].every(k => v[k] == null || when(v[k])) ? only(v, ['button', 'whole']) : BAD,
+  overrun: v => typeof v === 'boolean' ? v : BAD,
+  fade: v => between(v, 0, 5) ? v : BAD,
+  backdrop: v => ['poster', 'video'].includes(v) ? v : BAD,
+};
+const SHOWN = Object.entries({ ...ANY, ...VIDEO });
+// → `c` with these as the player reads them; each one that can't be read left out, and named by `left(field, why)`
+function shown(c, url, left) {
+  const file = u => typeof u === 'string' ? url(u) : null, out = { ...c };
+  for (const [k, read] of SHOWN) {
+    if (c[k] == null) continue;
+    const v = k in VIDEO && c.kind !== 'video' ? left(k, 'is a video\'s') : read(c[k], c, file);
+    if (v === BAD) left(k, 'can\'t be read');
+    if (v === BAD || v === undefined) delete out[k]; else out[k] = v;
+  }
+  return out;
+}
+// Every file a creative names, as [field, URL or null]: the one list of them, for whoever publishes or keeps them (tools/lib.mjs)
+export const filesOf = c => [['src', c.src], ['poster', c.poster], ...SHAPES.map(s => [`endCard.${s}`, c.endCard?.[s]]), ...STORES.map(s => [`storeButton.${s}`, c.storeButton?.[s]])];
+
 // Not http, unless it's this machine (a developer's own server). A relative path is as secure as what it's read against.
 const LOCAL = ['localhost', '127.0.0.1', '[::1]'];
 export function secure(url, base = globalThis.location?.href) {
@@ -72,7 +118,7 @@ export function validate(raw, base) {
     const src = url(c.src);
     if (!src) { why('creative', id, 'no src'); continue; }
     seen.add(id);
-    creatives.push({ ...c, src, poster: url(c.poster) });
+    creatives.push({ ...shown(c, url, (field, reason) => { dropped.push(`creative ${id}: ${field} ${reason}, and is left out`); }), src, poster: url(c.poster) });
   }
   const exchange = raw.exchange && typeof raw.exchange === 'object' ? raw.exchange : null;   // exchange.js reads it, and trusts none of it
   return { version: raw.version ?? 1, pt: raw.pt ?? null, exchange, apps, creatives, dropped };

@@ -3,7 +3,7 @@ import { readFileSync, existsSync, statSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { pathToFileURL, fileURLToPath } from 'node:url';
 import { resolve, dirname, relative } from 'node:path';
-import { validate } from '../core/catalogue.js';
+import { validate, filesOf } from '../core/catalogue.js';
 
 const local = u => u?.startsWith('file:') ? fileURLToPath(u) : null;
 
@@ -16,7 +16,7 @@ export function readCatalogue(arg) {
 // Every local file the catalogue names: [{ what, id, field, file }]. The one list of them:
 // a new field that names a file is added here, and every tool has it.
 export const assets = cat => [
-  ...cat.creatives.flatMap(c => [['src', c.src], ['poster', c.poster]].map(([field, u]) => ({ what: 'creative', id: c.id, field, file: local(u) }))),
+  ...cat.creatives.flatMap(c => filesOf(c).map(([field, u]) => ({ what: 'creative', id: c.id, field, file: local(u) }))),
   ...Object.values(cat.apps).flatMap(a => [['icon', a.icon], ['art', a.art]].map(([field, u]) => ({ what: 'app', id: a.id, field, file: local(u) }))),
 ].filter(x => x.file);
 
