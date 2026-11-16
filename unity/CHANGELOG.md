@@ -1,6 +1,6 @@
 # Changelog
 
-Every release of the Indie Ad Network SDK (called house-ads until 0.5.0, and HouseAds in its code until 0.6.0): the whole repository, not only the Unity package. It lives here because this is where Unity's Package Manager looks for it.
+Every release of the Indie Ad Network SDK (called house-ads until 0.5.0, and HouseAds in its code until 0.6.0): the whole repository, not only the Unity package. What the network's server does is its own to say, and isn't logged here.
 
 The repository has one version, [Semantic Versioning](https://semver.org), and a release is the tag `vX.Y.Z` (a Unity game takes it as `…/sdk.git?path=/unity#vX.Y.Z`). Before 1.0.0 a minor version may break a game that takes it, and a patch may not. `npm test` fails if the packages' versions differ or the newest entry here isn't that version.
 
@@ -99,9 +99,6 @@ The SDK in its own repository and under its own name, and a creative that says h
 ### Changed
 - **The bar lies over a playable on every screen wider than tall.** In 0.3.3 that was only a phone held sideways (a screen up to 500 px high); a tablet in landscape still had the solid bar across its shorter side. Now any landscape screen has the bar over the playable's top and the game's name left out of it. The side-by-side end card is still only for a screen up to 500 px high, where the stacked one doesn't fit.
 
-### Added
-- **The dashboard can show one platform.** A "Platform" choice beside "Shown in" narrows the counts to iOS or to Android. The exchange between studios and a playable's funnel stay both platforms together, and say so.
-
 ## [0.3.3] - 2026-11-14
 
 ### Changed
@@ -110,7 +107,6 @@ The SDK in its own repository and under its own name, and a creative that says h
 
 ### Added
 - **The playable kit films an ad as a video.** `playable-kit/tools/record.mjs` plays a built playable in headless Chrome and writes an MP4 as [Creatives](../CREATIVES.md) asks for one, with the ad's own sound; `template/play.mjs` is who plays it. See the kit's README.
-- **The dashboard's placements by game.** The front page lists a row a game, its placements summed, and a game's page lists that game's placements one by one.
 
 ## [0.3.2] - 2026-11-13
 
@@ -133,8 +129,7 @@ Apple compliance, security, and ad reporting.
 
 ### Added
 - **A player can report an ad.** The "Ad" label has an ⓘ beside it and is a button: it stops the ad's clock and says whose ad this is (the Indie Ad Network), what it was chosen by, and takes a report, with up to 200 characters if the player types any. Apple asks both of an app with ads (App Store Review Guidelines 2.5.18). The game hears the event `report` (with `message`); with an ingest it goes to `POST /flag` with the ad, the game, the placement, the platform, the language and this release, and nothing about the player. In all 21 languages. Nothing to do in a game.
-- **Reports on the dashboard:** a Reports tab counted with a ⚠️, a bar across the Dashboard while any wait, and a mark on each reported creative; an admin dismisses each, and whoever may change the creative can pause it there. Migration `0007_flags.sql`: **run `npm run migrate` in `ingest/` before deploying the Worker.**
-- **A signed catalogue.** The Worker signs the catalogue (ECDSA P-256; its secret `CATALOGUE_KEY`, made by `tools/catalogue-key.mjs`), and a game given the public key (`signedBy` in `createHouseAds`, `HouseAdsConfig.catalogueKey` in Unity; the dashboard shows it under Network) uses the server's catalogue only if the signature is the network's: someone between a player and the server, false certificate and all, can't serve ads of their own. Unsigned or wrongly signed is as no answer: the last catalogue kept, or the one shipped. The key is also in every catalogue the Worker serves, and a game takes it from the copy it ships with: **download the shipped catalogue again once the server signs, and there is nothing else to set.** A game with no key takes the catalogue as before.
+- **A signed catalogue.** The network's server signs the catalogue (ECDSA P-256), and a game given the public key (`signedBy` in `createHouseAds`, `HouseAdsConfig.catalogueKey` in Unity; the dashboard shows it under Network) uses the server's catalogue only if the signature is the network's: someone between a player and the server, false certificate and all, can't serve ads of their own. Unsigned or wrongly signed is as no answer: the last catalogue kept, or the one shipped. The key is also in every catalogue the server gives, and a game takes it from the copy it ships with: **download the shipped catalogue again once the server signs, and there is nothing else to set.** A game with no key takes the catalogue as before.
 
 ### Changed
 - **https, and nothing else.** A catalogue, ingest or mix address that's `http://` isn't used (said in the console), nor a creative, picture or tracking link a catalogue names; `localhost` is let be, for a developer's own server. Every address the docs have ever given is https, so nothing to do unless a game's wasn't.
@@ -217,15 +212,12 @@ Ten things a review of the SDK found. Nothing to change in a game that takes it.
 - **A day's limit.** `perDay`, for the network or one game: the most house ads a player is shown in 24 hours in that game. Counted on the device.
 - **Fatigue.** A game whose ads a player has been shown 6 times with no store tap rests for 14 days, twice as long each time again, up to 180 days; a store tap starts it over. When every game rests, nothing is available, and a game's paid network has its slots back. `fatigue: { after, rest, grow }` in the `exchange`, for the network or one game; `after: 0` turns it off. Counted on the device, in the history it already kept.
 - **A game not on a store.** A game's record may have `web: { url, label }`: its own page, https, opened in the browser where the game isn't on the player's store, or on none yet (a prototype with a playtest to join). The button says one of `signUp`, `playtest`, `wishlist`, `learnMore`, in the player's language, and the page's address takes the tracking link's macros. Counted as `store_open`. A game with only a page is dropped by SDKs before this one, as on neither store. In the admin: Website, in a game's form.
-- **A playable's funnel.** A playable says how far a showing got with `window.houseAds?.step('board2')`: once a showing each, a dozen names a playable. A new event, `step`, with the name and the seconds it was reached at, counted by the ingest in a table of its own (migration `0005_steps.sql`, to run before the Worker is deployed), and drawn on the admin's dashboard under Playables: impressions, the first touch, each step in the order reached, the store tap.
-- **Released games, kept working.** `npm test` has every released SDK (each tag's own `core/`) read a catalogue made as the admin makes one today, and has today's ingest count every event each of them sends. `npm run deploy` deploys the ingest behind the same check made of the live catalogue, and rolls the Worker back if it fails; `npm run check:live` is the check alone.
-- The admin's Network page sets all three (a game's and its placements' in the JSON for one game).
+- **A playable's funnel.** A playable says how far a showing got with `window.houseAds?.step('board2')`: once a showing each, a dozen names a playable. A new event, `step`, with the name and the seconds it was reached at, counted by the ingest, and drawn on the dashboard under Playables: impressions, the first touch, each step in the order reached, the store tap.
 
 ### Changed
 - **A playable ends as a video does.** When its time is up, or it says it's done, it stops and the end card takes its place (the game's icon, name, line and store button). It used to run on under the ✓. It's taken off the page, not asked to pause, so nothing of it goes on playing or sounding.
 
 ### Fixed
-- **A creative's file opens in a browser.** The ingest served every file sandboxed, which a playable's page needs and which kept a video opened by its link from playing. Only pages are sandboxed now. And a playable opened by its link runs (`sandbox allow-scripts`): it was a blank page, its scripts kept from running. It still has no origin.
 - **Android: playables and videos draw.** The build step makes the game's activity hardware accelerated, which Unity's manifest turns off. Unaccelerated, the web view drew in software: a playable's canvas stayed blank and a video showed one frame while its sound played.
 
 ## [0.2.0] - 2026-11-11
@@ -236,8 +228,6 @@ Ten things a review of the SDK found. Nothing to change in a game that takes it.
 - **The Unity package** (`unity/`): `HouseAds.Init`, `Demand`, `Wants`, `Show`; the App Store sheet; the installed-game and metered-network checks; build steps that write `LSApplicationQueriesSchemes` and `<queries>` from the catalogue the game ships.
 - **`NativeWebView`**: the system's web view over a Unity game (WKWebView, `android.webkit.WebView`), which the ads play in and a game can use for its other pages.
 - **Languages.** The player's own words in 19 languages, with Latin America's Spanish apart from Spain's and Portugal's Portuguese apart from Brazil's (`strings/`, `core/locale.js`). The device's language, or the game's: `lang` (`HouseAdsConfig.language` in Unity), whose region is filled in from the device. Arabic reads right to left. A catalogue's `line` may be given per language, and a creative may be kept to some languages (`langs`).
-- **The admin** (`/admin` on the ingest Worker): studios sign in through Cloudflare Access, upload creatives and manage their games, and read a dashboard of impressions per day, per creative and per placement, and of showings between studios. The catalogue can be kept there (D1 and R2) in place of a published folder: the Worker then answers `/catalogue.json` and the files, with byte ranges. `ingest/README.md` says how to set it up.
-- **The network's front page** (the ingest's `/`): what it is, a sign-up form kept for the admin and emailed to whoever runs it, the format a creative takes, and a prompt to copy that makes a video from a game's store pages. `/docs` is these READMEs as pages. The report moves to `/report`.
 - `web/host.js` and `tools/build-player.mjs`: `core/` as one page for a native game's web view.
 - `ads.catalogue`, `ads.settled()`, `ads.refresh()`.
 - A shipped catalogue may be given as an object: `catalogue: [url, object]`.
@@ -248,8 +238,6 @@ Ten things a review of the SDK found. Nothing to change in a game that takes it.
 
 ### For a game taking this version
 - Nothing changes for a game that only shows rewarded ads: a catalogue with no `exchange` asks for no share, and `show()` is as it was.
-- The admin needs an R2 bucket bound as `FILES`, the ingest's new migration, and a Cloudflare Access application on `/admin` (`ingest/README.md`). A Worker without them serves as before.
-- `/mix` needs the catalogue bound to the Worker as `ASSETS` (`ingest/wrangler.example.jsonc`) and a redeploy.
 - A minified Android build of a Unity game must keep `com.thevoxelagents.houseads.**`.
 
 ## [0.1.0] - 2026-11-10

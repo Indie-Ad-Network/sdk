@@ -148,7 +148,7 @@ One JSON file on a server, shared by every game, so changing what's shown never 
 }
 ```
 
-Which creative shows is decided in `core/pick.js`: in date, not the host, not rated above it, not resting, under its daily cap, the right shape, no longer than the placement takes; then by weight, and never the same one twice running.
+Which creative shows is decided in `core/pick.js`: in date, not the host, not rated above it, not resting, under its daily cap, no longer than the placement takes; then by weight, and never the same one twice running. A video cut for the other shape of screen isn't left out: it plays letterboxed, and counts for half its weight.
 
 ## Creatives
 

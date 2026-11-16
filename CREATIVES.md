@@ -49,7 +49,7 @@ Cut it from your store trailer or your own footage: the 15 seconds that show the
 
 - **The frame at 1.0 s is the poster** players see before the video starts. Make it a clean picture of the game, not a fade or a caption.
 - **Size comes first.** Phones download creatives ahead of time. Under 4 MB is a good 15 seconds.
-- **Make both shapes.** A portrait game is shown the portrait cut, a landscape game the landscape one.
+- **Make both shapes.** A portrait game is shown the portrait cut, a landscape game the landscape one. With only one, it is shown in both: letterboxed in the other, and picked half as often there.
 
 A coding agent can do the cutting. [The video prompt](#the-video-prompt) below goes into [Claude Code](https://claude.com/claude-code), or any agent that can run ffmpeg, in an empty folder. It finds the preview videos on your store pages (or takes footage you give it), cuts a 15 second portrait and landscape ad, and checks both against the format above.
 
