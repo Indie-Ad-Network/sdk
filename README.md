@@ -42,7 +42,7 @@ A game with no bundler takes this repo as a git submodule and imports `core/inde
 
 ## In a Capacitor app
 
-Add `capacitor/` as a dependency (`"house-ads-capacitor": "file:…/house-ads/capacitor"`), run `npx cap sync`, and pass `native: capacitorNative()` (from `capacitor/index.js`). The app then shows the App Store sheet over the game, leaves out games already installed (Android), and doesn't download on mobile data. `node tools/native-queries.mjs catalogue.json --host <id> --android …/AndroidManifest.xml` writes the list Android needs before it'll say whether a game is installed. iOS isn't asked: Apple's review guidelines (5.1.2 iv) keep what else is on a device out of advertising, so there a game's daily cap and its rest are what spare a player who has it.
+Add `capacitor/` as a dependency (`"house-ads-capacitor": "file:…/sdk/capacitor"`), run `npx cap sync`, and pass `native: capacitorNative()` (from `capacitor/index.js`). The app then shows the App Store sheet over the game, leaves out games already installed (Android), and doesn't download on mobile data. `node tools/native-queries.mjs catalogue.json --host <id> --android …/AndroidManifest.xml` writes the list Android needs before it'll say whether a game is installed. iOS isn't asked: Apple's review guidelines (5.1.2 iv) keep what else is on a device out of advertising, so there a game's daily cap and its rest are what spare a player who has it.
 
 ## In a Unity game
 
@@ -128,7 +128,7 @@ Which creative shows is decided in `core/pick.js`: in date, not the host, not ra
 | Video | MP4, H.264 + AAC, 15 s or 30 s, about 2 Mbps. 9:16 (1080×1920) for portrait games, 16:9 for landscape. A poster JPG. |
 | Playable | One self-contained HTML file, under 5 MB (8 MB at most; the admin warns over 5), MRAID 2/3. Its install button calls `mraid.open()`; if it has an end, it calls `mraid.close()`. |
 
-The player draws the close button, the countdown and the end card (icon, line, store button), so a creative is all game: no "Download now", no end card of its own, and nothing that matters in the top 12% of the frame.
+The player draws the close button, the countdown and the end card (icon, line, store button), so a creative is all game: no "Download now", no end card of its own, and nothing that matters in the top 12% of the frame. A creative may dress that end card with art of its own and put the store button where it wants it, and a video may fade into it, loop at its end, or be shown in a shorter slot than its length: [Creatives](CREATIVES.md#dressing-the-end-card-and-how-a-video-is-shown) has each.
 
 - **[Creatives](CREATIVES.md)** is the guide for a studio making them: the formats, a prompt that cuts a video from a store trailer, the flags, languages and uploading.
 - **[The playable kit](playable-kit/README.md)** makes a playable of your own game, with a narrator's voice baked on your own computer.

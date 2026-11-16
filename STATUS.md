@@ -12,6 +12,7 @@ Where the SDK stands, what was put off, and what it can't do. The server's own l
 | **Analytics** (`core/analytics.js`, `core/wire.js`): what was shown, sent to the network's server ([SERVER.md](SERVER.md)), nothing about a player | Node tests; running in production |
 | **The Unity package** (`unity/`): the player as one page in the package's own web view, the App Store sheet, the installed-game (Android) and metered-network checks, a build step for `<queries>` | The page checked in headless Chrome, driven as Unity drives it; **shipping in a released game**: about 12,000 showings from 70,000 offers by 2026-11-16 |
 | **Interstitials** (`format: 'interstitial'`) | Checked in headless Chrome |
+| **A creative's own way of being shown** (0.5.0: the end card's art and the store button's place and picture; a video's backdrop, fade, loop, taps and `overrun`; these kept in the cache) | Node tests; each checked in headless Chrome with a real video. **Not yet seen on a phone**: the loop's seek, the fade (iOS keeps a video's volume to itself) and the backdrop want watching on both platforms before a creative that uses them goes live |
 | **Languages**: the player's own words in 19 languages (`strings/`, `core/locale.js`) | Node tests |
 | **The exchange** (`core/exchange.js`, the ingest's `GET /mix`): the share of a host's slots the network asks for, raised by what its studio owes other studios in showings | Node tests; `/mix` running in production. Not yet used by a released game |
 

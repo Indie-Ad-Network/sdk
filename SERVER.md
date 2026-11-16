@@ -61,7 +61,7 @@ Answer `204`. On `429` or a `5xx` the batch is kept and sent again later; any ot
 From the ⓘ beside the "Ad" label, at once, as `text/plain`:
 
 ```json
-{ "v": 1, "sdk": "0.3.5", "host": "mygame", "os": "ios", "lang": "fr", "placement": "saveMe",
+{ "v": 1, "sdk": "0.5.0", "host": "mygame", "os": "ios", "lang": "fr", "placement": "saveMe",
   "creative": "othergame-15", "app": "othergame", "kind": "video", "secs": 7, "message": "", "test": true }
 ```
 

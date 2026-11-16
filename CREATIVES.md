@@ -17,7 +17,31 @@ The network's player draws these over and after every creative, always in the sa
 - **A close button** (top left) and **a countdown** (top right).
 - **The end card**: your icon, your line and the store button.
 
-So a creative is all game. Leave out "Download now" buttons, store badges and an end card of your own, and keep anything that matters out of the top 12% of the frame.
+So a creative is all game. Leave out "Download now" buttons, store badges and an end card of your own, and keep anything that matters out of the top 12% of the frame. (To change the card the player shows, see the next section: that is the player's card dressed, not one baked into your video.)
+
+## Dressing the end card, and how a video is shown
+
+From 0.5.0 a creative may say more about how it's shown. All of it is optional, set in the creative's form under **How it's shown**, and a game on an older release shows the creative the usual way.
+
+| You give | What happens |
+|---|---|
+| **End card art** (`endCard`): a picture for portrait screens, one for landscape, or one of the two. The network's admin takes JPEG, PNG or WebP, 2 MB at most | It's shown whole in place of your icon and line, over a blur of itself where it doesn't fill the screen. Either stands in for the other. If it can't be had, the usual card is shown |
+| **The store button's place** (`storeButton`): the edge or corner it's set against, its width, and how far in | The button is put there, on your art or on the usual card. Lengths are in 1/720 of the screen's shorter side, so it sits the same on a phone and a tablet. Left out: bottom centre, 360 wide, 128 up |
+| **The store button as a picture**, one for each store | Your picture is the button. With none for the player's store it's in words, in the player's language: a picture's words are in one language only |
+| **A pulse** | The button swells and settles, to be seen |
+
+And for a video:
+
+| You give | What happens |
+|---|---|
+| **Backdrop: itself** (`backdrop`) | Where the video doesn't fill the screen (a landscape video in a portrait game), its own picture is blurred behind it as it plays. Left out: its poster, blurred |
+| **A fade** (`fade`), in seconds, 5 at most | Over the video's last seconds the end card comes up and the sound goes down (with a loop, only the sound). Left out: a cut |
+| **A loop** (`loop`), from a second of the video | At its end the video plays on from there, silent, with the store button over it and no end card. Make the last seconds something that can go round |
+| **When the store button is there** (`tap`) | From a second of the video, or only at its end. Left out: from the start |
+| **A tap anywhere opens the store** (`tap`) | The same choice. Left out: never, and only the button does (but for a video marked as ending on its own card, where a tap anywhere always does) |
+| **It may be shown in a shorter slot** (`overrun`) | A 45 second video may be shown where a game asks for 30. The reward comes at the game's 30 seconds and the video plays on; a player who leaves then goes by the end card, or the loop. Left out: it's shown only where it fits |
+
+Nothing in this section shortens the wait for the reward. [The schema](schema/catalogue.schema.json) has every field as a catalogue carries it.
 
 ## Make a video
 

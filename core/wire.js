@@ -6,7 +6,7 @@
 //   { v: VERSION, host, os, events: [{ event, placement, creative, app, kind, secs?, from? }] }
 //
 // `from`, of a store_open: what was tapped (FROM), which the server counts beside the store_open itself, a column to
-// each but the first. Since 0.5.0, with `skip` (a video left for its end once the reward was in: not an interstitial's ✕) and `paid`; a server from before leaves
+// each. Since 0.5.0, with `skip` (a video left for its end once the reward was in: not an interstitial's ✕) and `paid`; a server from before leaves
 // out what it doesn't know, and an SDK from before doesn't send them.
 //
 // One more goes the same way and isn't a column: STEP, a playable's own name for somewhere in it
@@ -21,7 +21,7 @@
 // developer's test showing (createHouseAds test()), kept apart from players' reports on the dashboard.
 
 export const VERSION = 1;
-export const SDK = '0.3.5';   // this release, as package.json has it (test/version.test.mjs): said with a report of an ad
+export const SDK = '0.5.0';   // this release, as package.json has it (test/version.test.mjs): said with a report of an ad
 export const EVENTS = ['offer', 'show', 'cache_miss', 'q25', 'q50', 'q75', 'q100', 'first_touch', 'complete', 'reward', 'exit_kept', 'exit_early', 'store_open', 'fail', 'keep_playing', 'store_banner', 'skip', 'paid'];
 export const KINDS = ['video', 'playable', 'card'];
 export const OS = ['ios', 'android'];

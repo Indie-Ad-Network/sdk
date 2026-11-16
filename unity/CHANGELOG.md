@@ -6,11 +6,28 @@ The repository has one version, [Semantic Versioning](https://semver.org), and a
 
 Two numbers are not this one, and change only when a format does: `VERSION` in `core/wire.js` (what games send the ingest) and the catalogue's `version`. Games already released go on sending and reading the old ones.
 
-## [Unreleased]
+## [0.5.0] - 2026-11-16
+
+The SDK in its own repository and under its own name, and a creative that says how it's shown. (There is no 0.4.0.)
+
+### To take it
+- **A Unity game changes its package**: remove `com.thevoxelagents.house-ads` from `Packages/manifest.json` and add `https://github.com/Indie-Ad-Network/sdk.git?path=/unity#v0.5.0`, which is `com.indieadnetwork.sdk`. **A minified Android build keeps `com.indieadnetwork.sdk.**`** where it kept `com.thevoxelagents.houseads.**`. Nothing in a game's code changes.
+- **A web or Capacitor game points its submodule or dependency at the new repository** (the plugin is its `capacitor/` folder, as before). A Capacitor app runs `npx cap sync`: the plugin's Android side is `com.indieadnetwork.sdk`.
+- Nothing else: every creative already in a catalogue plays as it did.
+
+### Added
+- **A creative may dress the end card.** `endCard` is art of its own for portrait and landscape screens, shown whole in place of the icon and line; `storeButton` puts the store button where the creative wants it, as a picture for each store or in the player's words, with a pulse if asked. For a video or a playable. Where the art can't be had the card is the usual one.
+- **A video may say how it's shown.** `backdrop: "video"` blurs its own picture behind it where it doesn't fill the screen; `fade` brings the end card up over its last seconds; `loop` plays it on from a second of it at its end, silent, with the store button over it; `tap` says when the store button is there and from when a tap anywhere on the video opens the store.
+- **A video may be shown in a placement shorter than it**, if marked `overrun`. The reward comes at the placement's `maxSecs` and the video plays on; ✕ or ✓ after that goes to its end card (or its loop), and from there out. None of these shortens the wait for a reward.
+- **The cache keeps a creative's end card art and its button's picture** for the player's store beside what it plays, so a dressed card is there with no signal.
+- **Three things more are counted**: a `store_open` says what was tapped (`from`: the ad itself, the player's store button, or the end card's); `skip`, a video left for its end once its reward was in; and `paid`, a slot `show({ paid })` gave the game's paid network. All go to `onEvent`. A server from before 0.5.0 leaves them out.
+- [The server](../SERVER.md): what a game asks of the network's server, for anyone who would answer in its place. [Creatives](../CREATIVES.md#dressing-the-end-card-and-how-a-video-is-shown) has each new field.
 
 ### Changed
-- **The SDK has a repository of its own: `https://github.com/Indie-Ad-Network/sdk`.** It begins at 0.3.5, as released; the releases before it are below. The network's server (the admin, the catalogue, the counts) is kept apart, and [The server](../SERVER.md) says what a game asks of it. **A Unity game changes its package's URL** to `https://github.com/Indie-Ad-Network/sdk.git?path=/unity#<tag>`.
-- **The Unity package is `com.indieadnetwork.sdk`**, where it was `com.thevoxelagents.house-ads`: **remove the old package from `Packages/manifest.json` and add the new one.** Its Android side is `com.indieadnetwork.sdk` too, the Capacitor plugin's with it: **a minified Android build keeps `com.indieadnetwork.sdk.**`** where it kept `com.thevoxelagents.houseads.**`.
+- **A video on screen that doesn't move for 12 seconds gives way to the still card**, as one that can't be played does (`fail`, with `why: "stall"`). Before, the countdown stood still for as long as the player waited. This one is for every video.
+- **In a Unity game the screen stays on while an ad is up.**
+- **The SDK has a repository of its own: `https://github.com/Indie-Ad-Network/sdk`.** It begins at 0.3.5, as released; the releases before it are below. The network's server (the admin, the catalogue, the counts) is kept apart.
+- **The Unity package is `com.indieadnetwork.sdk`**, where it was `com.thevoxelagents.house-ads`, and its Android side with the Capacitor plugin's is `com.indieadnetwork.sdk` too: see "To take it".
 - What a playable's page says of itself is read by `playable-kit/tools/page-says.js`, and the prompt that cuts a video from a trailer is `creative-prompt.txt`: both were the server's files.
 
 ## [0.3.5] - 2026-11-14

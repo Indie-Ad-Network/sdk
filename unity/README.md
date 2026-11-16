@@ -7,7 +7,7 @@ The package's player (`core/`, as one page: `Runtime/Resources/HouseAdsPlayer.ht
 Add the package by its git URL. In Unity: Window → Package Manager → **+** → *Add package from git URL…*, and paste:
 
 ```
-https://github.com/Indie-Ad-Network/sdk.git?path=/unity#v0.3.5
+https://github.com/Indie-Ad-Network/sdk.git?path=/unity#v0.5.0
 ```
 
 What follows the `#` is the release (`CHANGELOG.md` has each): it's how a game stays on the version it was tested with. Then:
