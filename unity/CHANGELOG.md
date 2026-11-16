@@ -6,6 +6,13 @@ The repository has one version, [Semantic Versioning](https://semver.org), and a
 
 Two numbers are not this one, and change only when a format does: `VERSION` in `core/wire.js` (what games send the ingest) and the catalogue's `version`. Games already released go on sending and reading the old ones.
 
+## [0.6.6] - 2026-11-17
+
+Times that are as good as equal are equal. Nothing to do to take it.
+
+### Changed
+- **Two times within 0.05 s are the same time**, where a creative is fitted to a placement: its earliest skip (`skipFrom`) against the placement's least time and its longest (`maxSecs`), and its length against `maxSecs` and against `skipFrom`. A video that may be skipped from 5 s fits a 5 s interstitial however either number was rounded on its way, and one of 15.03 s fits a 15 s slot. Whole numbers compared as they should before.
+
 ## [0.6.5] - 2026-11-17
 
 A fix to 0.6.3. Take it in place of 0.6.3 or 0.6.4; nothing to do besides.

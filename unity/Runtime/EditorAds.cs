@@ -40,6 +40,7 @@ namespace IndieAdNetwork
 
 		const float HoldSecs = 3f;           // an interstitial's video left by Skip: how long its end stands before ✕, and how long before the game's time Skip is
 		const float SkipSecs = 5f, SkipMost = 15f;   // an interstitial's least time where no one says, and the most it may be (core/pick.js)
+		const float Slack = 0.05f;           // two times this near are the same time (core/pick.js SLACK)
 		const float StillCardSecs = 5f;      // what a rewarded placement with no video counts down
 		const float CatalogueWait = 4f;      // how long a Show waits on the catalogue before going without
 		static bool said;
@@ -210,11 +211,11 @@ namespace IndieAdNetwork
 				// as core/pick.js: an interstitial's time is the game's, so one not to be left before a later second isn't shown there;
 				// and one longer than the placement takes is shown only if it may be left by then, or may run on
 				double skipFrom = Json.Num(c, "skipFrom", -1);
-				if (interstitial && skipFrom > least)
+				if (interstitial && skipFrom > least + Slack)
 				{
 					continue;
 				}
-				if (maxSecs > 0 && Json.Num(c, "secs", 0) > maxSecs && !Json.Bool(c, "overrun") && !(skipFrom >= 0 && skipFrom <= maxSecs))
+				if (maxSecs > 0 && Json.Num(c, "secs", 0) > maxSecs + Slack && !Json.Bool(c, "overrun") && !(skipFrom >= 0 && skipFrom <= maxSecs + Slack))
 				{
 					continue;
 				}

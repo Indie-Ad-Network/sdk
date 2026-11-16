@@ -128,6 +128,10 @@ test('a placement\'s least time, and who fits it: skipFrom and minSecs', async (
   assert.deepEqual(ids({ minSecs: 0 }), ['early', 'late', 'plain']);                           // rewarded: the later of the two is its time, and all are shown
   assert.deepEqual(ids({ maxSecs: 15 }), ['early', 'late']);                                   // too long for it, unless it may be left by then
   assert.deepEqual(ids({ maxSecs: 8 }), ['early']);
+  // 5 meets 5: a time is the same as another within SLACK, so neither's rounding keeps a creative out of a slot it fits
+  const near = skipFrom => eligible({ catalogue: { apps: catalogue.apps, creatives: [{ id: 'v', app: 'a', kind: 'video', secs: 30, skipFrom, src: 'x' }] }, host: 'h', placement: { format: 'interstitial' } }).length;
+  assert.deepEqual([near(5), near(5.04), near(4.96), near(5.1), near(0)], [1, 1, 1, 0, 1]);
+  assert.equal(eligible({ catalogue: { apps: catalogue.apps, creatives: [{ id: 'v', app: 'a', kind: 'video', secs: 15.03, src: 'x' }] }, host: 'h', placement: { maxSecs: 15 } }).length, 1);
   const cat = { exchange: { hosts: { h: { placements: { between: { minSecs: 12 }, bad: { minSecs: -1 } } } } } };
   assert.deepEqual([leastSaid(cat, 'h', 'between'), leastSaid(cat, 'h', 'bad'), leastSaid(cat, 'h', 'other'), leastSaid({}, 'h', 'between')], [12, null, null, null]);
   const game = { exchange: { hosts: { h: { minSecs: { interstitial: 8 }, placements: { between: { minSecs: 12 } } } } } };   // the game's, for a kind; a placement's own before it

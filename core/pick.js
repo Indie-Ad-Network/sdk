@@ -48,6 +48,8 @@ function appOk(app, { host, rating, age, history, now, test = false }) {
 // is as long as Google Play lets a full-screen ad go unclosable. A rewarded ad's is null where the game says none: its
 // creative's own time rules then (player.js).
 export const SKIP_SECS = 5, SKIP_MOST = 15;
+// Two times within SLACK seconds are the same time: a creative that may be left at 5 fits a 5 s slot, however either was rounded on its way here.
+export const SLACK = 0.05;
 const secsOr = (v, otherwise) => Number.isFinite(v) && v >= 0 ? v : otherwise;
 export const leastOf = (placement = {}) => placement.format === 'interstitial' ? Math.min(SKIP_MOST, secsOr(placement.minSecs, secsOr(placement.skipAfter, SKIP_SECS))) : secsOr(placement.minSecs, null);
 
@@ -66,9 +68,9 @@ export function eligible({ catalogue, host, placement = {}, rating, age, history
     if (!ready(c)) return false;
     if (placement.kinds && !placement.kinds.includes(c.kind)) return false;
     // an interstitial's time is the game's to say: a creative that mustn't be left before a later second than that isn't shown there
-    if (c.skipFrom != null && least != null && c.skipFrom > least) return false;
+    if (c.skipFrom != null && least != null && c.skipFrom > least + SLACK) return false;
     // longer than the placement takes: unless it says it may be left by then (`skipFrom`), or may run on past it (`overrun`). Only a video has either (catalogue.js)
-    return !(placement.maxSecs && c.secs > placement.maxSecs && !c.overrun && !(c.skipFrom != null && c.skipFrom <= placement.maxSecs));
+    return !(placement.maxSecs && c.secs > placement.maxSecs + SLACK && !c.overrun && !(c.skipFrom != null && c.skipFrom <= placement.maxSecs + SLACK));
   });
 }
 

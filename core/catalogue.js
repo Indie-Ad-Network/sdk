@@ -49,7 +49,7 @@ const VIDEO = {
   tap: v => obj(v) && (v.button != null || v.whole != null) && ['button', 'whole'].every(k => v[k] == null || when(v[k])) ? only(v, ['button', 'whole']) : BAD,
   overrun: v => typeof v === 'boolean' ? v : BAD,
   fade: v => between(v, 0, 5) ? v : BAD,
-  skipFrom: (v, c) => count(v) && v <= c.secs ? v : BAD,
+  skipFrom: (v, c) => count(v) && v <= c.secs + 0.05 ? v : BAD,   // pick.js SLACK: its length as near as that
   backdrop: v => ['poster', 'video'].includes(v) ? v : BAD,
 };
 const SHOWN = Object.entries({ ...ANY, ...VIDEO });
