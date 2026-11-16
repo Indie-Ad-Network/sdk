@@ -116,3 +116,21 @@ test("a video marked overrun is let into a placement shorter than it; no other i
   assert.deepEqual(ids({ maxSecs: 60 }), ['long', 'plain', 'said-not', 'fits', 'play']);
   assert.deepEqual(ids({ maxSecs: 30, kinds: ['playable'] }), []);
 });
+
+test('a placement\'s least time, and who fits it: skipFrom and minSecs', async () => {
+  const { leastOf } = await import('../core/pick.js'), { leastSaid } = await import('../core/exchange.js');
+  assert.deepEqual([leastOf({}), leastOf({ minSecs: 15 }), leastOf({ format: 'interstitial' }), leastOf({ format: 'interstitial', skipAfter: 8 }), leastOf({ format: 'interstitial', skipAfter: 8, minSecs: 0 }), leastOf({ format: 'interstitial', minSecs: 40 })], [null, 15, 5, 8, 0, 15]);
+  const catalogue = { apps: { a: { name: 'A', ios: { id: 1 }, android: { package: 'a' } } }, creatives: [
+    { id: 'plain', app: 'a', kind: 'video', secs: 30, src: 'x' }, { id: 'early', app: 'a', kind: 'video', secs: 30, skipFrom: 5, src: 'x' }, { id: 'late', app: 'a', kind: 'video', secs: 30, skipFrom: 10, src: 'x' }] };
+  const ids = placement => eligible({ catalogue, host: 'h', placement }).map(c => c.id).sort();
+  assert.deepEqual(ids({ format: 'interstitial' }), ['early', 'plain']);                       // 5 s: one not to be left before 10 isn't shown
+  assert.deepEqual(ids({ format: 'interstitial', minSecs: 10 }), ['early', 'late', 'plain']);
+  assert.deepEqual(ids({ minSecs: 0 }), ['early', 'late', 'plain']);                           // rewarded: the later of the two is its time, and all are shown
+  assert.deepEqual(ids({ maxSecs: 15 }), ['early', 'late']);                                   // too long for it, unless it may be left by then
+  assert.deepEqual(ids({ maxSecs: 8 }), ['early']);
+  const cat = { exchange: { hosts: { h: { placements: { between: { minSecs: 12 }, bad: { minSecs: -1 } } } } } };
+  assert.deepEqual([leastSaid(cat, 'h', 'between'), leastSaid(cat, 'h', 'bad'), leastSaid(cat, 'h', 'other'), leastSaid({}, 'h', 'between')], [12, null, null, null]);
+  const game = { exchange: { hosts: { h: { minSecs: { interstitial: 8 }, placements: { between: { minSecs: 12 } } } } } };   // the game's, for a kind; a placement's own before it
+  assert.deepEqual([leastSaid(game, 'h', 'between', 'interstitial'), leastSaid(game, 'h', 'loading', 'interstitial'), leastSaid(game, 'h', 'coins', 'rewarded'), leastSaid(game, 'h', 'coins')], [12, 8, null, null]);
+  assert.equal(leastSaid({ exchange: { hosts: { h: { minSecs: { interstitial: 8 }, placements: { between: { minSecs: -1 } } } } } }, 'h', 'between', 'interstitial'), 8);   // one that can't be read is as none said
+});

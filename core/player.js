@@ -37,8 +37,14 @@
 //
 // Two formats. `rewarded` (the default) is the player's choice, and watching to the end of the
 // countdown earns the host's reward. `interstitial` is the host's choice, between two things
-// the player was doing: there's no reward and nothing to forfeit, the ring counts `skipAfter`
-// seconds, and then ✕ appears and closes at once. Until then there is no ✕ to press.
+// the player was doing: there's no reward and nothing to forfeit. The game says the least time it
+// holds the player (`least`: 5 s unless it says). A video shows Skip 3 s before that (at once, if the
+// time is under 3 s): Skip takes it to its end, the end card or whatever it ends on, and ✕ is there
+// 3 s later. A video that reaches its end by itself has ✕ at once. A playable or a still card has
+// ✕ at the game's time, and it closes at once. Until then there is no ✕ to press.
+// A rewarded ad's reward comes at the game's time, if it says one (`least`), or at the creative's
+// own earliest (`skipFrom`), and with both at the later; with neither, at its end. A reward in
+// before a video's end, ✓ takes the video to its end card, and from there the player leaves.
 //
 // The "Ad" label is a button, with an ⓘ beside the word: it stops the clock and says whose ad this is (the
 // network: a circle of developers who know each other), by what it was chosen, and takes a report of it, with a
@@ -54,6 +60,7 @@
 // In a shadow root, so the host's CSS can't reach in, and this CSS can't leak out.
 import { withShim } from './mraidShim.js';
 import { STEP, STEP_NAME, STEPS_MAX, SDK, REASONS } from './wire.js';
+import { leastOf } from './pick.js';
 import { stringsFor, say } from './locale.js';
 import { MARK } from './mark.js';
 
@@ -61,7 +68,7 @@ const R = 19, C = 2 * Math.PI * R;   // the ring
 const TICK = 100, GAP = 250;         // ms: the clock's step; a longer gap was time off screen, not time watched
 const CARD_SECS = 5;                 // how long the still card stands in for a creative
 const STALL_SECS = 12;               // a video on screen and not moving for this long isn't going to
-const SKIP_SECS = 5;                 // an interstitial: how long before it can be closed
+const HOLD_SECS = 3;                 // an interstitial's video left by Skip: how long its end stands before ✕ is there, and how long before the game's time Skip is
 const KEEP_SECS = 120;               // how long a playable may be played on past its time, at most
 const NETWORK = 'Indie Ad Network';  // whose ads these are: a name, the same in every language
 const WORDS_MAX = 200;               // a report's own words, at most
@@ -91,6 +98,8 @@ button { font-family: inherit; cursor: pointer; }
 .about i { font-style: normal; opacity: .75; letter-spacing: .1em; text-transform: uppercase; font-size: 11px; padding: 2px 5px; border: 1px solid #fff9; border-radius: 4px; }
 .about b { width: 18px; height: 18px; border: 1.5px solid #fffc; border-radius: 50%; font: italic 700 12px/15px Georgia, "Times New Roman", serif; text-align: center; opacity: .9; }
 .earned { padding: 7px 12px; border: 0; border-radius: 999px; background: #fff; color: #10202f; font-weight: 800; font-size: 14px; white-space: nowrap; }
+.skip { height: 44px; flex: none; padding: 0 16px; border: 2px solid #fff; border-radius: 999px; background: #000a; color: #fff; font-weight: 800; font-size: 15px; white-space: nowrap; }
+.skip i { margin-inline-start: 6px; font-style: normal; }
 .ring { position: relative; width: 44px; height: 44px; flex: none; padding: 0; border: 0; background: none; color: inherit; }
 .ring svg { position: absolute; top: 0; right: 0; bottom: 0; left: 0; transform: rotate(-90deg); }
 .ring circle { fill: #000a; stroke: #fff4; stroke-width: 4; transition: fill .15s; }
@@ -186,7 +195,7 @@ video.go { cursor: pointer; }
 // stands ended, over the end card or a video's own, and taken away with null.
 // Resolves { granted, watchedSecs, kind }: `kind` is what was shown in the end, 'card' if it came to that;
 // `granted` of an interstitial says only that it stayed up until it could be closed.
-export function play({ creative, app, html, link, ctaText, reward, format = 'rewarded', skipAfter = SKIP_SECS, limit = null, picture = null, muted = false, emit = () => {}, openStore, banner = null, report = null, more = null, words = stringsFor('en') }) {
+export function play({ creative, app, html, link, ctaText, reward, format = 'rewarded', least = null, limit = null, picture = null, muted = false, emit = () => {}, openStore, banner = null, report = null, more = null, words = stringsFor('en') }) {
   const { t } = words;   // the player's own words, in the player's language (locale.js)
   const doc = document;
   let { kind } = creative;
@@ -207,6 +216,7 @@ export function play({ creative, app, html, link, ctaText, reward, format = 'rew
     <button class="about" aria-label="${esc(t.about)}"><i>${esc(t.ad)}</i><b aria-hidden="true">i</b></button>
     <span class="tag">${esc(app.name)}</span>
     <button class="earned" hidden>${esc(reward ? say(t.earned, { reward }) : t.earnedPlain)}</button>
+    <button class="skip" hidden>${esc(t.skip)}<i aria-hidden="true">▸</i></button>
     <button class="ring" role="timer" disabled><svg viewBox="0 0 44 44"><circle cx="22" cy="22" r="${R}"/><circle class="left" cx="22" cy="22" r="${R}"/></svg><b></b></button>
     ${link && kind === 'playable' && creative.keepPlaying ? `<button class="get go" hidden>${icon}<span>${esc(ctaText)}</span></button>` : ''}
   </div>
@@ -249,22 +259,35 @@ export function play({ creative, app, html, link, ctaText, reward, format = 'rew
   // a `keepPlaying` playable past its time: 'resting' under the end card, then 'kept' when the player plays on
   let overtime = null;
   const rewarded = format !== 'interstitial';
-  const need = () => Math.min(total, rewarded ? limit ?? Infinity : skipAfter);   // seconds until the way out is free
+  // The least time the game holds the player to this ad (`least`, the placement's: pick.js leastOf, which is what a caller that says none gets).
+  // A rewarded ad's is null where the game has said none.
+  const min = least ?? leastOf({ format }), skipAt = Math.max(0, min - HOLD_SECS);
+  // An interstitial's video isn't closed from where it plays: Skip is there HOLD_SECS before the game's time, and takes it to its end, where ✕ is
+  // HOLD_SECS later (`hold` counts them). One that reaches its end by itself has ✕ at once. Anything else of an interstitial's has ✕ at the game's time.
+  const skips = () => !rewarded && !!video && !over;
+  let hold = 0, offered = false;
+  // Seconds until the way out is free. A rewarded ad's reward: at the game's time, where it says one, or the creative's own earliest (`skipFrom`),
+  // and with both the later; with neither at its end (or at `limit`, for one marked `overrun`). The reward in before a video's end, ✓ takes it to
+  // its end card. An interstitial's ✕; or for its video, Skip.
+  const earns = creative.skipFrom != null ? Math.max(min ?? 0, creative.skipFrom) : min ?? limit ?? Infinity;
+  const need = () => Math.min(total, rewarded ? earns : skips() ? skipAt : min);
   const secs = () => Math.round(elapsed);
   const waits = new Set();   // why the clock stands still: 'hidden', 'ask', 'info', 'store', 'loading'
   let finish;
   const result = new Promise(done => { finish = done; });
 
   const draw = () => {
-    if (granted) return;
-    const left = Math.ceil(Math.max(0, need() - elapsed));
+    if (granted || (offered && !hold)) return;
+    const of = hold > 0 ? HOLD_SECS : need(), gone = hold > 0 ? HOLD_SECS - hold : elapsed, left = Math.ceil(Math.max(0, of - gone));
     if (left !== shownLeft) number.textContent = shownLeft = left;
-    arc.style.strokeDashoffset = C * Math.min(1, elapsed / need());
+    arc.style.strokeDashoffset = C * (of > 0 ? Math.min(1, gone / of) : 1);
   };
+  // Skip, in the ring's place: the game's time is nearly up (or was none)
+  function offer() { if (offered) return; offered = true; ring.hidden = true; $('.skip').hidden = false; }
   function grant() {
     if (granted) return;
     granted = true;
-    if (!rewarded) { ring.hidden = true; $('.x').hidden = false; return; }   // free to go: nothing earned, and the clock runs on for how long they stayed
+    if (!rewarded) { hold = 0; ring.hidden = true; $('.skip').hidden = true; $('.x').hidden = false; return; }   // free to go: nothing earned, and the clock runs on for how long they stayed
     if (!(kind === 'playable' && creative.keepPlaying) && !video) clearInterval(clock);   // nothing left to count; but one that may be played on counts on, for how long it was, and a video's stops at its end (toEnd)
     ring.classList.add('done'); number.textContent = '✓';
     ring.disabled = false; ring.removeAttribute('role'); ring.setAttribute('aria-label', t.done);   // a button now: the way back to the game
@@ -327,7 +350,7 @@ export function play({ creative, app, html, link, ctaText, reward, format = 'rew
     emit('keep_playing', { secs: secs() });
   }
   // the still card in the creative's place, for CARD_SECS more
-  function toCard() { dropVideo(); kind = 'card'; total = Math.min(total || Infinity, elapsed + CARD_SECS); endCard(); }
+  function toCard() { dropVideo(); kind = 'card'; if (offered && !granted) { offered = false; $('.skip').hidden = true; ring.hidden = false; } total = Math.min(total || Infinity, elapsed + CARD_SECS); endCard(); }
   // a video that won't play, or has stopped: no reason to keep the player waiting. The still card; or, the reward already in, the end card as it would have come
   function broken(why) { emit('fail', { why }); if (granted) { dropVideo(); endCard(); } else toCard(); }
   function close() {
@@ -354,13 +377,15 @@ export function play({ creative, app, html, link, ctaText, reward, format = 'rew
     last = now;
     if (video) { if (!over) { elapsed = video.currentTime; during(dt); } }
     else if (!waits.size && !(granted && rewarded && overtime !== 'kept')) elapsed += dt;
-    if (!granted && elapsed >= need()) { if (rewarded && !video) elapsed = total; grant(); }
+    if (hold > 0) { if (!waits.size && (hold -= dt) <= 0) grant(); }   // its end, stood for long enough: ✕
+    else if (skips()) { if (skipAt < total && elapsed >= skipAt) offer(); }   // one shorter than that comes to its end first
+    else if (!granted && elapsed >= need()) { if (rewarded && !video) elapsed = total; grant(); }
     if (frame && overtime !== 'resting' && elapsed >= total && !creative.ownCard) endPlayable({ rest: !overtime });   // its time is up (an interstitial's playable runs on past its ✕, to here): a rest the first time, the end if it was played on
     draw();
   }, TICK);
 
   // ---- the creative ----
-  let during, toEnd;   // a video's: what each tick of its playing does; and, the reward in and more of it to play, the way to its end (false: there's none to go to)
+  let during, toEnd, skip = () => {};   // a video's: what each tick of its playing does; and, the reward in and more of it to play, the way to its end (false: there's none to go to)
   if (kind === 'video') {
     const { tap = {}, loop, fade = 0 } = creative, ends = creative.ownEndCard ? 'own' : loop || rests ? 'bare' : 'card';   // what it ends on: the player's card; or the store button alone, over its loop or the card of its own it rests on
     if (creative.poster) { stage.insertAdjacentHTML('afterbegin', '<div class="blur"></div>'); $('.blur').style.backgroundImage = cssUrl(creative.poster); }
@@ -371,7 +396,7 @@ export function play({ creative, app, html, link, ctaText, reward, format = 'rew
     const quartiles = [0.25, 0.5, 0.75];
     const on = (event, f) => { const v = video; v.addEventListener(event, () => { if (video === v) f(); }); };   // not after it's dropped
     on('loadedmetadata', () => { if (isFinite(video.duration) && video.duration > 0) total = video.duration; });
-    on('timeupdate', () => { while (quartiles.length && video.currentTime >= quartiles[0] * total) emit(`q${quartiles.shift() * 100}`); });
+    on('timeupdate', () => { while (!over && quartiles.length && video.currentTime >= quartiles[0] * total) emit(`q${quartiles.shift() * 100}`); });   // not once it's past its playing: one skipped to its end wasn't watched there
     // its own picture behind it, small and blurred, over the poster's (which stands wherever this can't be drawn); not where it fills the screen, and none of that would show
     if (creative.backdrop === 'video') on('loadedmetadata', () => {
       const shape = video.videoWidth / video.videoHeight, room = stage.clientWidth / stage.clientHeight;
@@ -389,13 +414,18 @@ export function play({ creative, app, html, link, ctaText, reward, format = 'rew
     if (link && wholeFrom != null) { go = () => video.classList.toggle('go', whole()); video.addEventListener('click', () => { if (whole()) store('creative'); }); }
     // Past its playing: the reward if it isn't in, and what it ends on: the card, its own last frame, or its loop
     const again = () => { video.muted = true; video.currentTime = loop.from; video.play().catch(() => broken('loop')); };
-    const videoOver = () => {
-      over = true; grant(); if (rewarded) clearInterval(clock);
+    // `skipped`: an interstitial's, left by Skip: its end stands HOLD_SECS before ✕ is there
+    const videoOver = (skipped = false) => {
+      over = true;
+      if (skipped) { hold = HOLD_SECS; shownLeft = null; $('.skip').hidden = true; ring.hidden = false; } else grant();
+      if (rewarded) clearInterval(clock);
       if (loop) again(); else video.pause();
       go(); endCard(ends);
     };
     toEnd = () => { if (!rewarded || over || ends === 'own' || rests) return false; emit('skip', { secs: secs() }); videoOver(); return true; };   // an interstitial's ✕ is out; and one's own card is at its last frame, not here
     on('ended', () => { if (over) { if (loop) again(); return; } emit('q100'); elapsed = total; videoOver(); });
+    // Skip: to its end, as if it had played there (its last frame is what one that rests on it shows)
+    skip = () => { if (over || rewarded) return; emit('skip', { secs: secs() }); try { if (!loop) video.currentTime = total; } catch { /* where it is, then */ } videoOver(true); };
     on('error', () => broken('video'));
     let at = -1, still = 0;
     during = dt => {
@@ -500,6 +530,7 @@ export function play({ creative, app, html, link, ctaText, reward, format = 'rew
     else if (b.matches('.reason')) pick(b);
     else if (b.matches('.send')) send();
     else if (b.matches('.see')) more();
+    else if (b.matches('.skip')) skip();
     else if (b.matches('.x, .ring, .earned')) ask();   // any way out: free once the reward is earned, asked about before
     else if (b.matches('.go')) store(b.closest('.end') ? 'card' : 'button');
     else if (b.matches('.more')) keepPlaying();

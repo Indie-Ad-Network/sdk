@@ -5,7 +5,9 @@
 // Otherwise a creative is out if any of these says so, in this order:
 //   1. out of its dates                    5. shown `capPerDay` times in 24 h
 //   2. it advertises the host itself       6. not ready to play (`ready(creative)`: the cache's word)
-//   3. rated above the host; or not one    7. longer than the placement takes (`maxSecs`: but a video marked `overrun`), or not a kind it takes
+//   3. rated above the host; or not one    7. longer than the placement takes (`maxSecs`: but a video marked `overrun`, or one
+//                                              that may be left by then, `skipFrom`), or not a kind it takes; or for an
+//                                              interstitial, not to be left before a later second than the game's (`minSecs`)
 //      for a player under 13, who is one   8. the one shown last, if there's another
 //   4. its game is resting: shown too often with no store tap (history.js)
 // Of those left, one by weight: its own `weight`, a game of the host's own studio × OWN_BOOST, and a video of the
@@ -41,8 +43,17 @@ function appOk(app, { host, rating, age, history, now, test = false }) {
   return test || !resting(history, app.id, now);
 }
 
+// The least time a placement holds a player to an ad, in seconds: the game's to say (`minSecs`). An interstitial's
+// was `skipAfter` before 0.6.3, still read, and is SKIP_SECS where neither is said; never more than SKIP_MOST, which
+// is as long as Google Play lets a full-screen ad go unclosable. A rewarded ad's is null where the game says none: its
+// creative's own time rules then (player.js).
+export const SKIP_SECS = 5, SKIP_MOST = 15;
+const secsOr = (v, otherwise) => Number.isFinite(v) && v >= 0 ? v : otherwise;
+export const leastOf = (placement = {}) => placement.format === 'interstitial' ? Math.min(SKIP_MOST, secsOr(placement.minSecs, secsOr(placement.skipAfter, SKIP_SECS))) : secsOr(placement.minSecs, null);
+
 export function eligible({ catalogue, host, placement = {}, rating, age, history, lang = null, now = Date.now(), ready = () => true, test = false, perDay = null, among = null }) {
   if (!test && perDay != null && shownToday(history, now) >= perDay) return [];
+  const least = placement.format === 'interstitial' ? leastOf(placement) : null;
   return catalogue.creatives.filter(c => {
     const app = catalogue.apps[c.app];
     if (among && !among.has(c.app)) return false;
@@ -54,7 +65,10 @@ export function eligible({ catalogue, host, placement = {}, rating, age, history
     if (!test && recent(history?.shown?.[c.id], now).length >= (c.capPerDay ?? CAP_PER_DAY)) return false;
     if (!ready(c)) return false;
     if (placement.kinds && !placement.kinds.includes(c.kind)) return false;
-    return !(placement.maxSecs && c.secs > placement.maxSecs && !c.overrun);   // only a video has it (catalogue.js)
+    // an interstitial's time is the game's to say: a creative that mustn't be left before a later second than that isn't shown there
+    if (c.skipFrom != null && least != null && c.skipFrom > least) return false;
+    // longer than the placement takes: unless it says it may be left by then (`skipFrom`), or may run on past it (`overrun`). Only a video has either (catalogue.js)
+    return !(placement.maxSecs && c.secs > placement.maxSecs && !c.overrun && !(c.skipFrom != null && c.skipFrom <= placement.maxSecs));
   });
 }
 

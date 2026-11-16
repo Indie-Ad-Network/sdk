@@ -33,10 +33,11 @@
           "additionalProperties": {
             "type": "object",
             "properties": {
+              "minSecs": { "description": "The least time this host's placements hold a player to an ad, in seconds, for each kind of placement, in place of what the game's code says; a placement's own (`placements.<id>.minSecs`) comes before it. Read from 0.6.3.", "type": "object", "properties": { "rewarded": { "type": "number", "minimum": 0 }, "interstitial": { "type": "number", "minimum": 0, "maximum": 15 } } },
               "placements": {
-                "description": "By the placement's id, as the host names it. A placement given a share and no max stays at that share, whatever is owed.",
+                "description": "By the placement's id, as the host names it. A placement given a share and no max stays at that share, whatever is owed. `minSecs` is its own, with or without a share.",
                 "type": "object",
-                "additionalProperties": { "type": "object", "properties": { "share": { "type": "number", "minimum": 0, "maximum": 1 }, "max": { "type": "number", "minimum": 0, "maximum": 1 } } }
+                "additionalProperties": { "type": "object", "properties": { "share": { "type": "number", "minimum": 0, "maximum": 1 }, "max": { "type": "number", "minimum": 0, "maximum": 1 }, "minSecs": { "description": "The least time this placement holds a player to an ad, in seconds, in place of what the game's code says. Read from 0.6.3.", "type": "number", "minimum": 0 } } }
               }
             }
           }
@@ -145,6 +146,7 @@
             }
           },
           "overrun": { "description": "video: it may be shown in a placement shorter than it (`maxSecs` under its `secs`). The reward comes at the placement's time, and the video plays on: the player may watch to its end or leave by the end card. Read from 0.5.0; a release before it shows the video only where it fits.", "type": "boolean" },
+          "skipFrom": { "description": "video: the earliest second it may be left at; no later than `secs`. Rewarded: the reward comes then, or at the placement's own least time (`minSecs`) if that is later, and the player may leave for the end card. Interstitial: it isn't shown in a placement whose least time is shorter than this. It may also be shown in a placement shorter than it (`maxSecs`), if it may be left by then. Left out: a rewarded one is watched to its end unless the placement says a time, and an interstitial is the placement's to time. Read from 0.6.3; a release before plays it as one without.", "type": "number", "minimum": 0 },
           "fade": { "description": "video: the seconds at its end over which the end card comes up and the sound goes down. Left out: none, a cut. Read from 0.5.0.", "type": "number", "minimum": 0, "maximum": 5 },
           "backdrop": { "description": "video: what's behind it where it doesn't fill the screen. \"video\": its own picture, blurred, as it plays. Left out: its poster, blurred. Read from 0.5.0.", "enum": ["poster", "video"] }
         }

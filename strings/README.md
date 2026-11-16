@@ -15,6 +15,7 @@ Everything the ad player itself says, one file per language. `en.json` is the or
 | `seeMore` | In the ⓘ's panel, where the network has a page of its games: the link to it, under the words about whose ad this is |
 | `loading` | While a playable's page arrives |
 | `close`, `done`, `soundOn` | Read by screen readers only: ✕, the ✓, the 🔇 button |
+| `skip` | The button that takes an interstitial's video to its end, top right, with ▸ after it. One short word |
 
 ## Languages and regions
 

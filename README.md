@@ -51,11 +51,25 @@ Add `capacitor/` as a dependency (`"indie-ads-capacitor": "file:…/sdk/capacito
 
 ## Interstitials
 
-A placement with `format: 'interstitial'` is the game's choice, not the player's: no reward, no "Leave now?", and ✕ appears after `skipAfter` seconds (5). With nothing ready it shows nothing: `show()` resolves `{ shown: false }`, and the game carries on (or shows its paid network's).
+A placement with `format: 'interstitial'` is the game's choice, not the player's: no reward and no "Leave now?". The game says the least time it holds the player, `minSecs` (5 unless said, 15 at most; `skipAfter` is its name before 0.6.3, still read). A video shows **Skip** 3 seconds before that time (at once, under 3): Skip takes the video to its end card, and ✕ is there 3 seconds later. A video that reaches its end by itself has ✕ at once. A playable, or the still card, has ✕ at the game's time. With nothing ready it shows nothing: `show()` resolves `{ shown: false }`, and the game carries on (or shows its paid network's).
 
 ```js
-placements: { betweenLevels: { format: 'interstitial', maxSecs: 30, skipAfter: 5 } }
+placements: { betweenLevels: { format: 'interstitial', maxSecs: 30, minSecs: 5 } }
 ```
+
+## How long an ad holds the player
+
+Two things say, and the game's comes first:
+
+- **The game's least time**, a placement's `minSecs`. A studio can say another in the dashboard, with no release of the game: one for the game's interstitials and one for its rewarded ads (the catalogue's `exchange.hosts.<game>.minSecs`), and, where a placement needs its own, one for that placement by name (`…placements.<name>.minSecs`). What the dashboard says comes before the code, and a placement's own before the game's.
+- **A creative's earliest skip**, `skipFrom`: the first second a video may be left at. [Creatives](CREATIVES.md) has it.
+
+| | The placement says a time | It says none |
+|---|---|---|
+| **Rewarded** | The reward can be claimed at that time, or at the creative's `skipFrom` if that is later | At the creative's `skipFrom`; with none, at its end |
+| **Interstitial** | Skip 3 s before that time, ✕ on the end card 3 s after Skip. A creative whose `skipFrom` is later isn't shown there | As 5 s |
+
+A reward claimed before a video's end takes the video to its end card, and the player leaves from there; one who watches to the end leaves from the same card.
 
 ## Beside a paid ad network
 

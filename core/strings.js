@@ -3,6 +3,7 @@ export const STRINGS = {
  "ar": {
   "ad": "إعلان",
   "close": "إغلاق",
+  "skip": "تخطي",
   "done": "تم",
   "soundOn": "تشغيل الصوت",
   "loading": "جارٍ التحميل…",
@@ -39,6 +40,7 @@ export const STRINGS = {
  "de": {
   "ad": "Anzeige",
   "close": "Schließen",
+  "skip": "Überspringen",
   "done": "Fertig",
   "soundOn": "Ton an",
   "loading": "Wird geladen…",
@@ -75,6 +77,7 @@ export const STRINGS = {
  "en": {
   "ad": "Ad",
   "close": "Close",
+  "skip": "Skip",
   "done": "Done",
   "soundOn": "Sound on",
   "loading": "Loading…",
@@ -118,6 +121,7 @@ export const STRINGS = {
  "es": {
   "ad": "Anuncio",
   "close": "Cerrar",
+  "skip": "Saltar",
   "done": "Listo",
   "soundOn": "Activar sonido",
   "loading": "Cargando…",
@@ -154,6 +158,7 @@ export const STRINGS = {
  "fr": {
   "ad": "Pub",
   "close": "Fermer",
+  "skip": "Passer",
   "done": "Terminer",
   "soundOn": "Activer le son",
   "loading": "Chargement…",
@@ -190,6 +195,7 @@ export const STRINGS = {
  "hi": {
   "ad": "विज्ञापन",
   "close": "बंद करें",
+  "skip": "छोड़ें",
   "done": "हो गया",
   "soundOn": "आवाज़ चालू करें",
   "loading": "लोड हो रहा है…",
@@ -226,6 +232,7 @@ export const STRINGS = {
  "id": {
   "ad": "Iklan",
   "close": "Tutup",
+  "skip": "Lewati",
   "done": "Selesai",
   "soundOn": "Nyalakan suara",
   "loading": "Memuat…",
@@ -262,6 +269,7 @@ export const STRINGS = {
  "it": {
   "ad": "Annuncio",
   "close": "Chiudi",
+  "skip": "Salta",
   "done": "Fine",
   "soundOn": "Attiva audio",
   "loading": "Caricamento…",
@@ -298,6 +306,7 @@ export const STRINGS = {
  "ja": {
   "ad": "広告",
   "close": "閉じる",
+  "skip": "スキップ",
   "done": "完了",
   "soundOn": "サウンドをオン",
   "loading": "読み込み中…",
@@ -334,6 +343,7 @@ export const STRINGS = {
  "ko": {
   "ad": "광고",
   "close": "닫기",
+  "skip": "건너뛰기",
   "done": "완료",
   "soundOn": "소리 켜기",
   "loading": "불러오는 중…",
@@ -370,6 +380,7 @@ export const STRINGS = {
  "pl": {
   "ad": "Reklama",
   "close": "Zamknij",
+  "skip": "Pomiń",
   "done": "Gotowe",
   "soundOn": "Włącz dźwięk",
   "loading": "Wczytywanie…",
@@ -414,11 +425,13 @@ export const STRINGS = {
   "preregister": "Pré-registar",
   "signUp": "Registe-se",
   "playtest": "Participe no playtest",
-  "whyBroken": "Não reproduziu ou bloqueou"
+  "whyBroken": "Não reproduziu ou bloqueou",
+  "skip": "Saltar"
  },
  "pt": {
   "ad": "Anúncio",
   "close": "Fechar",
+  "skip": "Pular",
   "done": "Concluir",
   "soundOn": "Ativar som",
   "loading": "Carregando…",
@@ -455,6 +468,7 @@ export const STRINGS = {
  "ru": {
   "ad": "Реклама",
   "close": "Закрыть",
+  "skip": "Пропустить",
   "done": "Готово",
   "soundOn": "Включить звук",
   "loading": "Загрузка…",
@@ -491,6 +505,7 @@ export const STRINGS = {
  "sv": {
   "ad": "Annons",
   "close": "Stäng",
+  "skip": "Hoppa över",
   "done": "Klar",
   "soundOn": "Ljud på",
   "loading": "Läser in…",
@@ -527,6 +542,7 @@ export const STRINGS = {
  "th": {
   "ad": "โฆษณา",
   "close": "ปิด",
+  "skip": "ข้าม",
   "done": "เสร็จสิ้น",
   "soundOn": "เปิดเสียง",
   "loading": "กำลังโหลด…",
@@ -563,6 +579,7 @@ export const STRINGS = {
  "tr": {
   "ad": "Reklam",
   "close": "Kapat",
+  "skip": "Geç",
   "done": "Bitti",
   "soundOn": "Sesi aç",
   "loading": "Yükleniyor…",
@@ -599,6 +616,7 @@ export const STRINGS = {
  "uk": {
   "ad": "Реклама",
   "close": "Закрити",
+  "skip": "Пропустити",
   "done": "Готово",
   "soundOn": "Увімкнути звук",
   "loading": "Завантаження…",
@@ -635,6 +653,7 @@ export const STRINGS = {
  "zh-Hans": {
   "ad": "广告",
   "close": "关闭",
+  "skip": "跳过",
   "done": "完成",
   "soundOn": "打开声音",
   "loading": "加载中…",
@@ -671,6 +690,7 @@ export const STRINGS = {
  "zh-Hant": {
   "ad": "廣告",
   "close": "關閉",
+  "skip": "略過",
   "done": "完成",
   "soundOn": "開啟聲音",
   "loading": "載入中…",

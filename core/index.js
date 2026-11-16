@@ -25,8 +25,8 @@
 //
 // A placement says the longest creative it takes (`maxSecs`), the kinds (`kinds`), and what
 // watching earns, as the player is told it (`reward`). One with `format: 'interstitial'` is
-// the host's choice, not the player's (player.js): no reward, closable after `skipAfter`
-// seconds (5), and with nothing ready it shows nothing at all.
+// the host's choice, not the player's (player.js): no reward, and a way out by `minSecs` seconds
+// (5 unless said; `skipAfter`, as it was called), and with nothing ready it shows nothing at all.
 //
 // A host with other ads to show (a paid network's) hands its network to show(), and whose
 // slot it is is the package's to say:
@@ -89,8 +89,8 @@
 // `ingest`. A game that counts nothing from its own development builds (no `ingest` there) can
 // still name it, and see its test reports arrive.
 import { loadCatalogue, validate, within, secure, filesOf } from './catalogue.js';
-import { pick, eligible, cardFor, wanted, isChild } from './pick.js';
-import { mix as mixOf, believed, shareOf, turn, settings as settingsOf } from './exchange.js';
+import { pick, eligible, cardFor, wanted, isChild, leastOf } from './pick.js';
+import { mix as mixOf, believed, shareOf, turn, settings as settingsOf, leastSaid } from './exchange.js';
 import { storeLink, cta } from './storeLinks.js';
 import { openHistory, safeStorage, memoryStorage, forget } from './history.js';
 import { OURS } from './keys.js';
@@ -195,12 +195,16 @@ export function createIndieAds({ host, rating = null, catalogue, placements = {}
   const page = media => { const html = media?.html; if (html != null) media.html = null; return html; };
   const nothing = granted => ({ granted, shown: false, via: null, creative: null, app: null, kind: null, watchedSecs: 0 });
 
+  // A placement as the game's code has it, with the least time the catalogue says for it, if it says one (exchange.js: a
+  // studio's to set for each of its game's placements, by name, with no release of the game).
+  const placed = (cat, name) => { const p = placements[name], said = leastSaid(cat, host, name, p?.format); return said == null ? p : { ...p, minSecs: said }; };
+
   // Download what's wanted next, if the network costs the player nothing. Resolves the ids fetched.
   async function prefetch() {
     const [cat, cache] = await Promise.all([loaded, cached]);
     if (!keep) return [];   // nothing is kept, so nothing is downloaded ahead: the network needn't be asked about
     try { if (await shell.metered()) return []; } catch { /* can't tell: go ahead */ }
-    return cache.fill({ creatives: cat.creatives, wanted: wanted({ ...await audience(cat), placements }) });
+    return cache.fill({ creatives: cat.creatives, wanted: wanted({ ...await audience(cat), placements: Object.fromEntries(Object.keys(placements).map(name => [name, placed(cat, name)])) }) });
   }
   let settled;   // the latest download: demand() is truest after it
   const refetch = () => (settled = prefetch().catch(e => { console.warn(`[indie-ads] ${e.message}`); return []; }));
@@ -211,7 +215,7 @@ export function createIndieAds({ host, rating = null, catalogue, placements = {}
   // be the still card is no reason to pass over a paid one.
   async function demand(placement) {
     const [cat, cache, answer] = await Promise.all([loaded, cached, mixed]);
-    const list = eligible({ ...await audience(cat), placement: placements[placement], ready: c => cache.has(c) });
+    const list = eligible({ ...await audience(cat), placement: placed(cat, placement), ready: c => cache.has(c) });
     const apps = [...new Set(list.map(c => c.app))];
     return { share: list.length ? shareOf(answer, placement) : 0, available: list.length, apps, owed: apps.filter(a => answer.owedTo.includes(a)) };
   }
@@ -219,7 +223,7 @@ export function createIndieAds({ host, rating = null, catalogue, placements = {}
   // `paid`: the host's other network, for the slots that aren't the house's (see the top).
   // `among`: only these games' ads (ids), for a host that decides the order itself from demand()
   async function show(placement, { reward = placements[placement]?.reward, paid = null, among = null } = {}) {
-    const { format = 'rewarded', skipAfter } = placements[placement] ?? {}, interstitial = format === 'interstitial';
+    const { format = 'rewarded' } = placements[placement] ?? {}, interstitial = format === 'interstitial';
     if (showing) return nothing(false);
     showing = true;
     let media = null;
@@ -233,7 +237,7 @@ export function createIndieAds({ host, rating = null, catalogue, placements = {}
           if (out) { tell('paid', placement); return { ...nothing(!!out.granted && !interstitial), shown: true, via: 'paid' }; }   // counted, as a slot the house didn't take
         }   // it had none: a house ad after all
       }
-      const [cat, cache] = await Promise.all([loaded, cached]), who = { ...await audience(cat), placement: placements[placement], among };
+      const [cat, cache] = await Promise.all([loaded, cached]), who = { ...await audience(cat), placement: placed(cat, placement), among }, least = leastOf(who.placement);
       // the pick, of those whose files are here; one whose file has gone is passed over for the next
       const gone = new Set();
       let creative;
@@ -258,7 +262,7 @@ export function createIndieAds({ host, rating = null, catalogue, placements = {}
       // as it's on the device: the file it plays, and what dresses its card, each from the cache where it's there
       const here = (field, url) => media?.files?.[field] ?? url;
       const local = { ...creative, ...(media?.src && { src: media.src }), ...(creative.endCard && { endCard: Object.fromEntries(Object.entries(creative.endCard).map(([shape, url]) => [shape, here(`endCard.${shape}`, url)])) }) };
-      const { granted, watchedSecs, kind } = await play({ creative: inWords(local), app: inWords(app), html: page(media), link, ctaText: cta(app, os, now(), said.t, link), reward, format, skipAfter, picture: here(`storeButton.${os}`, creative.storeButton?.[os] ?? null), limit: creative.overrun ? who.placement?.maxSecs : null, muted: muted(), emit, more, openStore: shell.openStore, banner: shell.banner, report: r => reported(placement, creative, app, said.locale, r), words: said });
+      const { granted, watchedSecs, kind } = await play({ creative: inWords(local), app: inWords(app), html: page(media), link, ctaText: cta(app, os, now(), said.t, link), reward, format, least, picture: here(`storeButton.${os}`, creative.storeButton?.[os] ?? null), limit: creative.overrun ? who.placement?.maxSecs : null, muted: muted(), emit, more, openStore: shell.openStore, banner: shell.banner, report: r => reported(placement, creative, app, said.locale, r), words: said });
       if (granted && kind !== 'card') history.watched(app.id);
       return { granted: granted && !interstitial, shown: true, via: 'house', creative: creative.id, app: app.id, kind, watchedSecs };
     } finally {

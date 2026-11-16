@@ -5,5 +5,27 @@
 	"includePlatforms": [],
 	"excludePlatforms": [],
 	"allowUnsafeCode": false,
-	"autoReferenced": true
+	"autoReferenced": true,
+	"versionDefines": [
+		{
+			"name": "com.unity.modules.video",
+			"expression": "",
+			"define": "INDIEADS_HAS_VIDEO"
+		},
+		{
+			"name": "com.unity.modules.imgui",
+			"expression": "",
+			"define": "INDIEADS_HAS_IMGUI"
+		},
+		{
+			"name": "com.unity.modules.unitywebrequest",
+			"expression": "",
+			"define": "INDIEADS_HAS_WEBREQUEST"
+		},
+		{
+			"name": "com.unity.modules.imageconversion",
+			"expression": "",
+			"define": "INDIEADS_HAS_IMAGES"
+		}
+	]
 }

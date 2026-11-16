@@ -21,7 +21,7 @@ const ASPECTS = ['9:16', '16:9'];
 const strings = x => Array.isArray(x) && x.every(s => typeof s === 'string'), count = x => Number.isFinite(x) && x >= 0;
 const TYPED = { langs: [strings, 'a list of strings'], hosts: [strings, 'a list of strings'], weight: [count, 'a number, 0 or more'], capPerDay: [count, 'a number, 0 or more'], bytes: [count, 'a number, 0 or more'] };
 // How a creative asks to be shown, beyond the player's own way (0.5.0): endCard, storeButton, and for a video loop,
-// tap, overrun, fade and backdrop, each as schema/catalogue.schema.json describes it (test/catalogue.test.mjs holds
+// tap, overrun, fade, backdrop and (0.6.3) skipFrom, each as schema/catalogue.schema.json describes it (test/catalogue.test.mjs holds
 // these to the schema's bounds). Each is optional, and none is a reason to lose an ad: one that can't be read is left
 // out and named in `dropped`, and the creative plays as it would without it. What's left unsaid is the player's to
 // fill in. A release from before 0.5.0 reads none of them, and plays the creative its own way.
@@ -49,6 +49,7 @@ const VIDEO = {
   tap: v => obj(v) && (v.button != null || v.whole != null) && ['button', 'whole'].every(k => v[k] == null || when(v[k])) ? only(v, ['button', 'whole']) : BAD,
   overrun: v => typeof v === 'boolean' ? v : BAD,
   fade: v => between(v, 0, 5) ? v : BAD,
+  skipFrom: (v, c) => count(v) && v <= c.secs ? v : BAD,
   backdrop: v => ['poster', 'video'].includes(v) ? v : BAD,
 };
 const SHOWN = Object.entries({ ...ANY, ...VIDEO });

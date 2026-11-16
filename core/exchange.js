@@ -6,7 +6,7 @@
 //   "exchange": { "share": 0.1, "max": 0.6, "full": 2000, "days": 30, "perDay": 3,
 //                 "fatigue": { "after": 6, "rest": 14, "grow": 2 },
 //                 "hosts": { "mygame": { "share": 0.15, "perDay": 2,
-//                                        "placements": { "saveMe": { "share": 0 } } } } }
+//                                        "placements": { "saveMe": { "share": 0 }, "betweenLevels": { "minSecs": 10 } } } } }
 //
 //   share       what's asked of a host that owes no one: our own games shown to our own players
 //   max         what's asked of a host whose studio owes `full` showings or more
@@ -19,7 +19,11 @@
 //               day's showings are: the ingest knows nothing of any one player
 //   hosts       any of the above, except days, for one host; and
 //   placements  in a host, share / max for one of its placements. A placement given a share and
-//               no max stays at that share, whatever is owed: one held to 0 stays at 0
+//               no max stays at that share, whatever is owed: one held to 0 stays at 0.
+//               And `minSecs` (0.6.3): the least time that placement holds a player to an ad, in
+//               place of what the game's code says (pick.js leastOf)
+//   minSecs     in a host (0.6.3): { rewarded, interstitial }, the least time for its placements of
+//               each kind, where a placement has none of its own here
 //
 // The debt is between studios: another studio's games showing ours puts us in theirs, and our
 // games showing theirs pays it off. So a studio that has been shown more than it has shown is
@@ -50,6 +54,12 @@ export function settings(catalogue, host, placement = null) {
   const fatigue = { after: Math.max(0, Math.round(num(tired.after, FATIGUE.after))), rest: clamp(num(tired.rest, FATIGUE.rest), 0, MAX_REST), grow: clamp(num(tired.grow, FATIGUE.grow), 1, 10) };
   return { share, max, full: Math.max(1, of('full', 1000)), days: clamp(Math.round(num(all.days, 30)), 1, 365),
     perDay: perDay == null ? null : Math.max(0, Math.round(perDay)), fatigue };
+}
+// The least time the catalogue says one of a host's placements holds a player to an ad, in seconds; null where it says none.
+// The placement's own, by its name; else the game's for ads of that `format` ('rewarded' or 'interstitial').
+export function leastSaid(catalogue, host, placement, format = 'rewarded') {
+  const own = catalogue?.exchange?.hosts?.[host], secs = v => Number.isFinite(v) && v >= 0 ? v : null;
+  return secs(own?.placements?.[placement]?.minSecs) ?? secs(own?.minSecs?.[format]);
 }
 // the share of `s` at a debt of `owed`
 const shareAt = (s, owed) => +(s.share + (s.max - s.share) * Math.min(1, owed / s.full)).toFixed(3);

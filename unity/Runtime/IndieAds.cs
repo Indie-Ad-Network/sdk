@@ -10,7 +10,7 @@ namespace IndieAdNetwork
 	{
 		/// The player's choice; watching to the end of the countdown earns the game's reward.
 		Rewarded,
-		/// The game's choice, between two things the player was doing: no reward, closable after skipAfter seconds.
+		/// The game's choice, between two things the player was doing: no reward, and a way out by the placement's minSecs.
 		Interstitial,
 	}
 
@@ -21,7 +21,9 @@ namespace IndieAdNetwork
 		public IndieAdFormat format = IndieAdFormat.Rewarded;
 		[Tooltip("The longest creative this placement takes, in seconds. 0 = any.")]
 		public int maxSecs = 30;
-		[Tooltip("Interstitial: seconds before it can be closed.")]
+		[Tooltip("The least time this placement holds the player to an ad, in seconds. -1 = unsaid. Interstitial: a video offers Skip 3 s before it, and ✕ is on its end card 3 s after Skip (unsaid: skipAfter; 15 at most). Rewarded: the reward can be claimed from then (unsaid: the creative's own time, its end unless it says earlier). The dashboard can say another for a placement, by its name.")]
+		public float minSecs = -1f;
+		[Tooltip("Interstitial: minSecs, as it was called before 0.6.3. Read where minSecs is unsaid.")]
 		public float skipAfter = 5f;
 		[Tooltip("Rewarded: what watching earns, as the player is told it (\"Earned: …\"). Empty = \"Reward earned\".")]
 		public string reward;
@@ -289,6 +291,12 @@ namespace IndieAdNetwork
 			}
 			TextAsset page = Resources.Load<TextAsset>(PlayerPage);
 			view = page == null ? null : config.createWebView != null ? config.createWebView() : NativeWebView.Create();
+#if UNITY_EDITOR && INDIEADS_HAS_VIDEO && INDIEADS_HAS_IMGUI && INDIEADS_HAS_WEBREQUEST
+			if (view == null && page != null)
+			{
+				view = EditorAds.Create();   // Play mode in the Editor, which has no web view: a stand-in that plays the catalogue's videos
+			}
+#endif
 			if (view == null)
 			{
 				return false;
@@ -469,6 +477,10 @@ namespace IndieAdNetwork
 				if (p.maxSecs > 0)
 				{
 					json.Append(",\"maxSecs\":").Append(p.maxSecs);
+				}
+				if (p.minSecs >= 0f)
+				{
+					json.Append(",\"minSecs\":").Append(p.minSecs.ToString(System.Globalization.CultureInfo.InvariantCulture));
 				}
 				if (p.format == IndieAdFormat.Interstitial)
 				{
@@ -652,7 +664,7 @@ namespace IndieAdNetwork
 
 		const char LineSeparator = (char)0x2028, ParagraphSeparator = (char)0x2029;   // end a line in JavaScript, though not in JSON
 
-		static string Quote(string s)
+		internal static string Quote(string s)
 		{
 			if (s == null)
 			{

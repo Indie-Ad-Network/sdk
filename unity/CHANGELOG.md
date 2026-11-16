@@ -6,6 +6,23 @@ The repository has one version, [Semantic Versioning](https://semver.org), and a
 
 Two numbers are not this one, and change only when a format does: `VERSION` in `core/wire.js` (what games send the ingest) and the catalogue's `version`. Games already released go on sending and reading the old ones.
 
+## [0.6.3] - 2026-11-17
+
+Ads in the Unity Editor, and how long an ad holds a player. Nothing to do to take it; an interstitial's way out changes for players (below).
+
+### Added
+- **A stand-in plays ads in the Editor's Play mode** (Unity). The Editor has no web view, so `IndieAds.Show` answered false there and never called back: a game's ad code couldn't be tried without a device build, and code that waited on the callback hung. Now `Show` answers true and an ad goes up over the Game view: one of the catalogue's videos, the real file, played by Unity's VideoPlayer and shown as its creative asks (the end card's art, the store button's place and picture, a pulse, a card of its own, a fade, a loop, when a tap opens the store), under a countdown, a close and a store button of the stand-in's drawing. `Demand`, `Wants`, the callbacks and every event come as they do on a phone. Two buttons are for testing: the ad's end now, and "nothing was shown". It isn't the player: no playables, no caps or resting, nothing sent to the ingest. Compiled only in the Editor, where the Video, IMGUI and UnityWebRequest modules are in the project. [The Unity README](README.md) has the rest.
+
+- **A game says how long each placement holds a player: `minSecs`** (`IndieAdPlacement.minSecs` in Unity). A studio can say another in the dashboard, with no release: one for its game's interstitials and one for its rewarded ads, and one for any single placement by its name (`exchange.hosts.<game>.minSecs` and `…placements.<name>.minSecs` in the catalogue). An interstitial's was `skipAfter`, still read; 5 s where neither is said, 15 at most.
+- **A creative says the earliest it may be skipped: `skipFrom`** (a video). In a rewarded slot the reward comes at the later of that and the game's time; in an interstitial slot with a shorter time than it, the video isn't shown. It also lets a long video into a shorter slot, if it may be left by then. [Creatives](../CREATIVES.md#dressing-the-end-card-and-how-a-video-is-shown).
+
+### Changed
+- **An interstitial's video is left by Skip, and closed from its end.** There was a ✕ after `skipAfter` seconds that closed the ad where it stood. Now **Skip** is shown 3 s before the game's time (at once, if that is under 3 s) and takes the video to its end card; ✕ is there 3 s later. With nothing said that is Skip at 2 s and ✕ at 5 s, where ✕ alone was at 5 s. A video that reaches its end by itself has ✕ at once. A playable and the still card are as before: ✕ at the game's time.
+- **A rewarded video's reward can come before its end**, where the game says a time for the placement or the creative says `skipFrom`. The ✓ then takes the video to its end card, and the player leaves from there. With neither said it is as before: the reward at the video's end.
+- A quarter of a video isn't counted (`q25`…) once the video has been left for its end.
+- **This log is of the SDK alone.** Entries that were the network's server's (its dashboard, its migrations) are gone from it.
+- The READMEs agree with the code on a video cut for the other shape of screen: it is shown, letterboxed, at half its weight.
+
 ## [0.6.2] - 2026-11-16
 
 How a creative that brings its own end card is shown. Nothing to do to take it.
