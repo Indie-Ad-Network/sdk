@@ -42,9 +42,10 @@
 // time is under 3 s): Skip takes it to its end, the end card or whatever it ends on, and ✕ is there
 // 3 s later. A video that reaches its end by itself has ✕ at once. A playable or a still card has
 // ✕ at the game's time, and it closes at once. Until then there is no ✕ to press.
-// A rewarded ad's reward comes at the game's time, if it says one (`least`), or at the creative's
+// A rewarded video's reward comes at the game's time, if it says one (`least`), or at the creative's
 // own earliest (`skipFrom`), and with both at the later; with neither, at its end. A reward in
 // before a video's end, ✓ takes the video to its end card, and from there the player leaves.
+// A rewarded playable's reward is at its own time, whatever the game's.
 //
 // The "Ad" label is a button, with an ⓘ beside the word: it stops the clock and says whose ad this is (the
 // network: a circle of developers who know each other), by what it was chosen, and takes a report of it, with a
@@ -270,7 +271,9 @@ export function play({ creative, app, html, link, ctaText, reward, format = 'rew
   // and with both the later; with neither at its end (or at `limit`, for one marked `overrun`). The reward in before a video's end, ✓ takes it to
   // its end card. An interstitial's ✕; or for its video, Skip.
   const earns = creative.skipFrom != null ? Math.max(min ?? 0, creative.skipFrom) : min ?? limit ?? Infinity;
-  const need = () => Math.min(total, rewarded ? earns : skips() ? skipAt : min);
+  // That earlier reward is a video's alone: a playable, or the still card, is over when its own time is, and its reward comes there (a
+  // playable's sooner only by its own word, `finishEarly`). Held to the game's time it would be cut off as that time came, its time counted as run out.
+  const need = () => Math.min(total, rewarded ? (video ? earns : Infinity) : skips() ? skipAt : min);
   const secs = () => Math.round(elapsed);
   const waits = new Set();   // why the clock stands still: 'hidden', 'ask', 'info', 'store', 'loading'
   let finish;

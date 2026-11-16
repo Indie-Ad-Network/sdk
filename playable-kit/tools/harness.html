@@ -7,7 +7,7 @@
 <button id="again">Show the ad</button><div id="out">The host game would be here.</div>
 <script type="module">
 // The page given to tools/serve.mjs, played by indie-ads' real player (core/player.js) as the admin's
-// creative record would have it:  ?secs=30  ?finishEarly=1  ?keepPlaying=1  ?ownCard=1 (it has an end card of its own)  ?report=1 (the ⓘ takes a report)  ?muted=1  ?format=interstitial  ?lang=fr  ?more=1 (the ⓘ's link to more games)
+// creative record would have it:  ?secs=30  ?finishEarly=1  ?keepPlaying=1  ?ownCard=1 (it has an end card of its own)  ?report=1 (the ⓘ takes a report)  ?least=5 (the game's least time for the placement, in seconds)  ?muted=1  ?format=interstitial  ?lang=fr  ?more=1 (the ⓘ's link to more games)
 // ?wait=1 shows nothing until the button is pressed, so the page may have sound (a browser wants a touch first).
 // What the player emits is in window.__events, and what show() resolved to in window.__result.
 import { play } from '/indie-ads/core/player.js';
@@ -20,7 +20,7 @@ async function show() {
   const result = await play({
     creative: { kind: 'playable', secs: +q.get('secs') || 30, finishEarly: q.has('finishEarly'), keepPlaying: q.has('keepPlaying'), ownCard: q.has('ownCard'), line: 'The line for the end card.' },
     app: { name: q.get('name') || 'The game advertised', line: 'Its one line.', studio: 'Its studio' },
-    html, link: { via: 'harness' }, ctaText: 'Get', reward: '+3 hints', format: q.get('format') || 'rewarded', muted: q.has('muted'),
+    html, link: { via: 'harness' }, ctaText: 'Get', reward: '+3 hints', format: q.get('format') || 'rewarded', muted: q.has('muted'), least: q.has('least') ? +q.get('least') : null,
     emit: (event, fields) => { window.__events.push([event, fields || {}]); out.textContent = window.__events.map(e => e[0] + ' ' + JSON.stringify(e[1])).join('\n'); },
     openStore: async () => { window.__events.push(['(store opened)', {}]); }, words: stringsFor(q.get('lang') || 'en'),
     report: q.has('report') ? r => { window.__events.push(['(reported)', r]); } : null,

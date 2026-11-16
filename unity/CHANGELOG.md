@@ -6,6 +6,14 @@ The repository has one version, [Semantic Versioning](https://semver.org), and a
 
 Two numbers are not this one, and change only when a format does: `VERSION` in `core/wire.js` (what games send the ingest) and the catalogue's `version`. Games already released go on sending and reading the old ones.
 
+## [0.6.5] - 2026-11-17
+
+A fix to 0.6.3. Take it in place of 0.6.3 or 0.6.4; nothing to do besides.
+
+### Fixed
+- **A rewarded playable was cut off at the game's time.** In a rewarded placement given a least time (`minSecs`, or the dashboard's), a playable had its reward at that time, was counted as watched for its whole length (`reward` with its full `secs`), and was taken down for the end card there and then. The earlier reward is a video's alone: a playable's reward comes at its own time, or when it says it's done if it's marked `finishEarly`, whatever the game's time. The still card likewise. No placement had a time until 0.6.3, so only a game that set one was touched.
+- The playable kit's harness takes `?least=`, the game's least time, to try this by hand.
+
 ## [0.6.4] - 2026-11-17
 
 Who the Unity package says it is by. Nothing to do to take it, and nothing in a game changes.
