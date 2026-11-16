@@ -26,5 +26,11 @@
   "seeMore": "Altri giochi indie di questa rete",
   "reportAsk": "Cosa non va in questo annuncio? (facoltativo)",
   "report": "Segnala questo annuncio",
+  "whyBroken": "Non è partito o si è bloccato",
+  "whyStuck": "Non riuscivo a chiuderlo",
+  "whyInappropriate": "È inappropriato",
+  "whyMisleading": "È ingannevole",
+  "whyOther": "Altro",
+  "send": "Invia",
   "reported": "Grazie. Daremo un'occhiata."
 }

@@ -26,5 +26,11 @@
   "seeMore": "來自此網路的更多獨立遊戲",
   "reportAsk": "這則廣告有什麼問題？（選填）",
   "report": "檢舉此廣告",
+  "whyBroken": "無法播放或卡住了",
+  "whyStuck": "無法關閉",
+  "whyInappropriate": "內容不當",
+  "whyMisleading": "有誤導性",
+  "whyOther": "其他",
+  "send": "傳送",
   "reported": "謝謝。我們會查看。"
 }

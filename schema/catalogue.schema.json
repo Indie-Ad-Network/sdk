@@ -103,7 +103,8 @@
           "line": { "description": "One line for the end card. One string, or one per language, as an app's.", "type": ["string", "object"], "additionalProperties": { "type": "string" } },
           "langs": { "description": "Only for players in these languages (\"en\", \"es\"): for a creative with words in it. Left out: for all.", "type": "array", "items": { "type": "string" } },
           "finishEarly": { "description": "playable: the reward lands when it calls mraid.close(), if that's before `secs`.", "type": "boolean" },
-          "ownEndCard": { "description": "video: it ends on an end card of its own, so the player's isn't shown over it: the video rests on its last frame, and a tap anywhere on the video, at any time, opens the store.", "type": "boolean" },
+          "ownCard": { "description": "It ends on an end card of its own, so the player's isn't shown. video: it rests on its last frame, with the store button alone over it (the player's words, or `storeButton`'s picture), and the video itself opens nothing unless `tap.whole` says from when. playable: its own card and store button are in its page (mraid.open()); when `secs` are up the reward is in and it plays on until closed, and `keepPlaying` has nothing to do. Read from 0.6.2: a release before plays either as any other creative, the player's card at its end.", "type": "boolean" },
+          "ownEndCard": { "description": "How `ownCard` was said of a video before 0.6.2, with one difference: there's no store button, and a tap anywhere on the video, at any time, opens the store. Players tap through without meaning to: say `ownCard`. Still read, for a catalogue that says it.", "type": "boolean" },
           "keepPlaying": { "description": "playable: when `secs` are up it's paused under the end card (told it isn't viewable, volume 0), which offers Keep playing, for up to 2 minutes more. Only for a page that pauses when told.", "type": "boolean" },
           "weight": { "type": "number", "default": 1 },
           "capPerDay": { "description": "Showings per player in 24 hours.", "type": "integer", "default": 2 },
@@ -140,7 +141,7 @@
             "type": "object",
             "properties": {
               "button": { "description": "When the store button is there. Left out: from the start.", "oneOf": [{ "type": "number", "minimum": 0 }, { "const": "end" }] },
-              "whole": { "description": "From when a tap anywhere on the video opens the store. Left out: never (but for one marked ownEndCard, where it's always).", "oneOf": [{ "type": "number", "minimum": 0 }, { "const": "end" }] }
+              "whole": { "description": "From when a tap anywhere on the video opens the store. Left out: never.", "oneOf": [{ "type": "number", "minimum": 0 }, { "const": "end" }] }
             }
           },
           "overrun": { "description": "video: it may be shown in a placement shorter than it (`maxSecs` under its `secs`). The reward comes at the placement's time, and the video plays on: the player may watch to its end or leave by the end card. Read from 0.5.0; a release before it shows the video only where it fits.", "type": "boolean" },

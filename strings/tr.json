@@ -26,5 +26,11 @@
   "seeMore": "Bu ağdan daha fazla bağımsız oyun",
   "reportAsk": "Bu reklamda sorun ne? (isteğe bağlı)",
   "report": "Bu reklamı bildir",
+  "whyBroken": "Oynatılmadı veya dondu",
+  "whyStuck": "Kapatamadım",
+  "whyInappropriate": "Uygunsuz",
+  "whyMisleading": "Yanıltıcı",
+  "whyOther": "Başka bir şey",
+  "send": "Gönder",
   "reported": "Teşekkürler. İnceleyeceğiz."
 }

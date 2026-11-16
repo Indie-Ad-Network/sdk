@@ -163,7 +163,7 @@ The player draws the close button, the countdown and the end card (icon, line, s
 - **[The playable kit](playable-kit/README.md)** makes a playable of your own game, with a narrator's voice baked on your own computer.
 - **[Hosting a playable](PLAYABLE_HOST.md)** is the contract between a playable and the player: the sandbox, the messages, `finishEarly`, `keepPlaying` and the funnel (`window.houseAds?.step('board2')`).
 
-A video that ends on a card of its own (one already cut for another network) is marked `ownEndCard`, a tick in the admin: the player's card isn't put over it, and a tap anywhere on the video opens the store.
+A creative that ends on a card of its own (one already cut for another network) is marked `ownCard`, a tick in the admin. A video's rests on its last frame with the store button alone over it; a playable's plays on, its reward in, with no card of the player's. (`ownEndCard`, as it was said before 0.6.2, made the whole video a store button, and is still read.)
 
 ## Events
 

@@ -6,6 +6,18 @@ The repository has one version, [Semantic Versioning](https://semver.org), and a
 
 Two numbers are not this one, and change only when a format does: `VERSION` in `core/wire.js` (what games send the ingest) and the catalogue's `version`. Games already released go on sending and reading the old ones.
 
+## [0.6.2] - 2026-11-16
+
+How a creative that brings its own end card is shown. Nothing to do to take it.
+
+### Added
+- **`ownCard`: a creative ends on a card of its own.** A video rests on its last frame with the store button alone over it: the usual button in the player's language, or the creative's own picture of it (`storeButton`), and nothing else of the player's, no dimming, icon or line. The video itself opens nothing when tapped, unless `tap.whole` says from when. A playable with a card and a store button of its own (`mraid.open()`) is left to show them: its time up, the reward is in and it plays on until it's closed or says it's done, and no card of the player's is put over it.
+
+- **A report of an ad says why.** "Report this ad" behind the ⓘ now asks what's wrong, one of five to be picked (it didn't play or froze; it couldn't be closed; it's inappropriate; it's misleading; something else), with the box for a few words kept under them. The pick goes with the report as `reason` (`core/wire.js` `REASONS`), to a game's `onEvent` too. In every language the player speaks.
+
+### Changed
+- **`ownEndCard` is how that was said before, and it made the whole video a store button from its first frame.** Players tapped through without meaning to: a video marked so was tapped several times as often as any other creative. It still means what it did, for a catalogue that says it; the network's server now says `ownCard`. A game on a release before this one doesn't know `ownCard`, and shows such a creative with the usual end card.
+
 ## [0.6.1] - 2026-11-16
 
 ### Added

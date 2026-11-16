@@ -26,5 +26,11 @@
   "seeMore": "Más juegos indie de esta red",
   "reportAsk": "¿Qué problema tiene este anuncio? (opcional)",
   "report": "Denunciar este anuncio",
+  "whyBroken": "No se reprodujo o se congeló",
+  "whyStuck": "No pude cerrarlo",
+  "whyInappropriate": "Es inapropiado",
+  "whyMisleading": "Es engañoso",
+  "whyOther": "Otra cosa",
+  "send": "Enviar",
   "reported": "Gracias. Lo revisaremos."
 }

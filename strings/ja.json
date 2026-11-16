@@ -26,5 +26,11 @@
   "seeMore": "このネットワークのインディーゲームをもっと見る",
   "reportAsk": "この広告の問題点を教えてください（任意）",
   "report": "この広告を報告",
+  "whyBroken": "再生されない、または固まった",
+  "whyStuck": "閉じられなかった",
+  "whyInappropriate": "不適切な内容",
+  "whyMisleading": "誤解を招く内容",
+  "whyOther": "その他",
+  "send": "送信",
   "reported": "ありがとうございます。確認いたします。"
 }

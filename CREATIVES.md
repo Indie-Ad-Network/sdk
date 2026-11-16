@@ -26,7 +26,7 @@ From 0.5.0 a creative may say more about how it's shown. All of it is optional, 
 | You give | What happens |
 |---|---|
 | **End card art** (`endCard`): a picture for portrait screens, one for landscape, or one of the two. The network's admin takes JPEG, PNG or WebP, 2 MB at most | It's shown whole in place of your icon and line, over a blur of itself where it doesn't fill the screen. Either stands in for the other. If it can't be had, the usual card is shown |
-| **The store button's place** (`storeButton`): the edge or corner it's set against, its width, and how far in | The button is put there, on your art or on the usual card. Lengths are in 1/720 of the screen's shorter side, so it sits the same on a phone and a tablet. Left out: bottom centre, 360 wide, 128 up |
+| **The store button's place** (`storeButton`): the edge or corner it's set against, its width, and how far in | The button is put there, on your art or on the usual card. The network's admin takes a place only with a picture of the button, for one store at least. Lengths are in 1/720 of the screen's shorter side, so it sits the same on a phone and a tablet. Left out: bottom centre, 360 wide, 128 up |
 | **The store button as a picture**, one for each store | Your picture is the button. With none for the player's store it's in words, in the player's language: a picture's words are in one language only |
 | **A pulse** | The button swells and settles, to be seen |
 
@@ -53,7 +53,7 @@ Cut it from your store trailer or your own footage: the 15 seconds that show the
 
 A coding agent can do the cutting. [The video prompt](#the-video-prompt) below goes into [Claude Code](https://claude.com/claude-code), or any agent that can run ffmpeg, in an empty folder. It finds the preview videos on your store pages (or takes footage you give it), cuts a 15 second portrait and landscape ad, and checks both against the format above.
 
-**A video that ends on its own card**, one already cut for another network, is ticked "own end card" in the admin. The player's card isn't put over it, and a tap anywhere on the video opens the store.
+**A video that ends on its own card**, one already cut for another network, is ticked so in the admin. The player's card isn't put over it: the video rests on its last frame with the store button over it, the usual one or a picture of your own. The video itself opens nothing when tapped, unless you say from when it should. **A playable with its own end card** is ticked likewise: the player puts no card over it, and it plays on, its reward in, until it's closed. Both are from SDK 0.6.2; a game on an older release shows the usual end card.
 
 ## Make a playable
 

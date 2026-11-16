@@ -26,5 +26,11 @@
   "seeMore": "More indie games from this network",
   "reportAsk": "What's wrong with this ad? (optional)",
   "report": "Report this ad",
+  "whyBroken": "It didn't play, or it froze",
+  "whyStuck": "I couldn't close it",
+  "whyInappropriate": "It's inappropriate",
+  "whyMisleading": "It's misleading",
+  "whyOther": "Something else",
+  "send": "Send",
   "reported": "Thank you. We'll take a look."
 }

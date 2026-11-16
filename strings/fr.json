@@ -26,5 +26,11 @@
   "seeMore": "Plus de jeux indé de ce réseau",
   "reportAsk": "Quel est le problème avec cette pub ? (facultatif)",
   "report": "Signaler cette pub",
+  "whyBroken": "Elle ne s'est pas lancée ou s'est figée",
+  "whyStuck": "Impossible de la fermer",
+  "whyInappropriate": "Contenu inapproprié",
+  "whyMisleading": "Elle est trompeuse",
+  "whyOther": "Autre chose",
+  "send": "Envoyer",
   "reported": "Merci. Nous allons y jeter un œil."
 }

@@ -26,5 +26,11 @@
   "seeMore": "Mehr Indie-Spiele aus diesem Netzwerk",
   "reportAsk": "Was stimmt mit dieser Anzeige nicht? (optional)",
   "report": "Anzeige melden",
+  "whyBroken": "Wurde nicht abgespielt oder ist eingefroren",
+  "whyStuck": "Ließ sich nicht schließen",
+  "whyInappropriate": "Unangemessen",
+  "whyMisleading": "Irreführend",
+  "whyOther": "Etwas anderes",
+  "send": "Senden",
   "reported": "Danke. Wir sehen uns das an."
 }

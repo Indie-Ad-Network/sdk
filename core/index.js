@@ -140,8 +140,8 @@ export function createIndieAds({ host, rating = null, catalogue, placements = {}
   // with what was showing and which release showed it. Sent once, now: a report isn't kept for later as counts are.
   // A test showing's goes too, marked: it's how a developer sees that reports arrive (the dashboard keeps them apart).
   const flagUrl = https('reports', reportsAt) ?? (() => { try { return ingest ? new URL('flag', new URL(String(ingest), globalThis.location?.href)).href : null; } catch { return null; } })();
-  const reported = (placement, creative, app, locale, { message, secs, kind }) => {
-    const about = { host, placement, creative: creative.id, app: app.id, kind, secs, message };
+  const reported = (placement, creative, app, locale, { reason, message, secs, kind }) => {
+    const about = { host, placement, creative: creative.id, app: app.id, kind, secs, reason, message };
     try { onEvent?.({ event: 'report', ...about, t: now() }); } catch (err) { console.error(err); }
     if (flagUrl) Promise.resolve().then(() => fetch(flagUrl, { method: 'POST', body: JSON.stringify({ v: VERSION, sdk: SDK, os, lang: locale, ...about, ...test() && { test: true } }), headers: { 'content-type': 'text/plain' }, keepalive: true })).catch(() => { /* offline: it isn't told */ });
   };

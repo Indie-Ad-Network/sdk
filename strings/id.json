@@ -26,5 +26,11 @@
   "seeMore": "Game indie lainnya dari jaringan ini",
   "reportAsk": "Apa masalah iklan ini? (opsional)",
   "report": "Laporkan iklan ini",
+  "whyBroken": "Tidak diputar atau macet",
+  "whyStuck": "Tidak bisa ditutup",
+  "whyInappropriate": "Tidak pantas",
+  "whyMisleading": "Menyesatkan",
+  "whyOther": "Lainnya",
+  "send": "Kirim",
   "reported": "Terima kasih. Kami akan memeriksanya."
 }

@@ -28,6 +28,12 @@ export const STRINGS = {
   "seeMore": "ألعاب مستقلة أخرى من هذه الشبكة",
   "reportAsk": "ما المشكلة في هذا الإعلان؟ (اختياري)",
   "report": "الإبلاغ عن هذا الإعلان",
+  "whyBroken": "لم يعمل أو توقف",
+  "whyStuck": "لم أستطع إغلاقه",
+  "whyInappropriate": "محتوى غير لائق",
+  "whyMisleading": "مضلل",
+  "whyOther": "شيء آخر",
+  "send": "إرسال",
   "reported": "شكرًا لك. سنراجع الأمر."
  },
  "de": {
@@ -58,6 +64,12 @@ export const STRINGS = {
   "seeMore": "Mehr Indie-Spiele aus diesem Netzwerk",
   "reportAsk": "Was stimmt mit dieser Anzeige nicht? (optional)",
   "report": "Anzeige melden",
+  "whyBroken": "Wurde nicht abgespielt oder ist eingefroren",
+  "whyStuck": "Ließ sich nicht schließen",
+  "whyInappropriate": "Unangemessen",
+  "whyMisleading": "Irreführend",
+  "whyOther": "Etwas anderes",
+  "send": "Senden",
   "reported": "Danke. Wir sehen uns das an."
  },
  "en": {
@@ -88,6 +100,12 @@ export const STRINGS = {
   "seeMore": "More indie games from this network",
   "reportAsk": "What's wrong with this ad? (optional)",
   "report": "Report this ad",
+  "whyBroken": "It didn't play, or it froze",
+  "whyStuck": "I couldn't close it",
+  "whyInappropriate": "It's inappropriate",
+  "whyMisleading": "It's misleading",
+  "whyOther": "Something else",
+  "send": "Send",
   "reported": "Thank you. We'll take a look."
  },
  "es-419": {
@@ -125,6 +143,12 @@ export const STRINGS = {
   "seeMore": "Más juegos indie de esta red",
   "reportAsk": "¿Qué problema tiene este anuncio? (opcional)",
   "report": "Denunciar este anuncio",
+  "whyBroken": "No se reprodujo o se congeló",
+  "whyStuck": "No pude cerrarlo",
+  "whyInappropriate": "Es inapropiado",
+  "whyMisleading": "Es engañoso",
+  "whyOther": "Otra cosa",
+  "send": "Enviar",
   "reported": "Gracias. Lo revisaremos."
  },
  "fr": {
@@ -155,6 +179,12 @@ export const STRINGS = {
   "seeMore": "Plus de jeux indé de ce réseau",
   "reportAsk": "Quel est le problème avec cette pub ? (facultatif)",
   "report": "Signaler cette pub",
+  "whyBroken": "Elle ne s'est pas lancée ou s'est figée",
+  "whyStuck": "Impossible de la fermer",
+  "whyInappropriate": "Contenu inapproprié",
+  "whyMisleading": "Elle est trompeuse",
+  "whyOther": "Autre chose",
+  "send": "Envoyer",
   "reported": "Merci. Nous allons y jeter un œil."
  },
  "hi": {
@@ -185,6 +215,12 @@ export const STRINGS = {
   "seeMore": "इस नेटवर्क के और इंडी गेम",
   "reportAsk": "इस विज्ञापन में क्या गड़बड़ है? (वैकल्पिक)",
   "report": "इस विज्ञापन की रिपोर्ट करें",
+  "whyBroken": "यह चला नहीं या अटक गया",
+  "whyStuck": "मैं इसे बंद नहीं कर सका",
+  "whyInappropriate": "यह अनुचित है",
+  "whyMisleading": "यह भ्रामक है",
+  "whyOther": "कुछ और",
+  "send": "भेजें",
   "reported": "धन्यवाद। हम इसे देखेंगे।"
  },
  "id": {
@@ -215,6 +251,12 @@ export const STRINGS = {
   "seeMore": "Game indie lainnya dari jaringan ini",
   "reportAsk": "Apa masalah iklan ini? (opsional)",
   "report": "Laporkan iklan ini",
+  "whyBroken": "Tidak diputar atau macet",
+  "whyStuck": "Tidak bisa ditutup",
+  "whyInappropriate": "Tidak pantas",
+  "whyMisleading": "Menyesatkan",
+  "whyOther": "Lainnya",
+  "send": "Kirim",
   "reported": "Terima kasih. Kami akan memeriksanya."
  },
  "it": {
@@ -245,6 +287,12 @@ export const STRINGS = {
   "seeMore": "Altri giochi indie di questa rete",
   "reportAsk": "Cosa non va in questo annuncio? (facoltativo)",
   "report": "Segnala questo annuncio",
+  "whyBroken": "Non è partito o si è bloccato",
+  "whyStuck": "Non riuscivo a chiuderlo",
+  "whyInappropriate": "È inappropriato",
+  "whyMisleading": "È ingannevole",
+  "whyOther": "Altro",
+  "send": "Invia",
   "reported": "Grazie. Daremo un'occhiata."
  },
  "ja": {
@@ -275,6 +323,12 @@ export const STRINGS = {
   "seeMore": "このネットワークのインディーゲームをもっと見る",
   "reportAsk": "この広告の問題点を教えてください（任意）",
   "report": "この広告を報告",
+  "whyBroken": "再生されない、または固まった",
+  "whyStuck": "閉じられなかった",
+  "whyInappropriate": "不適切な内容",
+  "whyMisleading": "誤解を招く内容",
+  "whyOther": "その他",
+  "send": "送信",
   "reported": "ありがとうございます。確認いたします。"
  },
  "ko": {
@@ -305,6 +359,12 @@ export const STRINGS = {
   "seeMore": "이 네트워크의 인디 게임 더 보기",
   "reportAsk": "이 광고에 어떤 문제가 있나요? (선택 사항)",
   "report": "이 광고 신고",
+  "whyBroken": "재생되지 않거나 멈췄어요",
+  "whyStuck": "닫을 수 없었어요",
+  "whyInappropriate": "부적절해요",
+  "whyMisleading": "오해의 소지가 있어요",
+  "whyOther": "기타",
+  "send": "보내기",
   "reported": "감사합니다. 확인해 보겠습니다."
  },
  "pl": {
@@ -335,6 +395,12 @@ export const STRINGS = {
   "seeMore": "Więcej gier indie z tej sieci",
   "reportAsk": "Co jest nie tak z tą reklamą? (opcjonalnie)",
   "report": "Zgłoś tę reklamę",
+  "whyBroken": "Nie odtworzyła się lub się zawiesiła",
+  "whyStuck": "Nie dało się jej zamknąć",
+  "whyInappropriate": "Jest nieodpowiednia",
+  "whyMisleading": "Wprowadza w błąd",
+  "whyOther": "Coś innego",
+  "send": "Wyślij",
   "reported": "Dziękujemy. Przyjrzymy się temu."
  },
  "pt-PT": {
@@ -347,7 +413,8 @@ export const STRINGS = {
   "preorder": "Pré-encomendar",
   "preregister": "Pré-registar",
   "signUp": "Registe-se",
-  "playtest": "Participe no playtest"
+  "playtest": "Participe no playtest",
+  "whyBroken": "Não reproduziu ou bloqueou"
  },
  "pt": {
   "ad": "Anúncio",
@@ -377,6 +444,12 @@ export const STRINGS = {
   "seeMore": "Mais jogos indie desta rede",
   "reportAsk": "O que há de errado com este anúncio? (opcional)",
   "report": "Denunciar este anúncio",
+  "whyBroken": "Não reproduziu ou travou",
+  "whyStuck": "Não consegui fechar",
+  "whyInappropriate": "É inadequado",
+  "whyMisleading": "É enganoso",
+  "whyOther": "Outra coisa",
+  "send": "Enviar",
   "reported": "Obrigado. Vamos dar uma olhada."
  },
  "ru": {
@@ -407,6 +480,12 @@ export const STRINGS = {
   "seeMore": "Другие инди-игры этой сети",
   "reportAsk": "Что не так с этой рекламой? (необязательно)",
   "report": "Пожаловаться на рекламу",
+  "whyBroken": "Не воспроизвелась или зависла",
+  "whyStuck": "Не удалось закрыть",
+  "whyInappropriate": "Неприемлемое содержание",
+  "whyMisleading": "Вводит в заблуждение",
+  "whyOther": "Другое",
+  "send": "Отправить",
   "reported": "Спасибо. Мы разберёмся."
  },
  "sv": {
@@ -437,6 +516,12 @@ export const STRINGS = {
   "seeMore": "Fler indiespel från det här nätverket",
   "reportAsk": "Vad är fel med den här annonsen? (valfritt)",
   "report": "Anmäl annonsen",
+  "whyBroken": "Den spelades inte upp eller frös",
+  "whyStuck": "Jag kunde inte stänga den",
+  "whyInappropriate": "Den är olämplig",
+  "whyMisleading": "Den är vilseledande",
+  "whyOther": "Något annat",
+  "send": "Skicka",
   "reported": "Tack. Vi tittar på det."
  },
  "th": {
@@ -467,6 +552,12 @@ export const STRINGS = {
   "seeMore": "เกมอินดี้อื่น ๆ จากเครือข่ายนี้",
   "reportAsk": "โฆษณานี้มีปัญหาอะไร (ไม่บังคับ)",
   "report": "รายงานโฆษณานี้",
+  "whyBroken": "เล่นไม่ได้หรือค้าง",
+  "whyStuck": "ปิดไม่ได้",
+  "whyInappropriate": "เนื้อหาไม่เหมาะสม",
+  "whyMisleading": "ทำให้เข้าใจผิด",
+  "whyOther": "อื่น ๆ",
+  "send": "ส่ง",
   "reported": "ขอบคุณ เราจะตรวจสอบให้"
  },
  "tr": {
@@ -497,6 +588,12 @@ export const STRINGS = {
   "seeMore": "Bu ağdan daha fazla bağımsız oyun",
   "reportAsk": "Bu reklamda sorun ne? (isteğe bağlı)",
   "report": "Bu reklamı bildir",
+  "whyBroken": "Oynatılmadı veya dondu",
+  "whyStuck": "Kapatamadım",
+  "whyInappropriate": "Uygunsuz",
+  "whyMisleading": "Yanıltıcı",
+  "whyOther": "Başka bir şey",
+  "send": "Gönder",
   "reported": "Teşekkürler. İnceleyeceğiz."
  },
  "uk": {
@@ -527,6 +624,12 @@ export const STRINGS = {
   "seeMore": "Інші інді-ігри цієї мережі",
   "reportAsk": "Що не так із цією рекламою? (необов'язково)",
   "report": "Поскаржитися на рекламу",
+  "whyBroken": "Не відтворилася або зависла",
+  "whyStuck": "Не вдалося закрити",
+  "whyInappropriate": "Неприйнятний вміст",
+  "whyMisleading": "Вводить в оману",
+  "whyOther": "Інше",
+  "send": "Надіслати",
   "reported": "Дякуємо. Ми розберемося."
  },
  "zh-Hans": {
@@ -557,6 +660,12 @@ export const STRINGS = {
   "seeMore": "来自此网络的更多独立游戏",
   "reportAsk": "这则广告有什么问题？（选填）",
   "report": "举报此广告",
+  "whyBroken": "无法播放或卡住了",
+  "whyStuck": "无法关闭",
+  "whyInappropriate": "内容不当",
+  "whyMisleading": "有误导性",
+  "whyOther": "其他",
+  "send": "发送",
   "reported": "谢谢。我们会查看。"
  },
  "zh-Hant": {
@@ -587,6 +696,12 @@ export const STRINGS = {
   "seeMore": "來自此網路的更多獨立遊戲",
   "reportAsk": "這則廣告有什麼問題？（選填）",
   "report": "檢舉此廣告",
+  "whyBroken": "無法播放或卡住了",
+  "whyStuck": "無法關閉",
+  "whyInappropriate": "內容不當",
+  "whyMisleading": "有誤導性",
+  "whyOther": "其他",
+  "send": "傳送",
   "reported": "謝謝。我們會查看。"
  }
 };

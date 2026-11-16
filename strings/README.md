@@ -10,6 +10,7 @@ Everything the ad player itself says, one file per language. `en.json` is the or
 | `keepPlaying` | On the end card of a playable that may be played on past its time (`keepPlaying` in the catalogue) |
 | `playFree`, `get`, `preorder`, `preregister` | The store button: a free game; a paid one (never a price); not out yet, on the App Store; not out yet, on Google Play |
 | `signUp`, `playtest`, `wishlist`, `learnMore` | The button of a game with a page of its own and not on the player's store (`web.label` in the catalogue): a sign-up, a playtest, a wishlist, or anything else |
+| `whyBroken`, `whyStuck`, `whyInappropriate`, `whyMisleading`, `whyOther`, `send` | Once "Report this ad" is pressed: what's wrong with it, one to be picked (it didn't play or froze; it couldn't be closed; it's inappropriate; it's misleading; something else), and the button that sends the report |
 | `about`, `network`, `chosen`, `reportAsk`, `report`, `reported` | The ⓘ beside the ad's label, and its panel: the button's name for screen readers; whose ad this is ("Indie Ad Network" stays as it is in every language); what it was chosen by; the box for a few words; the report button; the thanks |
 | `seeMore` | In the ⓘ's panel, where the network has a page of its games: the link to it, under the words about whose ad this is |
 | `loading` | While a playable's page arrives |

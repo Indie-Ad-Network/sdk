@@ -26,5 +26,11 @@
   "seeMore": "이 네트워크의 인디 게임 더 보기",
   "reportAsk": "이 광고에 어떤 문제가 있나요? (선택 사항)",
   "report": "이 광고 신고",
+  "whyBroken": "재생되지 않거나 멈췄어요",
+  "whyStuck": "닫을 수 없었어요",
+  "whyInappropriate": "부적절해요",
+  "whyMisleading": "오해의 소지가 있어요",
+  "whyOther": "기타",
+  "send": "보내기",
   "reported": "감사합니다. 확인해 보겠습니다."
 }

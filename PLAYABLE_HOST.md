@@ -17,7 +17,7 @@ runtime does the playable's side of everything here.
 - One self-contained HTML file: scripts, pictures, sound and fonts all inline. It makes no
   network requests. Under 5 MB is the aim; 8 MB is the most the network's admin accepts.
 - Written to MRAID 2/3: it expects a global `mraid` object to exist before its own scripts run.
-- It draws no close button, countdown, or end card of its own. The host draws those.
+- It draws no close button or countdown of its own, and usually no end card: the host draws those. One that has an end card and a store button of its own (`mraid.open()`) is marked `ownCard`, and the host then puts no card over it.
 
 The creative's record carries, beside the file:
 
@@ -27,6 +27,7 @@ The creative's record carries, beside the file:
 | `secs` | number, 5–60 | how long it plays before its time is up |
 | `finishEarly` | boolean | a playable that ends itself before `secs` earns the reward then, not when the countdown is out (section 5) |
 | `keepPlaying` | boolean | when time is up, the player may choose to play on (section 6) |
+| `ownCard` | boolean | it has an end card and a store button of its own: the host shows no end card. When time is up the reward is in and it plays on until closed; its `mraid.close()` before then gives the reward if `finishEarly`, and after the reward closes the ad. From 0.6.2; a host before shows its own card, and `keepPlaying` has nothing to do |
 
 ### Settings from the page
 
@@ -121,7 +122,7 @@ The rest of the `mraid` object the shim provides, all fixed answers:
   first, and leaving forfeits it.
 - **Interstitial:** no reward. A close button appears after 5 seconds; the playable runs on
   until `secs` if the player stays.
-- **Time up (clock reaches `secs`), no `keepPlaying`:** the host sends `viewable: false` and
+- **Time up (clock reaches `secs`), no `keepPlaying` and no `ownCard`:** the host sends `viewable: false` and
   `volume: 0`, removes the frame, and shows its own end card (icon, name, one line, store
   button).
 

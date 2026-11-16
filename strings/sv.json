@@ -26,5 +26,11 @@
   "seeMore": "Fler indiespel från det här nätverket",
   "reportAsk": "Vad är fel med den här annonsen? (valfritt)",
   "report": "Anmäl annonsen",
+  "whyBroken": "Den spelades inte upp eller frös",
+  "whyStuck": "Jag kunde inte stänga den",
+  "whyInappropriate": "Den är olämplig",
+  "whyMisleading": "Den är vilseledande",
+  "whyOther": "Något annat",
+  "send": "Skicka",
   "reported": "Tack. Vi tittar på det."
 }

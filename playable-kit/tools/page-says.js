@@ -24,8 +24,9 @@ export function pageSays(html) {
     } catch (e) { error = 'the house-ads tag in its head isn’t JSON: ' + e.message; }
   }
   const closes = /mraid\s*(?:&&\s*mraid\s*)?\.close\(/.test(html), pauses = /viewableChange/.test(html);
+  const opens = /mraid\s*(?:&&\s*mraid\s*)?\.open\(/.test(html);   // it has a store button of its own: what one marked `ownCard` (an end card of its own) must have
   return {
-    said, error, closes, pauses, secs: said?.secs,
+    said, error, closes, pauses, opens, secs: said?.secs,
     finishEarly: said?.finishEarly === true && closes,
     keepPlaying: pauses && said?.keepPlaying !== false,
   };
