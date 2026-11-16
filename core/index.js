@@ -242,7 +242,7 @@ export function createHouseAds({ host, rating = null, catalogue, placements = {}
       if (missed) emit('cache_miss');
       const link = storeLink(app, { os, native: inApp, host, campaign: creative.campaign, creative: creative.id, placement, pt: app.own ? cat.pt : null });
       const said = words(), inWords = x => ({ ...x, line: localised(x.line, said.locale) });
-      const { granted, watchedSecs, kind } = await play({ creative: inWords(media?.src ? { ...creative, src: media.src } : creative), app: inWords(app), html: page(media), link, ctaText: cta(app, os, now(), said.t, link), reward, format, skipAfter, limit: creative.overrun ? who.placement?.maxSecs : null, muted: muted(), emit, openStore: shell.openStore, banner: shell.banner, report: r => reported(placement, creative, app, said.locale, r), words: said });
+      const { granted, watchedSecs, kind } = await play({ creative: inWords(media?.src ? { ...creative, src: media.src } : creative), app: inWords(app), html: page(media), link, ctaText: cta(app, os, now(), said.t, link), reward, format, skipAfter, picture: creative.storeButton?.[os] ?? null, limit: creative.overrun ? who.placement?.maxSecs : null, muted: muted(), emit, openStore: shell.openStore, banner: shell.banner, report: r => reported(placement, creative, app, said.locale, r), words: said });
       if (granted && kind !== 'card') history.watched(app.id);
       return { granted: granted && !interstitial, shown: true, via: 'house', creative: creative.id, app: app.id, kind, watchedSecs };
     } finally {

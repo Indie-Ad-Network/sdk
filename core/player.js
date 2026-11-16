@@ -22,6 +22,11 @@
 //             One marked `keepPlaying` is only paused under the card when its time is up, and
 //             the card offers Keep playing: for up to KEEP_SECS more, with a store button where
 //             the ✓ was, until ✕ (or that time, or the page saying it's done) ends it
+//   the end card  the game's icon, name and line, and the store button. A creative may dress it (catalogue.js): `endCard`,
+//             art for the screen's shape in place of those, fitted whole over a blur of itself; and `storeButton`, where
+//             the button is and, for the player's store, a picture of it (else the player's own words), with a pulse if
+//             asked. Where the art can't be had the card is the player's own again. A card so dressed has no banner of
+//             the store's under it, and over a video's loop the button stands alone.
 //   card      a still: the game's art, its line, the store button, for a few seconds. What shows when
 //             nothing else can, and what a video that won't play turns into
 //
@@ -82,7 +87,7 @@ button { font-family: inherit; cursor: pointer; }
 .earned { padding: 7px 12px; border: 0; border-radius: 999px; background: #fff; color: #10202f; font-weight: 800; font-size: 14px; white-space: nowrap; }
 .ring { position: relative; width: 44px; height: 44px; flex: none; padding: 0; border: 0; background: none; color: inherit; }
 .ring svg { position: absolute; top: 0; right: 0; bottom: 0; left: 0; transform: rotate(-90deg); }
-.ring circle { fill: #000a; stroke: #fff4; stroke-width: 4; }
+.ring circle { fill: #000a; stroke: #fff4; stroke-width: 4; transition: fill .15s; }
 .ring .left { fill: none; stroke: #fff; stroke-linecap: round; stroke-dasharray: ${C}; transition: stroke-dashoffset ${TICK}ms linear; }
 .ring b { position: absolute; top: 0; right: 0; bottom: 0; left: 0; display: flex; align-items: center; justify-content: center; font: 800 17px/1 system-ui, sans-serif; font-variant-numeric: tabular-nums; }
 .ring.done circle { fill: #1f9d3a; stroke: #fff; }
@@ -114,6 +119,23 @@ video.go { cursor: pointer; }
 .end button { margin-top: 8px; padding: 16px 34px; border: 0; border-radius: 999px; background: #1f6fd6; color: #fff; font-weight: 900; font-size: 19px; line-height: 1; box-shadow: 0 4px 0 #154f9c; }
 .end .more { margin-top: 0; padding: 12px 28px; border: 2px solid #fff; background: #0004; font-size: 17px; box-shadow: none; }
 .acts { display: contents; }
+/* a card dressed by its creative: its art whole, over a blur of itself; and the store button where it's asked for */
+.end img.whole { display: block; position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; border-radius: 0; box-shadow: none; background: none; }
+.end:not(.dressed) img.whole, .end:not(.dressed) > .blur { display: none; }
+.end.dressed { display: block; padding: 0; background: #000; overflow: hidden; }
+.end.dressed > img:not(.whole), .end.dressed h1, .end.dressed p, .end.dressed small { display: none; }
+.dressed .acts { position: absolute; left: 0; right: 0; bottom: calc(16px + env(safe-area-inset-bottom)); display: flex; justify-content: center; }
+.end.bare { background: none; pointer-events: none; }   /* over a video's loop: the button, and nothing else of the card's, its art neither */
+.end.bare > :not(.placed) { display: none; }
+.end .placed { position: absolute; margin: 0; padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none; pointer-events: auto; }
+.placed span { display: block; }
+.placed img, .placed b { display: block; transition: transform .08s; }
+.end .placed img { width: 100%; height: auto; border-radius: 0; background: none; box-shadow: none; }
+.placed b { padding: .85em 1em; border-radius: 999px; background: #1f6fd6; color: #fff; font-weight: 900; line-height: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; box-shadow: 0 4px 0 #154f9c; }
+.placed:active img, .placed:active b { transform: scale(.9); }   /* pressed: what's seen gives, what's touched stays its size */
+@keyframes swell { 50% { transform: scale(var(--swell)); } }
+.placed.pulse span { animation: swell var(--pace) ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .placed.pulse span { animation: none; } }
 @media (orientation: landscape) and (max-height: 500px) {   /* a phone on its side: the card's things one under another are taller than the screen, the store's banner across its foot besides. Side by side: the icon, the words, the buttons */
   .end { display: grid; grid-template-columns: auto minmax(0, 21em) auto; grid-template-areas: "icon name acts" "icon line acts" "icon studio acts"; align-content: center; column-gap: 20px; row-gap: 4px;
     text-align: start; padding: 56px calc(24px + env(safe-area-inset-right)) 16px calc(24px + env(safe-area-inset-left)); }
@@ -148,7 +170,7 @@ video.go { cursor: pointer; }
 // stands ended, over the end card or a video's own, and taken away with null.
 // Resolves { granted, watchedSecs, kind }: `kind` is what was shown in the end, 'card' if it came to that;
 // `granted` of an interstitial says only that it stayed up until it could be closed.
-export function play({ creative, app, html, link, ctaText, reward, format = 'rewarded', skipAfter = SKIP_SECS, limit = null, muted = false, emit = () => {}, openStore, banner = null, report = null, words = stringsFor('en') }) {
+export function play({ creative, app, html, link, ctaText, reward, format = 'rewarded', skipAfter = SKIP_SECS, limit = null, picture = null, muted = false, emit = () => {}, openStore, banner = null, report = null, words = stringsFor('en') }) {
   const { t } = words;   // the player's own words, in the player's language (locale.js)
   const doc = document;
   let { kind } = creative;
@@ -156,6 +178,11 @@ export function play({ creative, app, html, link, ctaText, reward, format = 'rew
   host.id = 'house-ads';
   host.style.cssText = 'position:fixed;top:0;right:0;bottom:0;left:0;z-index:2147483647';
   const icon = app.icon ? `<img src="${esc(app.icon)}" alt="">` : '';
+  // the end card as its creative dresses it: its art, and the store button where it's put, as a picture for this store or in the player's words
+  // (`picture`: the button's, for the player's store, if the creative has one)
+  const button = creative.storeButton, inWords = `<b>${esc(ctaText)}</b>`;
+  let arts = creative.endCard;   // null once its art has failed to come: the player's own card then
+  const placed = link && (arts || button) ? `<button class="placed go${button?.pulse ? ' pulse' : ''}"><span>${picture ? `<img src="${esc(picture)}" alt="${esc(ctaText)}">` : inWords}</span></button>` : '';
   root.innerHTML = `<style>${CSS}</style>
 <div class="layer ${kind}" lang="${esc(words.lang)}" dir="${words.rtl ? 'rtl' : 'ltr'}">
   <div class="bar">
@@ -167,7 +194,7 @@ export function play({ creative, app, html, link, ctaText, reward, format = 'rew
     ${link && kind === 'playable' && creative.keepPlaying ? `<button class="get go" hidden>${icon}<span>${esc(ctaText)}</span></button>` : ''}
   </div>
   <div class="stage" data-loading="${esc(t.loading)}">
-    <div class="end${app.art ? ' art' : ''}" hidden>${icon}<h1>${esc(app.name)}</h1><p>${esc(creative.line ?? app.line)}</p>${app.studioName ? `<small>${esc(app.studioName)}</small>` : ''}<div class="acts">${link ? `<button class="go">${esc(ctaText)}</button>` : ''}<button class="more" hidden>${esc(t.keepPlaying)}</button></div></div>
+    <div class="end${app.art ? ' art' : ''}" hidden>${arts ? '<div class="blur"></div><img class="whole" alt="">' : ''}${icon}<h1>${esc(app.name)}</h1><p>${esc(creative.line ?? app.line)}</p>${app.studioName ? `<small>${esc(app.studioName)}</small>` : ''}<div class="acts">${link && !placed ? `<button class="go">${esc(ctaText)}</button>` : ''}<button class="more" hidden>${esc(t.keepPlaying)}</button></div>${placed}</div>
   </div>
   ${link ? `<button class="store go" hidden>${icon}<span>${esc(app.name)}</span><em>${esc(ctaText)}</em></button>` : ''}
   <div class="ask" hidden><div><b>${esc(t.leaveTitle)}</b><span>${esc(reward ? say(t.miss, { reward }) : t.missPlain)}</span><button class="keep">${esc(t.keep)}</button><button class="leave">${esc(t.leave)}</button></div></div>
@@ -178,6 +205,27 @@ export function play({ creative, app, html, link, ctaText, reward, format = 'rew
   const $ = sel => root.querySelector(sel);
   const stage = $('.stage'), end = $('.end'), ring = $('.ring'), number = $('.ring b'), arc = $('.left');
   if (app.art) end.style.setProperty('--art', cssUrl(app.art));
+  // The card dressed for the screen as it is now, and again when it turns: the art for its shape (either stands in for the
+  // other), and the button where that shape has it. Lengths are in 1/720 of the screen's shorter side; an edge it's set
+  // against is the screen's safe one, a centre the screen's own.
+  const drawn = $('.whole'), put = $('.placed');
+  function dress() {
+    if (!$('.info').hidden) return;   // a keyboard up over the report box is no turn of the screen; it's dressed again when that's put away
+    const w = stage.clientWidth, h = stage.clientHeight, [shape, other] = w > h ? ['landscape', 'portrait'] : ['portrait', 'landscape'], unit = Math.min(w, h) / 720;
+    const art = arts && (arts[shape] || arts[other]);
+    if (art && drawn.getAttribute('src') !== art) { drawn.src = art; $('.end .blur').style.backgroundImage = cssUrl(art); }
+    end.classList.toggle('dressed', !!art);
+    if (!put) return;
+    const at = button?.[shape] ?? {}, [row, col] = (at.anchor ?? 'bottom-center').split('-'), width = (at.width ?? 360) * unit, s = put.style;
+    // along one axis: from its centre, or in from the edge it's set against; → how far it's then moved back by its own size
+    const along = (edge, start, n) => { const centred = edge === 'center' || edge === 'middle'; s[centred ? start : edge] = centred ? `calc(50% + ${n}px)` : `calc(${n}px + env(safe-area-inset-${edge}))`; return centred ? '-50%' : '0'; };
+    s.left = s.right = s.top = s.bottom = '';
+    s.transform = `translate(${along(col, 'left', (at.x ?? 0) * unit)}, ${along(row, 'top', (at.y ?? 128) * unit)})`;
+    s.width = `${width}px`; s.fontSize = `${Math.max(14, width / 9)}px`;
+  }
+  if (button?.pulse) { put?.style.setProperty('--pace', `${button.pulse.secs ?? 1}s`); put?.style.setProperty('--swell', button.pulse.scale ?? 1.05); }
+  $('.placed img')?.addEventListener('error', () => { $('.placed span').innerHTML = inWords; });   // no picture of it: the words
+  drawn?.addEventListener('error', () => { arts = null; dress(); });
 
   let total = creative.secs, elapsed = 0, shownLeft = null, granted = false, closed = false, video = null, frame = null;
   let over = false;   // a video's showing is past its playing: at its end, or left for it (an overrun video, once the reward is in)
@@ -216,10 +264,11 @@ export function play({ creative, app, html, link, ctaText, reward, format = 'rew
   }
   // the ad stands ended, on `ends`: the player's 'card'; a video's 'own' last frame, nothing of the player's over it; or a video's 'loop', the store button over it and no banner under that
   function endCard(ends = 'card') {
-    if (ends === 'card') end.hidden = false;
+    if (ends === 'card' || (ends === 'loop' && put)) end.hidden = false;   // `put`: the store button as the creative places it, which over a loop stands in the bar's place
+    end.classList.toggle('bare', ends === 'loop');
     end.style.opacity = end.style.pointerEvents = '';   // whatever a fade left it at
-    if ($('.store')) $('.store').hidden = ends !== 'loop';
-    $('.sound')?.remove(); storeBanner(ends !== 'loop');
+    if ($('.store')) $('.store').hidden = ends !== 'loop' || !!put;
+    $('.sound')?.remove(); storeBanner(ends === 'own' || (ends === 'card' && !put));   // the store's banner: under the player's own card, or a video's; never across one a creative has dressed
   }
   // the video gone, and its decoder and download with it; `video` is null first, so its last events are heard by no one
   const dropVideo = () => { const v = video; if (!v) return; video = null; v.pause(); v.removeAttribute('src'); v.load(); v.remove(); };
@@ -264,7 +313,7 @@ export function play({ creative, app, html, link, ctaText, reward, format = 'rew
   function close() {
     if (closed) return;
     closed = true; storeBanner(false);
-    clearInterval(clock); doc.removeEventListener('visibilitychange', seen); removeEventListener('message', heard); doc.removeEventListener('keydown', key, true);
+    clearInterval(clock); removeEventListener('resize', dress); doc.removeEventListener('visibilitychange', seen); removeEventListener('message', heard); doc.removeEventListener('keydown', key, true);
     dropVideo(); host.remove();
     finish({ granted, watchedSecs: secs(), kind });
   }
@@ -398,7 +447,7 @@ export function play({ creative, app, html, link, ctaText, reward, format = 'rew
     const panel = $('.info');
     if (panel.hidden === !on) return;
     panel.hidden = !on; wait('info', on);
-    if (on) { underInfo = bannered; storeBanner(false); } else if (underInfo && !closed) storeBanner(true);
+    if (on) { underInfo = bannered; storeBanner(false); } else { if (underInfo && !closed) storeBanner(true); dress(); }
   }
   function send(button) {
     const box = $('.info textarea'), message = box.value.replace(/\s+/g, ' ').trim().slice(0, WORDS_MAX);
@@ -422,8 +471,9 @@ export function play({ creative, app, html, link, ctaText, reward, format = 'rew
   });
   doc.addEventListener('keydown', key, true);
   doc.addEventListener('visibilitychange', seen);
+  if (arts || put) addEventListener('resize', dress);
 
   doc.body.append(host);
-  draw(); seen();
+  draw(); seen(); dress();
   return result;
 }
