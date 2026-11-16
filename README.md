@@ -140,7 +140,9 @@ A video that ends on a card of its own (one already cut for another network) is 
 
 Each goes to `onEvent` as `{ event, host, placement, creative, app, kind, t, … }`:
 
-`offer` · `show` · `q25` `q50` `q75` `q100` (video) · `first_touch` `step` `complete` (playable) · `reward` · `exit_kept` `exit_early` · `keep_playing` (playable) · `store_banner` · `store_open` · `fail`
+`offer` · `show` · `q25` `q50` `q75` `q100` (video) · `first_touch` `step` `complete` (playable) · `reward` · `exit_kept` `exit_early` · `keep_playing` (playable) · `store_banner` · `store_open` · `skip` (a video shown in a placement shorter than it, left for its end once the reward was in) · `paid` (the slot went to the paid network) · `fail`
+
+`store_open` says what was tapped, `from`: `creative` (the video itself, or a playable's own button), `button` (the player's store button beside the ad) or `card` (the end card's).
 
 `report` is a player's report of the ad, from the ⓘ beside its "Ad" label, with `message` (what they typed, or nothing). With an ingest it also goes to the dashboard's Reports, with the ad, the placement, the language and this release.
 

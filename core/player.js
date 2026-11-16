@@ -366,7 +366,7 @@ export function play({ creative, app, html, link, ctaText, reward, format = 'rew
     const from = when => when === 'end' ? Infinity : when, pill = $('.store'), buttonFrom = from(tap.button ?? 0), wholeFrom = ends === 'own' ? 0 : from(tap.whole);
     const whole = () => over || video.currentTime >= wholeFrom;
     let go = () => {};   // the video shown as something to tap, once it is
-    if (link && wholeFrom != null) { go = () => video.classList.toggle('go', whole()); video.addEventListener('click', () => { if (whole()) store(); }); }
+    if (link && wholeFrom != null) { go = () => video.classList.toggle('go', whole()); video.addEventListener('click', () => { if (whole()) store('creative'); }); }
     // Past its playing: the reward if it isn't in, and what it ends on: the card, its own last frame, or its loop
     const again = () => { video.muted = true; video.currentTime = loop.from; video.play().catch(() => broken('loop')); };
     const videoOver = () => {
@@ -374,7 +374,7 @@ export function play({ creative, app, html, link, ctaText, reward, format = 'rew
       if (loop) again(); else video.pause();
       go(); endCard(ends);
     };
-    toEnd = () => { if (!rewarded || over || ends === 'own') return false; videoOver(); return true; };   // an interstitial's ✕ is out; and one's own card is at its last frame, not here
+    toEnd = () => { if (!rewarded || over || ends === 'own') return false; emit('skip', { secs: secs() }); videoOver(); return true; };   // an interstitial's ✕ is out; and one's own card is at its last frame, not here
     on('ended', () => { if (over) { if (loop) again(); return; } emit('q100'); elapsed = total; videoOver(); });
     on('error', () => broken('video'));
     let at = -1, still = 0;
@@ -414,7 +414,7 @@ export function play({ creative, app, html, link, ctaText, reward, format = 'rew
   function heard(e) {
     if (!frame || e.source !== frame.contentWindow || overtime === 'resting') return;   // paused under the card, it has nothing to say
     const type = e.data?.houseAds;
-    if (type === 'open') store();                                   // its own URL is ignored: the catalogue's link, never the playable's
+    if (type === 'open') store('creative');                                 // its own URL is ignored: the catalogue's link, never the playable's
     else if (type === 'touch') emit('first_touch', { secs: secs() });
     else if (type === 'step') { const name = e.data.name; if (STEP_NAME.test(name) && !steps.has(name) && steps.size < STEPS_MAX) { steps.add(name); emit(STEP, { step: name, secs: secs() }); } }   // once a showing each
     else if (type === 'error') { const message = String(e.data.message).slice(0, 200); if (!errors.has(message) && errors.size < ERRORS_MAX) { errors.add(message); emit('fail', { why: 'playable', message }); } }   // each once, and few
@@ -427,9 +427,10 @@ export function play({ creative, app, html, link, ctaText, reward, format = 'rew
   addEventListener('message', heard);
 
   // ---- the buttons ----
-  async function store() {
+  // `tapped`: what was (wire.js FROM), sent as the event's `from`
+  async function store(tapped) {
     if (!link || waits.has('store')) return;
-    emit('store_open', { via: link.via });
+    emit('store_open', { via: link.via, from: tapped });
     const under = bannered; storeBanner(false);   // the sheet is the whole store: no banner beside it
     wait('store', true);
     try { await openStore(link); } catch { /* the store didn't open: carry on */ }
@@ -464,7 +465,7 @@ export function play({ creative, app, html, link, ctaText, reward, format = 'rew
     else if (b.matches('.shut')) info(false);
     else if (b.matches('.send')) send(b);
     else if (b.matches('.x, .ring, .earned')) ask();   // any way out: free once the reward is earned, asked about before
-    else if (b.matches('.go')) store();
+    else if (b.matches('.go')) store(b.closest('.end') ? 'card' : 'button');
     else if (b.matches('.more')) keepPlaying();
     else if (b.matches('.keep')) { $('.ask').hidden = true; wait('ask', false); emit('exit_kept', { secs: secs() }); }
     else if (b.matches('.leave')) { emit('exit_early', { secs: secs() }); close(); }

@@ -34,6 +34,7 @@ A catalogue can as well be a folder of static files with no server behind it: `t
 
 - `event` is one of `EVENTS` in `core/wire.js`, or `step` with a playable's own name for somewhere in it (`step`, at most 32 characters of letters, digits, `.`, `_` and `-`; a playable has at most 12).
 - `kind` is `video`, `playable` or `card`; `os` is `ios` or `android`.
+- A `store_open` says what was tapped, `from`: one of `FROM` in `core/wire.js`. `paid` has a placement and nothing else: the slot went to the game's paid network.
 - Up to 50 events a batch. Nothing in it is about the player: no device or advertising id, no install or session id.
 
 Answer `204`. On `429` or a `5xx` the batch is kept and sent again later; any other refusal and it's dropped. As a page closes, what's waiting goes by beacon, and no answer is read.

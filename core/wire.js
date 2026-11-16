@@ -3,7 +3,11 @@
 // the server's rollup, which counts (SERVER.md). A new event is added here, to the server's table
 // (a column of the same name; its tests check they agree), and nowhere else.
 //
-//   { v: VERSION, host, os, events: [{ event, placement, creative, app, kind, secs? }] }
+//   { v: VERSION, host, os, events: [{ event, placement, creative, app, kind, secs?, from? }] }
+//
+// `from`, of a store_open: what was tapped (FROM), which the server counts beside the store_open itself, a column to
+// each but the first. Since 0.5.0, with `skip` (a video left for its end once the reward was in: not an interstitial's ✕) and `paid`; a server from before leaves
+// out what it doesn't know, and an SDK from before doesn't send them.
 //
 // One more goes the same way and isn't a column: STEP, a playable's own name for somewhere in it
 // that a showing reached ({ event: 'step', step: 'board2', creative, app, secs }), counted in a
@@ -18,8 +22,9 @@
 
 export const VERSION = 1;
 export const SDK = '0.3.5';   // this release, as package.json has it (test/version.test.mjs): said with a report of an ad
-export const EVENTS = ['offer', 'show', 'cache_miss', 'q25', 'q50', 'q75', 'q100', 'first_touch', 'complete', 'reward', 'exit_kept', 'exit_early', 'store_open', 'fail', 'keep_playing', 'store_banner'];
+export const EVENTS = ['offer', 'show', 'cache_miss', 'q25', 'q50', 'q75', 'q100', 'first_touch', 'complete', 'reward', 'exit_kept', 'exit_early', 'store_open', 'fail', 'keep_playing', 'store_banner', 'skip', 'paid'];
 export const KINDS = ['video', 'playable', 'card'];
 export const OS = ['ios', 'android'];
+export const FROM = ['creative', 'button', 'card'];   // a store_open's: the ad itself (a video tapped, a playable's own button), the player's store button beside it, or the end card's
 export const STEP = 'step', STEP_NAME = /^[\w.-]{1,32}$/, STEPS_MAX = 12;   // a step's name, and how many a playable may have
-export const FIELDS = ['event', 'placement', 'creative', 'app', 'kind', 'secs', 'step'];   // of an event: all that's sent of it
+export const FIELDS = ['event', 'placement', 'creative', 'app', 'kind', 'secs', 'step', 'from'];   // of an event: all that's sent of it

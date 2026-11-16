@@ -184,6 +184,10 @@ test("show({ paid }): the paid network's slot is the paid network's, and says so
   assert.deepEqual([out.granted, out.shown, out.via, out.creative, asked], [true, true, 'paid', null, 1]);
   const left = await ads({ rand: () => 0.5 }).show('tile', { paid: async () => ({ granted: false }) });
   assert.deepEqual([left.granted, left.via], [false, 'paid'], 'left early: its own word');
+  // and it's counted: `paid`, of the placement, with no creative of ours
+  const heard = [];
+  await ads({ rand: () => 0.5, onEvent: e => heard.push([e.event, e.placement, e.creative]) }).show('tile', { paid });
+  assert.deepEqual(heard, [['paid', 'tile', null]]);
   assert.equal((await ads({ rand: () => 0.5 }).show('short', { paid })).via, 'paid', 'nothing of the house ready here');
 });
 

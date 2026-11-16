@@ -221,7 +221,7 @@ export function createHouseAds({ host, rating = null, catalogue, placements = {}
         if (whose === 'owed') among = new Set(asked.owed);   // the game owed, not merely likelier
         else if (!whose) {
           const out = await Promise.resolve().then(paid).catch(err => { console.warn(`[house-ads] paid: ${err?.message ?? err}`); return null; });
-          if (out) return { ...nothing(!!out.granted && !interstitial), shown: true, via: 'paid' };
+          if (out) { tell('paid', placement); return { ...nothing(!!out.granted && !interstitial), shown: true, via: 'paid' }; }   // counted, as a slot the house didn't take
         }   // it had none: a house ad after all
       }
       const [cat, cache] = await Promise.all([loaded, cached]), who = { ...await audience(cat), placement: placements[placement], among };
