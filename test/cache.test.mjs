@@ -94,3 +94,43 @@ test('a fill with nothing to do does not stand in for every fill after it', asyn
     assert.deepEqual(await first, ['d']);
   } finally { if (had) Object.defineProperty(globalThis, 'indexedDB', had); else delete globalThis.indexedDB; }
 });
+
+test("a creative's other files are kept beside it: fetched with it, again when the catalogue names another, gone when it goes; one that can't be had costs nothing", async () => {
+  const had = Object.getOwnPropertyDescriptor(globalThis, 'indexedDB');
+  Object.defineProperty(globalThis, 'indexedDB', { configurable: true, value: fakeIndexedDB() });
+  try {
+    const asked = [], gone = new Set(['https://x/none.png']);
+    const fetch = async url => { asked.push(url); return gone.has(url) ? { ok: false, status: 404 } : { ok: true, blob: async () => new Blob([/\.(jpg|png)$/.test(url) ? url : new ArrayBuffer(MB)]) }; };
+    const more = c => Object.entries(c.art ?? {}).map(([field, url]) => [`art.${field}`, url]);
+    const cache = await openCache({ fetch, more }), seen = async url => (await (await globalThis.fetch(url)).text());
+    const a = { ...c('a', 1), art: { tall: 'https://x/tall.jpg', button: 'https://x/none.png' } }, b = c('b', 1);
+    assert.deepEqual(await cache.fill({ creatives: [a, b], wanted: [a, b] }), ['a', 'b']);
+    assert.deepEqual(asked, ['https://x/a', 'https://x/b', 'https://x/tall.jpg', 'https://x/none.png'], 'what it plays first, then what dresses it');
+    assert.ok(cache.has(a), 'ready, though one of its pictures never came');
+    const media = await cache.media(a);
+    assert.deepEqual(Object.keys(media.files), ['art.tall']);
+    assert.equal(await seen(media.files['art.tall']), 'https://x/tall.jpg');
+    media.release();
+    assert.deepEqual((await cache.media(b)).files, {});
+    // the picture the server hasn't got isn't asked for again and again, nor anything that's here
+    asked.length = 0; gone.clear();
+    await cache.fill({ creatives: [a, b], wanted: [a, b] });
+    assert.deepEqual(asked, []);
+    // other art under the same creative: fetched, and the old not shown for it
+    const a2 = { ...a, art: { ...a.art, tall: 'https://x/taller.jpg' } };
+    asked.length = 0;
+    assert.deepEqual((await cache.media(a2)).files, {}, 'not the art the catalogue no longer names');
+    await cache.fill({ creatives: [a2, b], wanted: [a2, b] });
+    assert.deepEqual(asked, ['https://x/taller.jpg']);
+    assert.equal(await seen((await cache.media(a2)).files['art.tall']), 'https://x/taller.jpg');
+    // a file it no longer names at all goes, and its bytes with it
+    const a3 = { ...a2, art: { tall: a2.art.tall } };
+    await cache.fill({ creatives: [a3, b], wanted: [a3, b] });
+    assert.deepEqual(Object.keys((await cache.media(a3)).files), ['art.tall']);
+    // out of the catalogue and back: all of it again
+    await cache.fill({ creatives: [b], wanted: [b] });
+    asked.length = 0;
+    await cache.fill({ creatives: [a2, b], wanted: [a2, b] });
+    assert.deepEqual(asked, ['https://x/a', 'https://x/taller.jpg']);
+  } finally { if (had) Object.defineProperty(globalThis, 'indexedDB', had); else delete globalThis.indexedDB; }
+});

@@ -9,12 +9,17 @@
 // view all have. Where there isn't one that works (some private modes), openCache() gives a
 // source of the same shape that keeps nothing and plays straight from the catalogue's URLs.
 //
+// A creative may name more files than the one it plays (the art of its end card, a picture of its store button:
+// `more(creative)` says which, [[field, URL]]). They're kept beside it and go when it goes; one that isn't here is
+// no reason an ad isn't ready: the player asks the server for it, and does without where there's no answer.
+//
 // A file is the same file by its sha256 when the catalogue gives one (so moving it to another
 // URL costs no download), and by its URL when it doesn't.
 
 const DB = 'house-ads', META = 'meta', BLOBS = 'blobs';
 const BUDGET = 60e6;           // bytes kept, at most
 const GUESS = 8e6;            // a creative whose size the catalogue doesn't say: a 30 s video's worth
+const MORE_MAX = 8e6;         // one of a creative's other files, at most: a picture
 
 export const sameFile = (entry, c) => c.sha256 ? entry.sha256 === c.sha256 : entry.src === c.src;
 
@@ -73,8 +78,8 @@ const streaming = fetch => ({
   },
 });
 
-// `keep: false` for the streaming source outright.
-export async function openCache({ fetch = globalThis.fetch?.bind(globalThis), now = Date.now, keep = true } = {}) {
+// `keep: false` for the streaming source outright. `more(creative)`: its other files to keep, [[field, URL]].
+export async function openCache({ fetch = globalThis.fetch?.bind(globalThis), now = Date.now, keep = true, more = () => [] } = {}) {
   let db, meta;
   try {
     if (!keep) throw new Error('not kept');
@@ -90,22 +95,52 @@ export async function openCache({ fetch = globalThis.fetch?.bind(globalThis), no
     tx.oncomplete = () => ok(); tx.onerror = tx.onabort = () => no(tx.error);
     work(tx.objectStore(META), tx.objectStore(BLOBS));
   });
-  const remove = id => { meta.delete(id); return write((m, b) => { m.delete(id); b.delete(id); }); };
+  const beside = (id, field) => `${id} + ${field}`;   // where one of a creative's other files is kept
+  const remove = id => { const fields = Object.keys(meta.get(id)?.more ?? {}); meta.delete(id); return write((m, b) => { m.delete(id); b.delete(id); for (const f of fields) b.delete(beside(id, f)); }); };
+  const entry = c => { const e = meta.get(c.id); return e && sameFile(e, c) ? e : null; };   // what's kept of this creative, if it's this file
+  const blobAt = key => done(db.transaction(BLOBS).objectStore(BLOBS).get(key));
   const refused = new Set();   // files that weren't what the catalogue said, this session: not fetched again and again
   const fileKey = c => `${c.id} ${c.sha256 ?? c.src}`;
+  // A creative's other files, brought to what the catalogue names now: e.more is { field: { src, bytes } }. One is the
+  // same file by its URL (the catalogue gives these no sha256: other art is another URL). What's no longer named goes;
+  // what isn't here is fetched, while there's room; one the server hasn't got, or that's no picture's size, isn't asked
+  // for again this session, and one that just didn't arrive is left for the next fill.
+  async function fillMore(c) {
+    const named = new Map(more(c));
+    for (const field of [...Object.keys(entry(c)?.more ?? {}), ...named.keys()]) {
+      const e = entry(c), had = e?.more?.[field], src = named.get(field), key = `${c.id} ${field} ${src}`;
+      if (!e || had?.src === src || refused.has(key)) continue;
+      const { [field]: gone, ...rest } = e.more ?? {};
+      try {
+        let blob = null;
+        if (src) {
+          if ([...meta.values()].reduce((sum, x) => sum + x.bytes, 0) >= BUDGET) continue;
+          blob = await download({ id: `${c.id} ${field}`, src }, fetch);
+          if (blob.size > MORE_MAX) throw new Error(`${c.id} ${field}: ${blob.size} bytes`);
+        }
+        const next = { ...e, more: blob ? { ...rest, [field]: { src, bytes: blob.size } } : rest, bytes: e.bytes - (had?.bytes ?? 0) + (blob?.size ?? 0) };
+        await write((m, b) => { if (blob) b.put(blob, beside(c.id, field)); else b.delete(beside(c.id, field)); m.put(next); });
+        meta.set(c.id, next);
+      } catch (err) { if (/HTTP 4|bytes/.test(err.message)) refused.add(key); console.warn(`[house-ads] not cached: ${err.message}`); }
+    }
+  }
   let filling = null;
 
   return {
     // is this creative's file here? Synchronous: the pick asks it of every creative
-    has: c => { const e = meta.get(c.id); return !!e && sameFile(e, c); },
+    has: c => !!entry(c),
     // its file to play from, and it counts as just used; null if it has gone (the system may clear storage)
     async media(c) {
-      const e = meta.get(c.id);
+      const e = entry(c);
       try {
-        const blob = e && sameFile(e, c) ? await done(db.transaction(BLOBS).objectStore(BLOBS).get(c.id)) : null;
-        if (!blob) { if (e) await remove(c.id); return null; }
+        // with it, its other files that are here and are the ones the catalogue names: all read at once, the ad waiting on them
+        const here = more(c).filter(([field, src]) => e?.more?.[field]?.src === src);
+        const [blob, ...others] = e ? await Promise.all([blobAt(c.id), ...here.map(([field]) => blobAt(beside(c.id, field)).catch(() => null))]) : [];
+        if (!blob) { if (meta.has(c.id)) await remove(c.id); return null; }
         e.at = now(); write(m => m.put(e)).catch(() => {});
-        return await fromBlob(c, blob);
+        const main = await fromBlob(c, blob), files = {};   // { field: a URL to show it from }
+        here.forEach(([field], i) => { if (others[i]) files[field] = URL.createObjectURL(others[i]); });
+        return { ...main, files, release() { main.release(); Object.values(files).forEach(u => URL.revokeObjectURL(u)); } };
       } catch { return null; }
     },
     // Bring the cache to what plan() says, one download at a time. A fill under way is the
@@ -124,6 +159,7 @@ export async function openCache({ fetch = globalThis.fetch?.bind(globalThis), no
             meta.set(c.id, e); fetched.push(c.id);
           } catch (err) { if (/bytes, not|sha256/.test(err.message)) refused.add(fileKey(c)); console.warn(`[house-ads] not cached: ${err.message}`); }
         }
+        for (const c of wanted) await fillMore(c);   // of those just fetched, and of those here whose art has changed
         return fetched;
       })().finally(() => { filling = null; });
     },

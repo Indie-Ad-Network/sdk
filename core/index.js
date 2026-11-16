@@ -82,7 +82,7 @@
 // `reports`: where a player's report of an ad is sent (the ingest's /flag); left out, /flag beside
 // `ingest`. A game that counts nothing from its own development builds (no `ingest` there) can
 // still name it, and see its test reports arrive.
-import { loadCatalogue, validate, within, secure } from './catalogue.js';
+import { loadCatalogue, validate, within, secure, filesOf } from './catalogue.js';
 import { pick, eligible, cardFor, wanted } from './pick.js';
 import { mix as mixOf, believed, shareOf, turn, settings as settingsOf } from './exchange.js';
 import { storeLink, cta } from './storeLinks.js';
@@ -135,7 +135,9 @@ export function createHouseAds({ host, rating = null, catalogue, placements = {}
   const key = signedBy ?? (typeof fallback?.signedBy === 'string' && fallback.apps ? fallback.signedBy : null);
   const loaded = catalogue?.apps ? Promise.resolve(validate(catalogue)) : loadCatalogue({ url: String(url), fallback: fallback?.apps ? fallback : fallback && String(fallback), fetch, storage, signedBy: key });
   loaded.then(cat => cat.dropped.forEach(d => console.warn(`[house-ads] dropped ${d}`)));
-  const cached = openCache({ fetch, now, keep });
+  // beside what a creative plays: what dresses its end card, with the button's picture for this store and not the other's
+  const dressing = c => filesOf(c).filter(([field, url]) => url && (field.startsWith('endCard.') || field === `storeButton.${os}`));
+  const cached = openCache({ fetch, now, keep, more: dressing });
   let showing = false;
   const words = () => stringsFor(typeof lang === 'function' ? lang() : lang, globalThis.navigator?.languages ?? []);
 
@@ -242,7 +244,10 @@ export function createHouseAds({ host, rating = null, catalogue, placements = {}
       if (missed) emit('cache_miss');
       const link = storeLink(app, { os, native: inApp, host, campaign: creative.campaign, creative: creative.id, placement, pt: app.own ? cat.pt : null });
       const said = words(), inWords = x => ({ ...x, line: localised(x.line, said.locale) });
-      const { granted, watchedSecs, kind } = await play({ creative: inWords(media?.src ? { ...creative, src: media.src } : creative), app: inWords(app), html: page(media), link, ctaText: cta(app, os, now(), said.t, link), reward, format, skipAfter, picture: creative.storeButton?.[os] ?? null, limit: creative.overrun ? who.placement?.maxSecs : null, muted: muted(), emit, openStore: shell.openStore, banner: shell.banner, report: r => reported(placement, creative, app, said.locale, r), words: said });
+      // as it's on the device: the file it plays, and what dresses its card, each from the cache where it's there
+      const here = (field, url) => media?.files?.[field] ?? url;
+      const local = { ...creative, ...(media?.src && { src: media.src }), ...(creative.endCard && { endCard: Object.fromEntries(Object.entries(creative.endCard).map(([shape, url]) => [shape, here(`endCard.${shape}`, url)])) }) };
+      const { granted, watchedSecs, kind } = await play({ creative: inWords(local), app: inWords(app), html: page(media), link, ctaText: cta(app, os, now(), said.t, link), reward, format, skipAfter, picture: here(`storeButton.${os}`, creative.storeButton?.[os] ?? null), limit: creative.overrun ? who.placement?.maxSecs : null, muted: muted(), emit, openStore: shell.openStore, banner: shell.banner, report: r => reported(placement, creative, app, said.locale, r), words: said });
       if (granted && kind !== 'card') history.watched(app.id);
       return { granted: granted && !interstitial, shown: true, via: 'house', creative: creative.id, app: app.id, kind, watchedSecs };
     } finally {
