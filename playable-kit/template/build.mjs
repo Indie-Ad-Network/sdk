@@ -1,5 +1,5 @@
 // Builds dist/playable.html: one self-contained page. `node build.mjs`
-// KIT is where house-ads' playable-kit lies from this file: change it when this folder is copied into a game.
+// KIT is where indie-ads' playable-kit lies from this file: change it when this folder is copied into a game.
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';

@@ -1,9 +1,9 @@
 {
   "name": "com.indieadnetwork.sdk",
-  "version": "0.5.1",
+  "version": "0.6.0",
   "license": "MIT",
-  "displayName": "House Ads",
-  "description": "Rewarded and interstitial ads for our own and our friends' games (videos and MRAID playables), played in the package's own web view (the system's, on iOS and Android), with a say in how they're mixed with a paid ad network's. The Unity side of the house-ads package.",
+  "displayName": "Indie Ads",
+  "description": "Rewarded and interstitial ads for our own and our friends' games (videos and MRAID playables), played in the package's own web view (the system's, on iOS and Android), with a say in how they're mixed with a paid ad network's. The Unity side of the indie-ads package.",
   "unity": "2021.3",
   "author": {
     "name": "The Voxel Agents"

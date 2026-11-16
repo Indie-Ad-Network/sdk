@@ -1,8 +1,0 @@
-{
-	"name": "HouseAdsNetwork.Editor",
-	"rootNamespace": "HouseAdsNetwork",
-	"references": [ "HouseAdsNetwork" ],
-	"includePlatforms": [ "Editor" ],
-	"excludePlatforms": [],
-	"autoReferenced": false
-}

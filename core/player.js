@@ -175,7 +175,7 @@ export function play({ creative, app, html, link, ctaText, reward, format = 'rew
   const doc = document;
   let { kind } = creative;
   const host = doc.createElement('div'), root = host.attachShadow({ mode: 'open' });
-  host.id = 'house-ads';
+  host.id = 'indie-ads';
   host.style.cssText = 'position:fixed;top:0;right:0;bottom:0;left:0;z-index:2147483647';
   const icon = app.icon ? `<img src="${esc(app.icon)}" alt="">` : '';
   // the end card as its creative dresses it: its art, and the store button where it's put, as a picture for this store or in the player's words
@@ -273,6 +273,7 @@ export function play({ creative, app, html, link, ctaText, reward, format = 'rew
   // the video gone, and its decoder and download with it; `video` is null first, so its last events are heard by no one
   const dropVideo = () => { const v = video; if (!v) return; video = null; v.pause(); v.removeAttribute('src'); v.load(); v.remove(); };
   // what the playable is told (mraidShim.js hears it): whether it's seen, and how loud it may be
+  // `houseAds` in what's said to a playable and heard from it is the SDK's name before 0.6.0, kept: playables already made say it (mraidShim.js)
   const toFrame = (type, value) => frame?.contentWindow?.postMessage({ houseAds: type, value }, '*');
   // A playable's time is up, or it has said it's done: it stops, and the end card takes its place.
   // Told first, for one that listens (not viewable, no sound); then taken away, frame and all,

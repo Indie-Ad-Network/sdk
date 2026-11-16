@@ -141,9 +141,10 @@ export const within = (promise, ms) => new Promise(ok => {
 // one shipped as an object) the server is waited on for `patience` ms and no longer: an ad asked
 // for on a network that answers nothing mustn't stand waiting on it. What the server then sends
 // is kept all the same, for next time. Never rejects: at worst, an empty catalogue.
-const KEY = 'houseAds.catalogue';
+import { OURS } from './keys.js';
+const KEY = OURS + 'catalogue';
 export async function loadCatalogue({ url, fallback = null, fetch, storage, signedBy: key = null, timeout = 4000, patience = 1500 }) {
-  const warn = why => { console.warn(`[house-ads] ${why}`); return null; };
+  const warn = why => { console.warn(`[indie-ads] ${why}`); return null; };
   // `sign`: the server's, which must be the network's if the game knows its key; a file shipped with the game is the game's own
   const get = async (from, sign) => {
     if (!secure(from)) return warn(`the catalogue isn't asked for over http (${from})`);

@@ -4,11 +4,11 @@ using UnityEngine;
 using System.Runtime.InteropServices;
 #endif
 
-namespace HouseAdsNetwork
+namespace IndieAdNetwork
 {
 	/// <summary>
 	/// A web view laid over the game: the system's own (WKWebView on iOS, android.webkit.WebView on Android), with
-	/// nothing of a third party's in between. It's what house ads play in, and plain enough for a game's other
+	/// nothing of a third party's in between. It's what the ads play in, and plain enough for a game's other
 	/// pages (help, news): a URL or HTML in, a frame, and what the page says back.
 	///
 	///   NativeWebView view = NativeWebView.Create();          // null where there's no web view: the Editor, other platforms
@@ -25,7 +25,7 @@ namespace HouseAdsNetwork
 	/// It starts hidden, full screen and transparent where the page is. Links other than http(s) (mailto:, a store's)
 	/// are handed to the system.
 	/// </summary>
-	public class NativeWebView : MonoBehaviour, IHouseAdsWebView
+	public class NativeWebView : MonoBehaviour, IIndieAdsWebView
 	{
 		public static bool IsSupported
 		{
@@ -48,7 +48,7 @@ namespace HouseAdsNetwork
 		public event Action Lost;
 
 		/// Whether a view made from now on writes its page's console to the device log (logcat; iOS never does).
-		/// Off by default: a released game leaves no logs. HouseAds.Init sets it from HouseAdsConfig.log.
+		/// Off by default: a released game leaves no logs. IndieAds.Init sets it from IndieAdsConfig.log.
 		public static bool LogConsole;
 
 		static int count;

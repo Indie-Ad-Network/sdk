@@ -18,10 +18,10 @@
 //   { v: VERSION, sdk: SDK, host, os, lang, placement, creative, app, kind, secs, message, test? }
 //
 // kept as it is said, for the dashboard: the one thing sent that a player typed. `test`: from a
-// developer's test showing (createHouseAds test()), kept apart from players' reports on the dashboard.
+// developer's test showing (createIndieAds test()), kept apart from players' reports on the dashboard.
 
 export const VERSION = 1;
-export const SDK = '0.5.1';   // this release, as package.json has it (test/version.test.mjs): said with a report of an ad
+export const SDK = '0.6.0';   // this release, as package.json has it (test/version.test.mjs): said with a report of an ad
 export const EVENTS = ['offer', 'show', 'cache_miss', 'q25', 'q50', 'q75', 'q100', 'first_touch', 'complete', 'reward', 'exit_kept', 'exit_early', 'store_open', 'fail', 'keep_playing', 'store_banner', 'skip', 'paid'];
 export const KINDS = ['video', 'playable', 'card'];
 export const OS = ['ios', 'android'];

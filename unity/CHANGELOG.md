@@ -1,10 +1,27 @@
 # Changelog
 
-Every release of the Indie Ad Network SDK (called house-ads until 0.5.0, and still so in its code): the whole repository, not only the Unity package. It lives here because this is where Unity's Package Manager looks for it.
+Every release of the Indie Ad Network SDK (called house-ads until 0.5.0, and HouseAds in its code until 0.6.0): the whole repository, not only the Unity package. It lives here because this is where Unity's Package Manager looks for it.
 
 The repository has one version, [Semantic Versioning](https://semver.org), and a release is the tag `vX.Y.Z` (a Unity game takes it as `…/sdk.git?path=/unity#vX.Y.Z`). Before 1.0.0 a minor version may break a game that takes it, and a patch may not. `npm test` fails if the packages' versions differ or the newest entry here isn't that version.
 
 Two numbers are not this one, and change only when a format does: `VERSION` in `core/wire.js` (what games send the ingest) and the catalogue's `version`. Games already released go on sending and reading the old ones.
+
+## [0.6.0] - 2026-11-16
+
+The code takes the network's name: `HouseAds` is `IndieAds`. Nothing an ad does has changed, and the old names still work in this release, with a warning, so a game can take it first and rename after. They go in the release after this one. 0.5.1 was never tagged, so what it lists below comes with this release too.
+
+### To take it
+- **A Unity game renames when it likes**: `using HouseAdsNetwork;` becomes `using IndieAdNetwork;`, and `HouseAds`, `HouseAdsConfig`, `HouseAdPlacement`, `HouseAdFormat`, `HouseAdResult`, `HouseAdDemand`, `HouseAdEvent` and `IHouseAdsWebView` each have `IndieAd` where they had `HouseAd`. Until it does, the old names compile as they are and Unity says of each that it's obsolete. Three things have no old name: a variable declared as `HouseAdFormat` (the values `HouseAdFormat.Rewarded` and `.Interstitial` still work), `NativeWebView` and `HouseAdsNative` used by name, and an assembly definition that names `HouseAdsNetwork` rather than pointing at it (it's `IndieAdNetwork` now).
+- **`Resources/house-ads-catalogue.json` can stay**: the package looks for `indie-ads-catalogue.json` first and the old name after.
+- **A Capacitor app changes its dependency's name** to `indie-ads-capacitor` in `package.json` (the root package is `indie-ads`) and runs `npx cap sync`: the plugin is `IndieAds`. `createHouseAds` is still exported beside `createIndieAds`.
+- **A minified Android build keeps `com.indieadnetwork.sdk.**`**, as before: the package of the Java hasn't changed.
+
+### Changed
+- **Every name a game types has `IndieAds` for `HouseAds`**: `createIndieAds`, and in Unity the namespace `IndieAdNetwork` with `IndieAds`, `IndieAdsConfig` and the rest. The logs are `[IndieAds]` in Unity and `[indie-ads]` on the web.
+
+### Not changed
+- **What's kept on a player's device keeps its names** (`houseAds.…` in storage, the `house-ads` database), so a player's history and downloaded ads carry over an update.
+- **What a playable says and hears keeps its names**: `window.houseAds.step()`, the `houseAds` messages and the `<meta name="house-ads">` tag. Playables already made, and games already released, go on as they are.
 
 ## [0.5.1] - 2026-11-16
 

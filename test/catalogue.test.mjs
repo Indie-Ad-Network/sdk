@@ -6,14 +6,14 @@ import { withShim, shim, LOCKED } from '../core/mraidShim.js';
 import { openHistory, memoryStorage as memory } from '../core/history.js';
 import { DAY } from '../core/pick.js';
 
-const BASE = 'https://example.com/house-ads/catalogue.json';
+const BASE = 'https://example.com/indie-ads/catalogue.json';
 const good = { apps: { tcb: { name: 'G1', icon: 'icons/tcb.jpg', ios: { id: 1 } } }, creatives: [{ id: 'a', app: 'tcb', kind: 'video', secs: 15, src: 'creatives/a.mp4', poster: 'creatives/a.jpg' }] };
 
 test("paths are read against the catalogue's own URL", () => {
   const cat = validate(good, BASE);
-  assert.equal(cat.creatives[0].src, 'https://example.com/house-ads/creatives/a.mp4');
-  assert.equal(cat.creatives[0].poster, 'https://example.com/house-ads/creatives/a.jpg');
-  assert.equal(cat.apps.tcb.icon, 'https://example.com/house-ads/icons/tcb.jpg');
+  assert.equal(cat.creatives[0].src, 'https://example.com/indie-ads/creatives/a.mp4');
+  assert.equal(cat.creatives[0].poster, 'https://example.com/indie-ads/creatives/a.jpg');
+  assert.equal(cat.apps.tcb.icon, 'https://example.com/indie-ads/icons/tcb.jpg');
   assert.equal(cat.apps.tcb.id, 'tcb');
 });
 
@@ -58,7 +58,7 @@ test("the order: the server's, then the copy last fetched from it, then the one 
   // offline after that: the server's copy, not the older shipped one
   const offline = await load(only(SHIPPED, good));
   assert.equal(offline.creatives[0].id, 'newer');
-  assert.equal(offline.creatives[0].src, 'https://example.com/house-ads/creatives/a.mp4');
+  assert.equal(offline.creatives[0].src, 'https://example.com/indie-ads/creatives/a.mp4');
 });
 
 test("with a catalogue in hand, a server that answers nothing is waited on briefly, and what it sends late is kept", async () => {
@@ -179,8 +179,8 @@ test('a signed catalogue: the server signs, the game checks, and what is not the
   assert.equal(await name(async () => { throw new Error('offline'); }), null);
   assert.equal(Object.values((await loadCatalogue({ url, fetch: server(cat('Anyone'), null), storage: memoryStorage() })).apps)[0].name, 'Anyone');
   // the key from the catalogue the game shipped with, and never from the one the server sends
-  const { createHouseAds } = await import('../core/index.js');
-  const first = async (shipped, fetch) => Object.values((await createHouseAds({ host: 'h', catalogue: [url, shipped], storage: memoryStorage(), cache: false, fetch }).catalogue).apps)[0].name;
+  const { createIndieAds } = await import('../core/index.js');
+  const first = async (shipped, fetch) => Object.values((await createIndieAds({ host: 'h', catalogue: [url, shipped], storage: memoryStorage(), cache: false, fetch }).catalogue).apps)[0].name;
   const withKey = { ...JSON.parse(cat('Shipped')), signedBy: key }, theirs = JSON.stringify({ ...JSON.parse(cat('Theirs')), signedBy: other });
   assert.equal(await first(withKey, server(ours, sig)), 'Ours');
   assert.equal(await first(withKey, server(theirs, await sign(await pair(), theirs))), 'Shipped');
@@ -201,8 +201,8 @@ test('nothing over http: not the catalogue, not a file or link it names, not the
   const cat = await loadCatalogue({ url: 'https://ads.example/catalogue.json', fetch, storage: memoryStorage() });
   assert.deepEqual(cat.creatives.map(c => [c.id, c.src, c.poster]), [['fine', 'https://ads.example/v.mp4', null]]);
   assert.deepEqual([cat.apps.a.icon, cat.apps.a.tracking, cat.apps.b.tracking], [null, undefined, { ios: 'https://t.example/c' }]);
-  const { createHouseAds } = await import('../core/index.js');
-  const went = [], ads = createHouseAds({ host: 'h', catalogue: { apps: {}, creatives: [] }, ingest: 'http://ingest.example/e', mix: 'http://ingest.example/mix', storage: memoryStorage(), cache: false, fetch: async u => { went.push(String(u)); return { ok: false }; } });
+  const { createIndieAds } = await import('../core/index.js');
+  const went = [], ads = createIndieAds({ host: 'h', catalogue: { apps: {}, creatives: [] }, ingest: 'http://ingest.example/e', mix: 'http://ingest.example/mix', storage: memoryStorage(), cache: false, fetch: async u => { went.push(String(u)); return { ok: false }; } });
   const quiet = console.error; console.error = () => {}; try { ads.offered('p'); await new Promise(r => setTimeout(r, 2200)); } finally { console.error = quiet; }
   assert.deepEqual(went, []);
 });
@@ -213,8 +213,8 @@ test("how a creative asks to be shown (0.5.0): read as the player will, its file
   const c = one({ endCard: { portrait: 'cards/p.jpg' }, storeButton: { ios: 'b/ios.png', portrait: { anchor: 'bottom-center', width: 420, y: 96, colour: 'red' }, pulse: true },
     loop: { from: 38.5 }, tap: { button: 5, whole: 'end' }, overrun: true, fade: 2, backdrop: 'video' });
   assert.deepEqual(c.dropped, []);
-  assert.deepEqual(c.creatives[0].endCard, { portrait: 'https://example.com/house-ads/cards/p.jpg', landscape: null });
-  assert.deepEqual(c.creatives[0].storeButton, { ios: 'https://example.com/house-ads/b/ios.png', android: null, portrait: { anchor: 'bottom-center', width: 420, y: 96 }, pulse: {} });
+  assert.deepEqual(c.creatives[0].endCard, { portrait: 'https://example.com/indie-ads/cards/p.jpg', landscape: null });
+  assert.deepEqual(c.creatives[0].storeButton, { ios: 'https://example.com/indie-ads/b/ios.png', android: null, portrait: { anchor: 'bottom-center', width: 420, y: 96 }, pulse: {} });
   assert.deepEqual([c.creatives[0].loop, c.creatives[0].tap, c.creatives[0].overrun, c.creatives[0].fade, c.creatives[0].backdrop], [{ from: 38.5 }, { button: 5, whole: 'end' }, true, 2, 'video']);
   // a button with no picture is the player's own, put where it's asked; and a pulse of its own
   assert.deepEqual(one({ storeButton: { landscape: { anchor: 'middle-right', x: 40 }, pulse: { secs: 2 } } }).creatives[0].storeButton, { ios: null, android: null, landscape: { anchor: 'middle-right', x: 40 }, pulse: { secs: 2 } });
@@ -236,7 +236,7 @@ test("one of them that can't be read is left out and named, and the creative pla
   // a video's, on a playable
   const play = validate({ apps: good.apps, creatives: [{ id: 'p', app: 'tcb', kind: 'playable', secs: 30, src: 'p.html', loop: { from: 20 }, overrun: true, endCard: { landscape: 'l.jpg' } }] }, BASE);
   assert.deepEqual(play.dropped, ["creative p: loop is a video's, and is left out", "creative p: overrun is a video's, and is left out"]);
-  assert.deepEqual([play.creatives[0].loop, play.creatives[0].overrun, play.creatives[0].endCard.landscape], [undefined, undefined, 'https://example.com/house-ads/l.jpg']);
+  assert.deepEqual([play.creatives[0].loop, play.creatives[0].overrun, play.creatives[0].endCard.landscape], [undefined, undefined, 'https://example.com/indie-ads/l.jpg']);
   // overrun: false is said, and kept
   assert.equal(validate({ apps: good.apps, creatives: [{ ...video, overrun: false }] }, BASE).creatives[0].overrun, false);
 });

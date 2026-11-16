@@ -1,6 +1,6 @@
 {
-	"name": "HouseAdsNetwork",
-	"rootNamespace": "HouseAdsNetwork",
+	"name": "IndieAdNetwork",
+	"rootNamespace": "IndieAdNetwork",
 	"references": [],
 	"includePlatforms": [],
 	"excludePlatforms": [],

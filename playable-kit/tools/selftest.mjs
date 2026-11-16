@@ -1,5 +1,5 @@
 // The kit, end to end, on its own template: builds it, plays it by itself (?auto=1) and then inside
-// house-ads' real player with a finger holding the stick over, and checks what came out. Needs Chrome
+// indie-ads' real player with a finger holding the stick over, and checks what came out. Needs Chrome
 // and ffmpeg. Pictures go to .cache/shots. Exits 1 if a check fails.
 //   node tools/selftest.mjs
 import { execFileSync } from 'node:child_process';
@@ -40,7 +40,7 @@ try {
   check(st.steps.join(' ') === '', 'and no step claimed that the player did not reach: ' + (st.steps.join(' ') || 'none'));
   await page.close();
 
-  console.log('\n== in house-ads\' player, finishEarly, a finger holding the stick right');
+  console.log('\n== in indie-ads\' player, finishEarly, a finger holding the stick right');
   page = await chrome.open(`http://127.0.0.1:${PORT}/harness.html?secs=30&finishEarly=1`);
   await sleep(1500);
   const inner = await page.eval('window.__ad ? { paused: __ad.paused, T: __ad.T } : null', { frame: true });
@@ -55,10 +55,10 @@ try {
   if (page.logs.length) console.log(page.logs.join('\n'));
   await page.close();
 
-  console.log('\n== in house-ads\' player, muted, then not viewable');
+  console.log('\n== in indie-ads\' player, muted, then not viewable');
   page = await chrome.open(`http://127.0.0.1:${PORT}/harness.html?secs=30&muted=1`);
   await sleep(1500);
-  await page.eval(`document.querySelector('#house-ads').shadowRoot.querySelector('iframe').contentWindow.postMessage({ houseAds: 'viewable', value: false }, '*')`);
+  await page.eval(`document.querySelector('#indie-ads').shadowRoot.querySelector('iframe').contentWindow.postMessage({ houseAds: 'viewable', value: false }, '*')`);
   await sleep(300); const a = await page.eval('({ paused: __ad.paused, T: __ad.T })', { frame: true }); await sleep(700); const b = await page.eval('({ paused: __ad.paused, T: __ad.T })', { frame: true });
   check(a.paused && b.T === a.T, `told it isn't viewable, it stands still (T ${a.T.toFixed(2)} then ${b.T.toFixed(2)})`);
   await page.close();

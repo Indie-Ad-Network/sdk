@@ -1,5 +1,5 @@
 // What every playable's own build.mjs needs: the voice takes made ready, files as base64, the page put
-// together as one HTML file, and the checks house-ads makes of it. No dependencies beyond Node 22 and ffmpeg
+// together as one HTML file, and the checks indie-ads makes of it. No dependencies beyond Node 22 and ffmpeg
 // (and, on a Mac, `say` for scratch takes). An ad's build imports this; template/build.mjs is the smallest one.
 import { execFileSync, spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
@@ -65,7 +65,7 @@ export function voice({ lines, recorded, cache, scratch = null, words: other = n
   return out;
 }
 
-// What house-ads asks of a playable (../PLAYABLE_HOST.md), checked on the finished page.
+// What indie-ads asks of a playable (../PLAYABLE_HOST.md), checked on the finished page.
 // Gives { errors, warnings, size, steps, says }: an error is something the admin or the player would refuse.
 // `says` is what the admin will make of the page's settings (page-says.js).
 export function check(html, { maxMB = 8 } = {}) {

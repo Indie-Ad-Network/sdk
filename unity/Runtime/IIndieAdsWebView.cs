@@ -1,15 +1,15 @@
 using System;
 
-namespace HouseAdsNetwork
+namespace IndieAdNetwork
 {
 	/// <summary>
 	/// The web view the ads play in. The package's own is NativeWebView, and a game need do nothing; one with a
-	/// web view it would rather use gives it as this (HouseAdsConfig.createWebView).
+	/// web view it would rather use gives it as this (IndieAdsConfig.createWebView).
 	///
 	/// What it must be: full screen, over the game, transparent where the page is; JavaScript on; media playing
 	/// inline and without a tap (the tap was on the game's own button); not visible until SetVisible(true).
 	/// </summary>
-	public interface IHouseAdsWebView : IDisposable
+	public interface IIndieAdsWebView : IDisposable
 	{
 		/// The page called window.nativeWebView.postMessage(string): that string.
 		event Action<string> MessageReceived;

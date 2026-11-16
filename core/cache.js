@@ -125,7 +125,7 @@ export async function openCache({ fetch = globalThis.fetch?.bind(globalThis), no
         const next = { ...e, more: blob ? { ...rest, [field]: { src, bytes: blob.size } } : rest, bytes: e.bytes - (had?.bytes ?? 0) + (blob?.size ?? 0) };
         await write((m, b) => { if (blob) b.put(blob, beside(c.id, field)); else b.delete(beside(c.id, field)); m.put(next); });
         meta.set(c.id, next);
-      } catch (err) { if (/HTTP 4|bytes/.test(err.message)) refused.add(key); console.warn(`[house-ads] not cached: ${err.message}`); }
+      } catch (err) { if (/HTTP 4|bytes/.test(err.message)) refused.add(key); console.warn(`[indie-ads] not cached: ${err.message}`); }
     }
   }
   let filling = null;
@@ -161,7 +161,7 @@ export async function openCache({ fetch = globalThis.fetch?.bind(globalThis), no
             const blob = await download(c, fetch), e = { id: c.id, src: c.src, sha256: c.sha256 ?? null, bytes: blob.size, at: now() };
             await write((m, b) => { b.put(blob, c.id); m.put(e); });
             meta.set(c.id, e); fetched.push(c.id);
-          } catch (err) { if (/bytes, not|sha256/.test(err.message)) refused.add(fileKey(c)); console.warn(`[house-ads] not cached: ${err.message}`); }
+          } catch (err) { if (/bytes, not|sha256/.test(err.message)) refused.add(fileKey(c)); console.warn(`[indie-ads] not cached: ${err.message}`); }
         }
         for (const c of wanted) await fillMore(c);   // of those just fetched, and of those here whose art has changed
         return fetched;

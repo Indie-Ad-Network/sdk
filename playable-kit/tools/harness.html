@@ -1,17 +1,17 @@
 <!doctype html>
 <html><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>A playable in house-ads' player</title>
+<title>A playable in indie-ads' player</title>
 <style>html, body { margin: 0; height: 100%; background: #223; color: #fff; font: 15px system-ui, sans-serif; } #out { padding: 16px; white-space: pre-wrap; } button { font: inherit; padding: 10px 16px; margin: 16px; }</style>
 </head><body>
 <button id="again">Show the ad</button><div id="out">The host game would be here.</div>
 <script type="module">
-// The page given to tools/serve.mjs, played by house-ads' real player (core/player.js) as the admin's
+// The page given to tools/serve.mjs, played by indie-ads' real player (core/player.js) as the admin's
 // creative record would have it:  ?secs=30  ?finishEarly=1  ?keepPlaying=1  ?muted=1  ?format=interstitial
 // ?wait=1 shows nothing until the button is pressed, so the page may have sound (a browser wants a touch first).
 // What the player emits is in window.__events, and what show() resolved to in window.__result.
-import { play } from '/house-ads/core/player.js';
-import { stringsFor } from '/house-ads/core/locale.js';
+import { play } from '/indie-ads/core/player.js';
+import { stringsFor } from '/indie-ads/core/locale.js';
 const q = new URLSearchParams(location.search), out = document.getElementById('out');
 window.__events = []; window.__result = null;
 async function show() {

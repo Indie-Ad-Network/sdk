@@ -6,6 +6,7 @@
 // when it rests now. Nothing here leaves the device.
 import { recent, DAY } from './pick.js';
 import { MAX_REST } from './exchange.js';
+import { OURS } from './keys.js';
 
 export function openHistory(storage, key) {
   let h;
@@ -38,12 +39,12 @@ export function memoryStorage() {
   const m = new Map();
   return { getItem: k => m.get(k) ?? null, setItem: (k, v) => { m.set(k, String(v)); }, removeItem: k => { m.delete(k); } };
 }
-// What this package has kept in a storage, taken out: every key of its own (they all begin houseAds.). For a
+// What this package has kept in a storage, taken out: every key of its own (keys.js). For a
 // player who hasn't agreed to anything being kept (consent.js).
 export function forget(storage = globalThis.localStorage) {
-  try { for (let i = storage.length - 1; i >= 0; i--) { const k = storage.key(i); if (k?.startsWith('houseAds.')) storage.removeItem(k); } } catch { /* none, or not ours to touch */ }
+  try { for (let i = storage.length - 1; i >= 0; i--) { const k = storage.key(i); if (k?.startsWith(OURS)) storage.removeItem(k); } } catch { /* none, or not ours to touch */ }
 }
 // localStorage where there is one that works; a Map's worth of memory where there isn't
 export function safeStorage() {
-  try { const s = globalThis.localStorage; s.setItem('houseAds.probe', '1'); s.removeItem('houseAds.probe'); return s; } catch { return memoryStorage(); }
+  try { const s = globalThis.localStorage; s.setItem(OURS + 'probe', '1'); s.removeItem(OURS + 'probe'); return s; } catch { return memoryStorage(); }
 }

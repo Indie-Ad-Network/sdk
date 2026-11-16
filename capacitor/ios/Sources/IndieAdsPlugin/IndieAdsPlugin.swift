@@ -4,11 +4,11 @@ import Network
 import StoreKit
 import UIKit
 
-/// house-ads' native side on iOS (capacitor/index.js says what each call is for).
-@objc(HouseAdsPlugin)
-public class HouseAdsPlugin: CAPPlugin, CAPBridgedPlugin, SKStoreProductViewControllerDelegate {
-    public let identifier = "HouseAdsPlugin"
-    public let jsName = "HouseAds"
+/// indie-ads' native side on iOS (capacitor/index.js says what each call is for).
+@objc(IndieAdsPlugin)
+public class IndieAdsPlugin: CAPPlugin, CAPBridgedPlugin, SKStoreProductViewControllerDelegate {
+    public let identifier = "IndieAdsPlugin"
+    public let jsName = "IndieAds"
     public let pluginMethods: [CAPPluginMethod] = [
         CAPPluginMethod(name: "openStore", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "network", returnType: CAPPluginReturnPromise),

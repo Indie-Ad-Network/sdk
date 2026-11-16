@@ -2,21 +2,21 @@
 import PackageDescription
 
 let package = Package(
-    name: "HouseAdsCapacitor",
+    name: "IndieAdsCapacitor",
     platforms: [.iOS(.v15)],
     products: [
-        .library(name: "HouseAdsCapacitor", targets: ["HouseAdsPlugin"])
+        .library(name: "IndieAdsCapacitor", targets: ["IndieAdsPlugin"])
     ],
     dependencies: [
         .package(url: "https://github.com/ionic-team/capacitor-swift-pm.git", from: "8.0.0")
     ],
     targets: [
         .target(
-            name: "HouseAdsPlugin",
+            name: "IndieAdsPlugin",
             dependencies: [
                 .product(name: "Capacitor", package: "capacitor-swift-pm"),
                 .product(name: "Cordova", package: "capacitor-swift-pm")
             ],
-            path: "ios/Sources/HouseAdsPlugin")
+            path: "ios/Sources/IndieAdsPlugin")
     ]
 )

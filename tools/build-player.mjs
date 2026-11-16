@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // core/ and web/host.js as one page, for a game whose web view is handed HTML, not a server
-// (the Unity package): unity/Runtime/Resources/HouseAdsPlayer.html, which is committed, so a
+// (the Unity package): unity/Runtime/Resources/IndieAdsPlayer.html, which is committed, so a
 // game that takes the package needs no Node. Run after any change to core/ or web/:
 //
 //   node tools/build-player.mjs          (wants esbuild: `npx` fetches it, or ESBUILD=<path to its binary>)
@@ -10,7 +10,7 @@ import { execFileSync } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
-const root = new URL('..', import.meta.url), out = new URL('unity/Runtime/Resources/HouseAdsPlayer.html', root);
+const root = new URL('..', import.meta.url), out = new URL('unity/Runtime/Resources/IndieAdsPlayer.html', root);
 // es2020: every web view a game of ours still runs on (iOS 14's WKWebView, Android's System WebView 80+)
 const args = [fileURLToPath(new URL('web/host.js', root)), '--bundle', '--format=iife', '--minify', '--target=es2020', '--charset=utf8', '--log-level=warning'];
 const [cmd, ...pre] = process.env.ESBUILD ? [process.env.ESBUILD] : ['npx', '--yes', 'esbuild@0.25'];
@@ -28,7 +28,7 @@ ${js}
 `;
 if (process.argv.includes('--check')) {
   let now = ''; try { now = readFileSync(out, 'utf8'); } catch { /* not built yet */ }
-  if (now !== html) { console.error('unity/Runtime/Resources/HouseAdsPlayer.html is stale: run tools/build-player.mjs'); process.exit(1); }
+  if (now !== html) { console.error('unity/Runtime/Resources/IndieAdsPlayer.html is stale: run tools/build-player.mjs'); process.exit(1); }
 } else {
   writeFileSync(out, html);
   console.log(`${fileURLToPath(out)}  ${(html.length / 1024).toFixed(1)} KB`);

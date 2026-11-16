@@ -12,8 +12,9 @@
 // and as the page is hidden (by beacon: a page being closed can't wait for an answer). What
 // can't be sent waits in `storage`, so a player offline is counted when they're back.
 import { VERSION, FIELDS } from './wire.js';
+import { OURS } from './keys.js';
 
-const KEY = 'houseAds.outbox', BATCH = 50, KEEP = 300;   // at most KEEP wait; the oldest go first
+const KEY = OURS + 'outbox', BATCH = 50, KEEP = 300;   // at most KEEP wait; the oldest go first
 const SOON = 2000;                                       // ms after the last event
 
 export function createReporter({ url, host, os, storage, fetch = globalThis.fetch?.bind(globalThis) }) {
@@ -37,7 +38,7 @@ export function createReporter({ url, host, os, storage, fetch = globalThis.fetc
         // text/plain: a "simple" request, so the browser asks the ingest no permission first
         const res = await fetch(url, { method: 'POST', body: body(batch), headers: { 'content-type': 'text/plain' }, keepalive: true });
         if (res.status >= 500 || res.status === 429) break;   // the ingest is having a bad day: later
-        if (!res.ok) console.warn(`[house-ads] ingest refused a batch: HTTP ${res.status}`);   // for good: not sent for ever
+        if (!res.ok) console.warn(`[indie-ads] ingest refused a batch: HTTP ${res.status}`);   // for good: not sent for ever
         sent(batch);
       }
     } catch { /* offline: next time */ } finally { sending = false; }

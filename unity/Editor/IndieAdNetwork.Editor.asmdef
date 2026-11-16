@@ -1,0 +1,8 @@
+{
+	"name": "IndieAdNetwork.Editor",
+	"rootNamespace": "IndieAdNetwork",
+	"references": [ "IndieAdNetwork" ],
+	"includePlatforms": [ "Editor" ],
+	"excludePlatforms": [],
+	"autoReferenced": false
+}

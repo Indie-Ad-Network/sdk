@@ -20,7 +20,7 @@ const [arg, to] = process.argv.slice(2).filter(a => !a.startsWith('--'));
 if (!arg || !/^ftp:\/\/[^/]+\/.*\/$/.test(to ?? '')) { console.error('usage: publish.mjs catalogue.json ftp://host/dir/ [--upload]'); process.exit(2); }
 const { file, names } = checked(arg);
 
-const htaccess = join(mkdtempSync(join(tmpdir(), 'house-ads-')), '.htaccess');
+const htaccess = join(mkdtempSync(join(tmpdir(), 'indie-ads-')), '.htaccess');
 writeFileSync(htaccess, HTACCESS);
 const uploads = [[htaccess, '.htaccess'], ...names.map(name => [join(dirname(file), name), name])];
 

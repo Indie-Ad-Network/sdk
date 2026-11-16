@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mix, settings, believed, turn } from '../core/exchange.js';
 import { validate } from '../core/catalogue.js';
 import { pick, eligible, cardFor } from '../core/pick.js';
-import { createHouseAds } from '../core/index.js';
+import { createIndieAds } from '../core/index.js';
 import { memoryStorage } from '../core/history.js';
 
 const raw = {
@@ -100,7 +100,7 @@ test('a boosted game is picked more often', () => {
 // ---- demand(): the question a host with other ads asks ----
 globalThis.document ??= { hidden: false, addEventListener() {} };
 globalThis.innerWidth ??= 400; globalThis.innerHeight ??= 800;
-const ads = more => createHouseAds({ host: 'tcb', os: 'ios', catalogue: raw, cache: false, storage: memoryStorage(), fetch: async () => { throw new Error('offline'); },
+const ads = more => createIndieAds({ host: 'tcb', os: 'ios', catalogue: raw, cache: false, storage: memoryStorage(), fetch: async () => { throw new Error('offline'); },
   placements: { tile: { maxSecs: 30 }, short: { maxSecs: 10 } }, ...more });
 
 test('demand: what this player could be shown here, and the share asked for; no share of nothing', async () => {

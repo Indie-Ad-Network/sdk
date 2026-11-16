@@ -22,7 +22,7 @@ Setup (macOS, Apple silicon), once, anywhere (one venv serves every ad):
     ~/.cache/voicegen-venv/bin/python -m pip install torch torchaudio chatterbox-tts scipy
 
 Usage:
-    <venv>/bin/python <house-ads>/playable-kit/tools/bake-vo.py --ref sample.wav [key ...] [options]
+    <venv>/bin/python <indie-ads>/playable-kit/tools/bake-vo.py --ref sample.wav [key ...] [options]
         key ...          only these lines (default: every new or changed line)
         --ad DIR         the ad's folder (default: the current one)
         --lines FILE     the lines, a module exporting LINES (default: src/lines.mjs)

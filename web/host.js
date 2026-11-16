@@ -1,8 +1,8 @@
-// ---------- house-ads in a native game's web view ----------
+// ---------- indie-ads in a native game's web view ----------
 // For a game that isn't a web page (Unity: unity/): the whole of core/ in one page
-// (tools/build-player.mjs makes unity/Runtime/Resources/HouseAdsPlayer.html of this), which
+// (tools/build-player.mjs makes unity/Runtime/Resources/IndieAdsPlayer.html of this), which
 // the game loads into a web view laid over itself. The game's native side calls
-// `houseAdsHost` by evaluating JavaScript; the page answers through the one function the web
+// `indieAdsHost` by evaluating JavaScript; the page answers through the one function the web
 // view gives it, `window.nativeWebView.postMessage(string)` (unity/Runtime/NativeWebView.cs),
 // with JSON: { k, items: [message] }.
 //
@@ -28,7 +28,7 @@
 // catalogue is in, and tells it again whenever it may have
 // changed. `demand` is sent whenever it may have: so the game always has the answer to hand,
 // without asking, when it must decide in one frame whose ad to show.
-import { createHouseAds } from '../core/index.js';
+import { createIndieAds } from '../core/index.js';
 
 const DEVICE_WAIT = 1500;   // ms to wait for the game's first word on the network
 const IDLE_AFTER = 4000;    // ms of nothing before saying so: the analytics' last send is 2 s after an ad
@@ -63,7 +63,7 @@ async function during(work) {
   }
 }
 
-window.houseAdsHost = {
+window.indieAdsHost = {
   // config: { key, lang, host, rating, os, catalogue (URL), shipped (the catalogue object the game shipped with, or null),
   //           ingest, reports, mix (URLs or null; reports: where a report of an ad goes, else /flag beside ingest), placements, age (the player's, or null), test (a developer trying the ads out),
   //           wide (the game's screen is wider than tall: a web view not yet shown can't see its own shape),
@@ -75,7 +75,7 @@ window.houseAdsHost = {
     lang = config.lang ?? null;
     placements = config.placements ?? {};
     testing = !!config.test;
-    ads = createHouseAds({
+    ads = createIndieAds({
       host: config.host, rating: config.rating ?? null, os: config.os, placements,
       catalogue: config.shipped ? [config.catalogue, config.shipped] : config.catalogue,
       ingest: config.ingest ?? null, reports: config.reports ?? null, mix: config.mix ?? null, signedBy: config.signedBy ?? null,

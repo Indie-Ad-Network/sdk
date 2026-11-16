@@ -87,7 +87,7 @@ The shim also maps other networks' install calls to `'open'`: `window.install()`
 `FbPlayableAd.onCTAClick()` (Meta), `ExitApi.exit()` (Google Ads).
 
 `window.houseAds.step` is the one call that isn't MRAID. A playable should call it as
-`window.houseAds?.step('name')`, so it does nothing on a network without it.
+`window.houseAds?.step('name')`, so it does nothing on a network without it. It, the `houseAds` in each message and the `house-ads` tag keep the name the SDK had before 0.6.0: playables already made and games already released say and read them.
 
 ## 4. What the host says to the playable
 

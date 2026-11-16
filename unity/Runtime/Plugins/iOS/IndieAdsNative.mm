@@ -1,4 +1,4 @@
-// house-ads' native side on iOS (Runtime/HouseAdsNative.cs says what each call is for).
+// indie-ads' native side on iOS (Runtime/IndieAdsNative.cs says what each call is for).
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
 #import <StoreKit/StoreKit.h>
@@ -31,12 +31,12 @@ __attribute__((constructor)) static void StartMonitor(void)
 }
 
 // ---- the App Store sheet ----
-@interface HouseAdsStoreSheet : NSObject <SKStoreProductViewControllerDelegate>
+@interface IndieAdsStoreSheet : NSObject <SKStoreProductViewControllerDelegate>
 @property (nonatomic, strong) SKStoreProductViewController* sheet;
 @property (nonatomic, copy) NSString* listener;
 @end
 
-static HouseAdsStoreSheet* gSheet;
+static IndieAdsStoreSheet* gSheet;
 
 static void Tell(NSString* listener, const char* how)
 {
@@ -56,7 +56,7 @@ static void OpenOutside(NSString* url, NSString* fallback, NSString* listener)
     }];
 }
 
-@implementation HouseAdsStoreSheet
+@implementation IndieAdsStoreSheet
 - (void)productViewControllerDidFinish:(SKStoreProductViewController*)viewController
 {
     [viewController dismissViewControllerAnimated:YES completion:nil];
@@ -68,21 +68,21 @@ static void OpenOutside(NSString* url, NSString* fallback, NSString* listener)
 
 extern "C" {
 
-bool _HouseAds_IsMetered(void)
+bool _IndieAds_IsMetered(void)
 {
     static BOOL waited = NO;
     if (!waited) { waited = YES; dispatch_semaphore_wait(gPathSaid, dispatch_time(DISPATCH_TIME_NOW, 300 * NSEC_PER_MSEC)); }
     return gMetered;
 }
 
-bool _HouseAds_StoreSheetIsUp(void)
+bool _IndieAds_StoreSheetIsUp(void)
 {
     return gSheet != nil;
 }
 
 // `id` (with `ct`, `pt`): the App Store sheet over the game; the listener is sent NativeStoreClosed when it's put
 // away. Without an id, or if the sheet can't load the product: `url`, then `fallback`, outside the game.
-void _HouseAds_OpenStore(const char* idC, const char* ctC, const char* ptC, const char* urlC, const char* fallbackC, const char* listenerC)
+void _IndieAds_OpenStore(const char* idC, const char* ctC, const char* ptC, const char* urlC, const char* fallbackC, const char* listenerC)
 {
     NSString *itemId = Str(idC), *ct = Str(ctC), *pt = Str(ptC), *url = Str(urlC), *fallback = Str(fallbackC), *listener = Str(listenerC);
     dispatch_async(dispatch_get_main_queue(), ^{
@@ -94,7 +94,7 @@ void _HouseAds_OpenStore(const char* idC, const char* ctC, const char* ptC, cons
         if (ct.length) { product[SKStoreProductParameterCampaignToken] = ct; }
         if (pt.length) { product[SKStoreProductParameterProviderToken] = pt; }
 
-        HouseAdsStoreSheet* holder = [HouseAdsStoreSheet new];
+        IndieAdsStoreSheet* holder = [IndieAdsStoreSheet new];
         holder.listener = listener;
         holder.sheet = [SKStoreProductViewController new];
         holder.sheet.delegate = holder;
@@ -111,7 +111,7 @@ void _HouseAds_OpenStore(const char* idC, const char* ctC, const char* ptC, cons
 
 // `id` (with `ct`, `pt`): the App Store's banner for that game at the foot of the screen (SKOverlay, iOS 14 and
 // up), over whatever the game is showing. No id: the banner away. Before iOS 14, nothing.
-void _HouseAds_StoreBanner(const char* idC, const char* ctC, const char* ptC)
+void _IndieAds_StoreBanner(const char* idC, const char* ctC, const char* ptC)
 {
     NSString *itemId = Str(idC), *ct = Str(ctC), *pt = Str(ptC);
     dispatch_async(dispatch_get_main_queue(), ^{

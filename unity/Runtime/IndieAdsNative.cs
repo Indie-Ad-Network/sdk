@@ -4,22 +4,22 @@ using UnityEngine;
 using System.Runtime.InteropServices;
 #endif
 
-namespace HouseAdsNetwork
+namespace IndieAdNetwork
 {
 	/// <summary>
 	/// What the device is asked, on the page's behalf: whether the network costs the player, and to open a store.
 	/// What else is on the device is never asked: a game's daily cap and its rest are what spare a player who has it.
 	///
-	/// iOS (Plugins/iOS/HouseAdsNative.mm): the store is the App Store sheet over the game.
+	/// iOS (Plugins/iOS/IndieAdsNative.mm): the store is the App Store sheet over the game.
 	/// Android: the store is Google Play, by market://.
 	/// </summary>
-	public static class HouseAdsNative
+	public static class IndieAdsNative
 	{
 #if UNITY_IOS && !UNITY_EDITOR
-		[DllImport("__Internal")] static extern bool _HouseAds_IsMetered();
-		[DllImport("__Internal")] static extern bool _HouseAds_StoreSheetIsUp();
-		[DllImport("__Internal")] static extern void _HouseAds_OpenStore(string id, string ct, string pt, string url, string fallback, string listener);
-		[DllImport("__Internal")] static extern void _HouseAds_StoreBanner(string id, string ct, string pt);
+		[DllImport("__Internal")] static extern bool _IndieAds_IsMetered();
+		[DllImport("__Internal")] static extern bool _IndieAds_StoreSheetIsUp();
+		[DllImport("__Internal")] static extern void _IndieAds_OpenStore(string id, string ct, string pt, string url, string fallback, string listener);
+		[DllImport("__Internal")] static extern void _IndieAds_StoreBanner(string id, string ct, string pt);
 #endif
 
 		/// The App Store sheet is over the game (iOS): the game hasn't left the front, but the store is open.
@@ -28,7 +28,7 @@ namespace HouseAdsNetwork
 			get
 			{
 #if UNITY_IOS && !UNITY_EDITOR
-				return _HouseAds_StoreSheetIsUp();
+				return _IndieAds_StoreSheetIsUp();
 #else
 				return false;
 #endif
@@ -81,7 +81,7 @@ namespace HouseAdsNetwork
 		public static bool IsMetered()
 		{
 #if UNITY_IOS && !UNITY_EDITOR
-			return _HouseAds_IsMetered();
+			return _IndieAds_IsMetered();
 #elif UNITY_ANDROID && !UNITY_EDITOR
 			try
 			{
@@ -105,7 +105,7 @@ namespace HouseAdsNetwork
 		public static void StoreBanner(string id, string ct, string pt)
 		{
 #if UNITY_IOS && !UNITY_EDITOR
-			_HouseAds_StoreBanner(id ?? "", ct ?? "", pt ?? "");
+			_IndieAds_StoreBanner(id ?? "", ct ?? "", pt ?? "");
 #endif
 		}
 
@@ -114,11 +114,11 @@ namespace HouseAdsNetwork
 		public static void OpenStore(string id, string ct, string pt, string url, string fallback, string listener)
 		{
 #if UNITY_IOS && !UNITY_EDITOR
-			_HouseAds_OpenStore(id ?? "", ct ?? "", pt ?? "", url ?? "", fallback ?? "", listener);
+			_IndieAds_OpenStore(id ?? "", ct ?? "", pt ?? "", url ?? "", fallback ?? "", listener);
 #elif UNITY_ANDROID && !UNITY_EDITOR
-			if (!View(url) && !View(fallback) && HouseAds.Logging)
+			if (!View(url) && !View(fallback) && IndieAds.Logging)
 			{
-				Debug.LogWarning("[HouseAds] nothing on this device opens " + fallback);
+				Debug.LogWarning("[IndieAds] nothing on this device opens " + fallback);
 			}
 #else
 			Application.OpenURL(string.IsNullOrEmpty(fallback) ? url : fallback);

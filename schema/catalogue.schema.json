@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "house-ads catalogue",
+  "title": "indie-ads catalogue",
   "description": "The games that can be advertised and their creatives. Relative paths are read against the catalogue's own URL. core/catalogue.js enforces this at run time, dropping a bad entry rather than failing.",
   "type": "object",
   "required": ["apps", "creatives"],

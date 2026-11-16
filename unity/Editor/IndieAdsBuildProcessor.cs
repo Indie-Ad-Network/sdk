@@ -9,7 +9,7 @@ using System.Xml;
 using UnityEditor.Android;
 #endif
 
-namespace HouseAdsNetwork
+namespace IndieAdNetwork
 {
 	/// <summary>
 	/// What a build needs. iOS gets the two frameworks the native side uses. Nothing is written for asking what else
@@ -20,7 +20,7 @@ namespace HouseAdsNetwork
 	/// view in an unaccelerated window draws in software: a playable's canvas stays blank and a video shows one
 	/// frame while its sound plays on. Unity draws to its own surface either way.
 	/// </summary>
-	public static class HouseAdsBuildProcessor
+	public static class IndieAdsBuildProcessor
 	{
 #if UNITY_IOS
 		[PostProcessBuild(950)]

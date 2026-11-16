@@ -42,7 +42,7 @@ export function audit(cat, stamped = stamps(cat)) {
 // server by the publish tools.
 const FOR_ALL = { 'Access-Control-Allow-Origin': '*', 'X-Robots-Tag': 'noindex, nofollow' }, FOR_CATALOGUE = { 'Cache-Control': 'no-cache' };
 const lines = (headers, line) => Object.entries(headers).map(([k, v]) => line(k, v)).join('\n');
-export const HTACCESS = `# Written by house-ads tools/publish.mjs.
+export const HTACCESS = `# Written by indie-ads tools/publish.mjs.
 <IfModule mod_headers.c>
 ${lines(FOR_ALL, (k, v) => `  Header set ${k} "${v}"`)}
   <Files "catalogue.json">
@@ -50,7 +50,7 @@ ${lines(FOR_CATALOGUE, (k, v) => `    Header set ${k} "${v}"`)}
   </Files>
 </IfModule>
 `;
-export const CLOUDFLARE_HEADERS = `# Written by house-ads publish-cloudflare.mjs: don't edit, it's rewritten at each publish.
+export const CLOUDFLARE_HEADERS = `# Written by indie-ads publish-cloudflare.mjs: don't edit, it's rewritten at each publish.
 /*
 ${lines(FOR_ALL, (k, v) => `  ${k}: ${v}`)}
 /catalogue.json

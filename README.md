@@ -23,9 +23,9 @@ Rewarded ads and interstitials for our own and our friends' games, for any game 
 ## Use
 
 ```js
-import { createHouseAds } from './vendor/sdk/core/index.js';
+import { createIndieAds } from './vendor/sdk/core/index.js';
 
-const ads = createHouseAds({
+const ads = createIndieAds({
   host: 'mygame',              // this game's id in the catalogue: it's never advertised to itself
   rating: '9+',                // this game's age rating: nothing rated above it is shown
   catalogue: 'https://example.com/network/catalogue.json',
@@ -43,11 +43,11 @@ A game with no bundler takes this repo as a git submodule and imports `core/inde
 
 ## In a Capacitor app
 
-Add `capacitor/` as a dependency (`"house-ads-capacitor": "file:…/sdk/capacitor"`), run `npx cap sync`, and pass `native: capacitorNative()` (from `capacitor/index.js`). The app then shows the App Store sheet over the game, and doesn't download on mobile data. What else is on the device is never asked: a game's daily cap and its rest are what spare a player who already has it.
+Add `capacitor/` as a dependency (`"indie-ads-capacitor": "file:…/sdk/capacitor"`), run `npx cap sync`, and pass `native: capacitorNative()` (from `capacitor/index.js`). The app then shows the App Store sheet over the game, and doesn't download on mobile data. What else is on the device is never asked: a game's daily cap and its rest are what spare a player who already has it.
 
 ## In a Unity game
 
-`unity/` is a UPM package (add by git URL with `?path=/unity`): the same player, in the package's own web view (the system's, on iOS and Android: no web-view plugin to buy), with `HouseAds.Wants(placement)` to hand for mixing with a paid network. See [Unity](unity/README.md).
+`unity/` is a UPM package (add by git URL with `?path=/unity`): the same player, in the package's own web view (the system's, on iOS and Android: no web-view plugin to buy), with `IndieAds.Wants(placement)` to hand for mixing with a paid network. See [Unity](unity/README.md).
 
 ## Interstitials
 
@@ -97,7 +97,7 @@ A developer's test (`test()`) is held to neither.
 In the UK and the EEA the law asks for a player's agreement before anything is kept on their device for advertising, or read from it. The SDK keeps ads downloaded ahead, which ads it has shown and when, and counts waiting to be sent. The game is the one with a screen to ask on, so the game asks, and tells the SDK what was answered:
 
 ```js
-createHouseAds({ …, consent: false })   // the player hasn't agreed
+createIndieAds({ …, consent: false })   // the player hasn't agreed
 ```
 
 Without consent nothing is kept there: ads are streamed (on mobile data too: there's nothing downloaded ahead), what's been shown is remembered only until the game closes, and what an earlier session kept is taken away, counts not yet sent among it. Left out, or `true`, it's as ever, so **a game with players in the UK or the EEA must say**. It's read once: when the answer changes, make the SDK again in a page loaded afresh. [Privacy](https://indieadnetwork.com/privacy) has what's kept and what's sent.
@@ -108,7 +108,7 @@ Without consent nothing is kept there: ads are streamed (on mobile data too: the
 import { cmpConsent } from './vendor/sdk/capacitor/index.js';   // in a browser: from core/index.js
 
 const agreed = await cmpConsent();   // once the platform's own dialog has been answered
-const ads = createHouseAds({ …, consent: agreed ?? false });
+const ads = createIndieAds({ …, consent: agreed ?? false });
 ```
 
 What to set up in the platform, with Google's as the example (AdMob → Privacy & messaging):
@@ -125,7 +125,7 @@ What to set up in the platform, with Google's as the example (AdMob → Privacy 
 The player's own words ("Leave now?", "Play free"…) are in the player's language: 19 of them, with Latin America's Spanish apart from Spain's and Portugal's Portuguese apart from Brazil's. By default that's the device's language. A game with a language setting of its own says so, and only as much as it knows:
 
 ```js
-createHouseAds({ …, lang: () => settings.language })   // 'fr', 'es', 'zh-Hant'…
+createIndieAds({ …, lang: () => settings.language })   // 'fr', 'es', 'zh-Hant'…
 ```
 
 "es" from the game on a phone set to es-MX is Latin America's Spanish: the region comes from the device. What watching earns (`reward`) is the game's own text, so the game translates it. In the catalogue, a `line` may be one string or one per language (`{ "en": "…", "es-419": "…" }`), and a creative with words in it can be kept to those who read them (`"langs": ["ru"]`). It goes by language alone ("es" is Latin America's too). Where a creative has a cut per language, the admin's creative form takes either "only for these languages" or, for the cut everybody else sees, "not for these languages": the catalogue it serves gives that one as `langs` too, every language the player has words in but those, so nobody is shown two of them and games already released follow it. `strings/README.md` says how the words are kept and how to add a language.

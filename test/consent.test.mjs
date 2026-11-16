@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { fromTcf, cmpConsent } from '../core/consent.js';
-import { createHouseAds } from '../core/index.js';
+import { createIndieAds, createHouseAds } from '../core/index.js';
 import { forget } from '../core/history.js';
 
 test("a consent platform's answer: not needed or agreed is yes, asked and not agreed is no, nothing said is nobody's word", () => {
@@ -41,13 +41,13 @@ const catalogue = { version: 1, apps: { a: { name: 'A', studio: 's', ios: { id: 
 
 test("without consent nothing is kept: the game's storage is left alone but for what was kept before, which goes", async () => {
   const kept = recording({ 'houseAds.a': '{"shown":{}}', 'houseAds.outbox': '[]', 'houseAds.catalogue': '{}', 'the.games.own': 'save' });
-  const ads = createHouseAds({ host: 'a', os: 'ios', catalogue, consent: false, storage: kept, ingest: 'https://x.test/e', fetch: async () => { throw new Error('offline'); }, placements: { tile: { maxSecs: 30 } } });
+  const ads = createIndieAds({ host: 'a', os: 'ios', catalogue, consent: false, storage: kept, ingest: 'https://x.test/e', fetch: async () => { throw new Error('offline'); }, placements: { tile: { maxSecs: 30 } } });
   ads.offered('tile'); await ads.demand('tile');
   await new Promise(ok => setTimeout(ok, 2200));   // past the moment the offer is sent, or put by for later
   assert.deepEqual(kept.keys(), ['the.games.own'], 'its own keys gone, the game\'s untouched');
   assert.deepEqual(kept.wrote, [], 'and nothing written since: an offer waiting to be sent waits in memory');
   const agreed = recording({});
-  const yes = createHouseAds({ host: 'a', os: 'ios', catalogue, storage: agreed, cache: false, ingest: 'https://x.test/e', fetch: async () => { throw new Error('offline'); }, placements: { tile: { maxSecs: 30 } } });
+  const yes = createIndieAds({ host: 'a', os: 'ios', catalogue, storage: agreed, cache: false, ingest: 'https://x.test/e', fetch: async () => { throw new Error('offline'); }, placements: { tile: { maxSecs: 30 } } });
   yes.offered('tile'); await yes.demand('tile');
   await new Promise(ok => setTimeout(ok, 2200));
   assert.ok(agreed.wrote.includes('houseAds.outbox'), 'with consent (the usual), as ever');
@@ -58,3 +58,5 @@ test('forget takes out only what is this package\'s own', () => {
   forget(s);
   assert.deepEqual(s.keys(), ['houseAdsNot', 'other']);
 });
+
+test('the name before 0.6.0 is still exported, and is the same function', () => assert.equal(createHouseAds, createIndieAds));

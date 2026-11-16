@@ -1,7 +1,7 @@
 // ---------- has the player agreed? ----------
 // In the UK and the EEA, keeping anything on a player's device for advertising wants their agreement first, and so
 // does reading it back. The game is the one with a screen to ask on, so it asks, and says what was answered:
-// `consent` in createHouseAds (index.js). Without it nothing is kept there: ads are streamed, what's been shown is
+// `consent` in createIndieAds (index.js). Without it nothing is kept there: ads are streamed, what's been shown is
 // remembered only until the game is closed, and what an earlier session kept is taken away.
 //
 // A game that asks with a consent platform (Google's, or any other built on the IAB's Transparency and Consent

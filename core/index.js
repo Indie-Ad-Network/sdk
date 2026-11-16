@@ -1,10 +1,10 @@
-// ---------- house ads ----------
+// ---------- indie ads ----------
 // Rewarded ads for our own and our friends' games, for any game to drop in:
 //
-//   const ads = createHouseAds({
+//   const ads = createIndieAds({
 //     host: 'tca',                                   // this game's id in the catalogue: never advertised to itself
 //     rating: '9+',                                  // this game's age rating: nothing rated above it is shown
-//     catalogue: 'https://…/house-ads/catalogue.json',
+//     catalogue: 'https://…/indie-ads/catalogue.json',
 //     placements: { saveMe: { maxSecs: 30, reward: '+3 ♥' }, jobs: { maxSecs: 15, reward: 'a speed-up' } },
 //     onEvent: e => myAnalytics(e),                  // every event, for the host's own analytics
 //     ingest: 'https://…workers.dev/e',              // and to the package's own (analytics.js): how creatives compare
@@ -93,6 +93,7 @@ import { pick, eligible, cardFor, wanted } from './pick.js';
 import { mix as mixOf, believed, shareOf, turn, settings as settingsOf } from './exchange.js';
 import { storeLink, cta } from './storeLinks.js';
 import { openHistory, safeStorage, memoryStorage, forget } from './history.js';
+import { OURS } from './keys.js';
 import { openCache, forgetCache } from './cache.js';
 import { createReporter } from './analytics.js';
 import { VERSION, SDK } from './wire.js';
@@ -102,6 +103,7 @@ import { stringsFor, localised } from './locale.js';
 export { storeLink, cta } from './storeLinks.js';
 export { validate } from './catalogue.js';
 export { cmpConsent } from './consent.js';
+export { createIndieAds as createHouseAds };   // its name before 0.6.0: gone in the release after
 
 const guessOs = () => /android/i.test(navigator.userAgent) ? 'android' : 'ios';   // a desktop browser gets the App Store's web page
 // The screen's shape: the page's own, once it has been laid out. A web view not yet shown hasn't (0 × 0), which is
@@ -113,16 +115,16 @@ const WEB = {
   metered: () => { const c = navigator.connection; return !!c && (c.saveData || c.type === 'cellular'); },   // where the browser says
 };
 
-export function createHouseAds({ host, rating = null, catalogue, placements = {}, onEvent, ingest: ingestAt = null, reports: reportsAt = null, mix: mixFrom = null, signedBy = null, lang = null, os = guessOs(), native = {}, age = () => null, muted = () => false, aspect = () => null,
+export function createIndieAds({ host, rating = null, catalogue, placements = {}, onEvent, ingest: ingestAt = null, reports: reportsAt = null, mix: mixFrom = null, signedBy = null, lang = null, os = guessOs(), native = {}, age = () => null, muted = () => false, aspect = () => null,
   test = () => false, consent, cache: wantsCache = true, storage: given, fetch = globalThis.fetch?.bind(globalThis), now = Date.now, rand = Math.random }) {
   // Has the player agreed to anything being kept on the device (consent.js)? Said once, here: a game whose player
   // changes their mind makes this again. Without it: memory for storage, nothing cached, and what was kept before taken away.
   const agreed = consent !== false, keep = agreed && wantsCache, storage = agreed ? given ?? safeStorage() : memoryStorage();
   if (!agreed) { forget(given); forgetCache(); }
-  const https = (what, u) => { if (u == null || secure(String(u))) return u; console.error(`[house-ads] ${what} isn't https, and isn't used: ${u}`); return null; };
+  const https = (what, u) => { if (u == null || secure(String(u))) return u; console.error(`[indie-ads] ${what} isn't https, and isn't used: ${u}`); return null; };
   const ingest = https('ingest', ingestAt), mixUrl = https('mix', mixFrom);
   const shell = { ...WEB, ...native }, inApp = !!native.openStore;
-  const history = openHistory(storage, `houseAds.${host}`);
+  const history = openHistory(storage, OURS + host);
   const reporter = ingest ? createReporter({ url: String(ingest), host, os, storage, fetch }) : null;
   // an event, to the host's analytics and the package's own: what happened, and to which creative of which game
   const tell = (event, placement, creative, app, fields) => {
@@ -144,7 +146,7 @@ export function createHouseAds({ host, rating = null, catalogue, placements = {}
   // every catalogue it serves, so a copy taken for shipping brings it). Never the one in a catalogue just fetched: that's the thing in doubt.
   const key = signedBy ?? (typeof fallback?.signedBy === 'string' && fallback.apps ? fallback.signedBy : null);
   const loaded = catalogue?.apps ? Promise.resolve(validate(catalogue)) : loadCatalogue({ url: String(url), fallback: fallback?.apps ? fallback : fallback && String(fallback), fetch, storage, signedBy: key });
-  loaded.then(cat => cat.dropped.forEach(d => console.warn(`[house-ads] dropped ${d}`)));
+  loaded.then(cat => cat.dropped.forEach(d => console.warn(`[indie-ads] dropped ${d}`)));
   // beside what a creative plays: what dresses its end card, with the button's picture for this store and not the other's
   const dressing = c => filesOf(c).filter(([field, url]) => url && (field.startsWith('endCard.') || field === `storeButton.${os}`));
   const cached = openCache({ fetch, now, keep, more: dressing });
@@ -156,7 +158,7 @@ export function createHouseAds({ host, rating = null, catalogue, placements = {}
   // catalogue's own. Asked at the start, beside the catalogue, and again when the game comes back
   // to the front. The ingest is waited on for MIX_PATIENCE and no longer (there is always an older
   // answer to go by, and an ad asked for mustn't stand waiting); what it says after that is used from then on.
-  const MIX_KEY = `houseAds.mix.${host}`, MIX_KEEP = 7 * 864e5, MIX_AGE = 6e5, MIX_PATIENCE = 1500;
+  const MIX_KEY = `${OURS}mix.${host}`, MIX_KEEP = 7 * 864e5, MIX_AGE = 6e5, MIX_PATIENCE = 1500;
   let mixAt = 0, mixed;
   async function askMix() {
     const stop = new AbortController(), timer = setTimeout(() => stop.abort(), 4000);
@@ -197,7 +199,7 @@ export function createHouseAds({ host, rating = null, catalogue, placements = {}
     return cache.fill({ creatives: cat.creatives, wanted: wanted({ ...await audience(cat), placements }) });
   }
   let settled;   // the latest download: demand() is truest after it
-  const refetch = () => (settled = prefetch().catch(e => { console.warn(`[house-ads] ${e.message}`); return []; }));
+  const refetch = () => (settled = prefetch().catch(e => { console.warn(`[indie-ads] ${e.message}`); return []; }));
   const ready = refetch();
 
   // What there is to show this player in this placement now, and what share of the host's
@@ -223,7 +225,7 @@ export function createHouseAds({ host, rating = null, catalogue, placements = {}
         const asked = await demand(placement), whose = turn(asked, rand);
         if (whose === 'owed') among = new Set(asked.owed);   // the game owed, not merely likelier
         else if (!whose) {
-          const out = await Promise.resolve().then(paid).catch(err => { console.warn(`[house-ads] paid: ${err?.message ?? err}`); return null; });
+          const out = await Promise.resolve().then(paid).catch(err => { console.warn(`[indie-ads] paid: ${err?.message ?? err}`); return null; });
           if (out) { tell('paid', placement); return { ...nothing(!!out.granted && !interstitial), shown: true, via: 'paid' }; }   // counted, as a slot the house didn't take
         }   // it had none: a house ad after all
       }

@@ -12,9 +12,9 @@ import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 
-/** house-ads' native side on Android (capacitor/index.js says what each call is for). */
-@CapacitorPlugin(name = "HouseAds")
-public class HouseAdsPlugin extends Plugin {
+/** indie-ads' native side on Android (capacitor/index.js says what each call is for). */
+@CapacitorPlugin(name = "IndieAds")
+public class IndieAdsPlugin extends Plugin {
 
     private static final String PLAY_STORE = "com.android.vending";
 

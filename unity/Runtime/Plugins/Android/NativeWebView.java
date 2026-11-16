@@ -32,7 +32,7 @@ import com.unity3d.player.UnityPlayer;
  * Every method may be called from any thread: the work is done on the UI thread, in order.
  * The page talks back with window.nativeWebView.postMessage(string), which any frame of the
  * page can call: a listener that matters must be able to tell its own page's words from a
- * frame's (house-ads' page sends a key only it was given).
+ * frame's (indie-ads' page sends a key only it was given).
  */
 public class NativeWebView {
 

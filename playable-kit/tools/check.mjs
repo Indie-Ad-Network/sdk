@@ -1,4 +1,4 @@
-// Checks a finished playable against what house-ads asks of one (../PLAYABLE_HOST.md): its size, that it
+// Checks a finished playable against what indie-ads asks of one (../PLAYABLE_HOST.md): its size, that it
 // reaches for nothing outside itself, its funnel step names, that it pauses when told. Exits 1 on an error.
 //   node tools/check.mjs path/to/playable.html [more.html ...]
 import { readFileSync } from 'node:fs';
