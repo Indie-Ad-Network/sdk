@@ -233,6 +233,7 @@ namespace HouseAdsNetwork
 		float demandTime;
 
 		bool showing;
+		int? sleepTimeoutWas;   // the game's own Screen.sleepTimeout while an ad has the screen kept on, put back when it closes
 		bool showStarted;
 		int showNumber;
 		float showRequestedTime;
@@ -502,6 +503,10 @@ namespace HouseAdsNetwork
 			showing = true;
 			showStarted = false;
 			showDone = done;
+			// The screen stays on for as long as an ad is up: nobody touches a video, or a playable's opening, for
+			// longer than a phone waits before it dims, and a web view's page can't ask this of the device itself.
+			sleepTimeoutWas = Screen.sleepTimeout;
+			Screen.sleepTimeout = SleepTimeout.NeverSleep;
 			showRequestedTime = Time.realtimeSinceStartup;
 			++showNumber;
 			bool muted = config.muted != null && config.muted();
@@ -514,6 +519,11 @@ namespace HouseAdsNetwork
 		void FinishShow(HouseAdResult result)
 		{
 			bool wasShown = showStarted;
+			if (sleepTimeoutWas.HasValue)
+			{
+				Screen.sleepTimeout = sleepTimeoutWas.Value;
+				sleepTimeoutWas = null;
+			}
 			showing = false;
 			showStarted = false;
 			storeOpen = false;
