@@ -5,7 +5,9 @@
 // So a partner's existing playable drops in unchanged.
 //
 // The frame is sandboxed with no origin of its own: it can run scripts and nothing else. It
-// can't read the host game's page, storage or cookies, and can't open windows or navigate.
+// can't read the host game's page, storage or cookies, and can't open windows or navigate the
+// game's page. And it can ask for nothing outside itself (LOCKED, below): no request leaves a
+// player's device for anyone a playable's maker chose.
 // All it can do is post these to the player (player.js), which decides what they're worth:
 //   { houseAds: 'open' }       its install button: the player opens the store, with its own link
 //   { houseAds: 'complete' }   it says it's done (mraid.close())
@@ -64,10 +66,17 @@ export function shim() {
   addEventListener('unhandledrejection', e => tell('error', { message: String(e.reason) }));
 }
 
-// The playable's HTML with the shim in it, ahead of its own scripts, and the network's
+// What a playable's page may load: what's written into it (inline, data: and blob:), and nothing fetched. MRAID asks
+// no such thing, and a playable made for another network may reach for a font or call home: here that fails, as it
+// would with no signal, so that showing an ad tells nobody but this network that it was shown. The policy goes in
+// ahead of everything of the page's own, which is the only place a page's policy holds for all of it. What it can't
+// stop is the frame sending itself to another address: the player sees that and takes the frame away (player.js).
+export const LOCKED = "default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' data: blob:; style-src 'unsafe-inline' data: blob:; img-src data: blob:; media-src data: blob:; font-src data: blob:; connect-src data: blob:; worker-src data: blob:; child-src data: blob:; form-action 'none'; base-uri 'none'";
+
+// The playable's HTML with that policy and the shim in it, ahead of its own scripts, and the network's
 // mraid.js tag (there is no such file here) out.
 export function withShim(html) {
-  const tag = `<script>(${shim})()</script>`;
+  const tag = `<meta http-equiv="Content-Security-Policy" content="${LOCKED}"><script>(${shim})()</script>`;
   const out = html.replace(/<script\b[^>]*\bsrc=["'][^"']*mraid\.js["'][^>]*>\s*<\/script>/gi, '');
   for (const after of [/<head\b[^>]*>/i, /<html\b[^>]*>/i, /<!doctype[^>]*>/i]) {
     const m = out.match(after);

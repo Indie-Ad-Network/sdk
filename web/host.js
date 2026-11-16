@@ -14,30 +14,30 @@
 //   the game calls                              the page says
 //   start(config)                               { type: 'loaded' }           the page is up: start() may be called
 //   show(n, placement, reward, muted, lang)
-//   …                                           { type: 'apps', apps }       the catalogue's games: which are installed? (Android's to answer; iOS isn't asked)
+//   …                                           { type: 'device' }           what can't a page know? (answered with device())
 //   offered(placement)                          { type: 'demand', demand }   [{ placement, share, available, owed }] (core/index.js demand(); owed: how many games)
 //   test(on)          a developer trying the ads out (core/index.js test())
-//   device({ installed: [ids], metered })       { type: 'event', e }         every event of the player, for the game's analytics
+//   device({ metered })                         { type: 'event', e }         every event of the player, for the game's analytics
 //   storeClosed()                               { type: 'store', link }      open this store link; storeClosed() when it's put away
 //                                               { type: 'banner', link }     the store's banner for link.id at the foot of the screen; no id: away
 //   back()            the device's back button: the player's ✕
 //                                               { type: 'done', n, … }       show(n)'s result
 //                                               { type: 'idle' }             nothing under way: the web view may be put away
 //
-// The game is asked what a page can't know (which games are installed, whether the network
-// costs the player) once the catalogue is in, and tells it again whenever it may have
+// The game is asked what a page can't know (whether the network costs the player) once the
+// catalogue is in, and tells it again whenever it may have
 // changed. `demand` is sent whenever it may have: so the game always has the answer to hand,
 // without asking, when it must decide in one frame whose ad to show.
 import { createHouseAds } from '../core/index.js';
 
-const DEVICE_WAIT = 1500;   // ms to wait for the game's first word on what's installed
+const DEVICE_WAIT = 1500;   // ms to wait for the game's first word on the network
 const IDLE_AFTER = 4000;    // ms of nothing before saying so: the analytics' last send is 2 s after an ad
 
 let key = '';
 const post = (type, fields) => window.nativeWebView?.postMessage(JSON.stringify({ k: key, items: [{ type, ...fields }] }));
 
 let ads = null, placements = {}, muted = false, lang = null, testing = false, busy = 0, idleTimer = null;
-let device = { installed: new Set(), metered: false }, deviceKnown, storeDone = null;
+let device = { metered: false }, deviceKnown, storeDone = null;
 const known = new Promise(ok => { deviceKnown = ok; });
 
 // flat, and all strings: for a native side with no more than a field-by-field JSON reader
@@ -45,7 +45,6 @@ const flat = link => ({ via: link?.via ?? '', url: link?.url ?? '', fallback: li
 const native = {
   openStore: link => new Promise(done => { storeDone = done; post('store', { link: flat(link) }); }),
   banner: link => post('banner', { link: flat(link) }),   // an id: the App Store's banner for it; none: the banner away
-  isInstalled: async app => { await known; return device.installed.has(app.id); },
   metered: async () => { await known; return device.metered; },
 };
 
@@ -83,14 +82,14 @@ window.houseAdsHost = {
       onEvent: e => post('event', { e }),
     });
     during(async () => {
-      const cat = await ads.catalogue;
-      post('apps', { apps: Object.values(cat.apps).map(a => ({ id: a.id, package: a.android?.package ?? null })) });
-      setTimeout(deviceKnown, DEVICE_WAIT);   // a game that never answers: nothing is installed
+      await ads.catalogue;
+      post('device');
+      setTimeout(deviceKnown, DEVICE_WAIT);   // a game that never answers: the network costs nothing
       await around(ads.ready);   // what's already on the device can be shown at once; then what has just been downloaded
     });
   },
-  device({ installed = [], metered = false } = {}) {
-    device = { installed: new Set(installed), metered: !!metered };
+  device({ metered = false } = {}) {
+    device = { metered: !!metered };
     deviceKnown();
     if (ads) { ads.refresh(); during(() => around(ads.prefetch())); }   // and what's wanted downloaded, if the network no longer costs: the first word on that isn't the last
   },

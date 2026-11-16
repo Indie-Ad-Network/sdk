@@ -68,13 +68,13 @@
 // es-MX is Latin America's Spanish). The catalogue's `line`s may be given per language too.
 //
 // Optional: `os` ('ios' | 'android'; guessed), `native` (what the app shell does better than a
-// page can, e.g. the Capacitor plugin: any of { openStore(link), isInstalled(app), metered(), banner(link | null) }),
+// page can, e.g. the Capacitor plugin: any of { openStore(link), metered(), banner(link | null) }),
 // `age()` (the player's reported age, or null), `muted()`, `aspect()` ('16:9' | '9:16' | null: the
 // screen's shape, for a page that can't yet see its own), `cache: false` (keep nothing, always
 // stream), `storage`, `fetch`, `now`, `rand`.
 //
-// `test()`, true while a developer is trying the ads out: the host's own ads, games already
-// installed and creatives at their daily cap all count (pick.js), and nothing is sent to the
+// `test()`, true while a developer is trying the ads out: the host's own ads, games that are
+// resting and creatives at their daily cap all count (pick.js), and nothing is sent to the
 // ingest, so a test showing is never counted as one a studio owes or is owed. ads.prefetch()
 // downloads what that makes wanted. A player's report of an ad is still sent, marked as a test,
 // so the way a report goes can be tried before release; the dashboard keeps those apart.
@@ -103,7 +103,6 @@ const shape = told => { const seen = innerWidth > 0 && innerHeight > 0; if (!see
 // a page's own ways, where the shell gives none
 const WEB = {
   openStore: link => void open(link.fallback ?? link.url, '_blank', 'noopener'),
-  isInstalled: null,   // a page can't tell, and on iOS no shell asks (Apple's review guidelines, 5.1.2 iv)
   metered: () => { const c = navigator.connection; return !!c && (c.saveData || c.type === 'cellular'); },   // where the browser says
 };
 
@@ -169,20 +168,12 @@ export function createHouseAds({ host, rating = null, catalogue, placements = {}
   }
   mixed = loadMix();
 
-  // Which of the catalogue's games are on the device. Asked once, and again when the game
-  // comes back to the front: the only time it can have changed.
-  let installed = null;
-  const installedApps = cat => installed ??= (async () => {
-    const out = new Set();
-    if (shell.isInstalled) await Promise.all(Object.values(cat.apps).map(async a => { try { if (await shell.isInstalled(a)) out.add(a.id); } catch { /* can't tell: not installed */ } }));
-    return out;
-  })();
-  // The game is back at the front, as the page sees it or as the host says (a game installed, a day gone by):
-  // what's installed is asked again, and the mix if it's old.
-  const refresh = () => { installed = null; if (mixUrl && now() - mixAt > MIX_AGE) mixed = loadMix(); };
+  // The game is back at the front, as the page sees it or as the host says (a day gone by): the mix is asked again if it's old.
+  // What else is on the device is never asked: which games a player has is theirs to know.
+  const refresh = () => { if (mixUrl && now() - mixAt > MIX_AGE) mixed = loadMix(); };
   if (typeof document !== 'undefined') document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
   // who the player is and where things stand, to the pick
-  const audience = async cat => ({ catalogue: cat, host, rating, age: age(), installed: await installedApps(cat), history: history.get(), now: now(), aspect: shape(aspect()), rand, boost: (await mixed).boost, lang: words().locale, test: !!test(), perDay: settingsOf(cat, host).perDay });
+  const audience = async cat => ({ catalogue: cat, host, rating, age: age(), history: history.get(), now: now(), aspect: shape(aspect()), rand, boost: (await mixed).boost, lang: words().locale, test: !!test(), perDay: settingsOf(cat, host).perDay });
   // a playable's page, handed on and no longer held here: megabytes, for the length of the ad
   const page = media => { const html = media?.html; if (html != null) media.html = null; return html; };
   const nothing = granted => ({ granted, shown: false, via: null, creative: null, app: null, kind: null, watchedSecs: 0 });
@@ -266,7 +257,7 @@ export function createHouseAds({ host, rating = null, catalogue, placements = {}
     settled: () => settled,
     show,
     demand,
-    // the host knows something changed that a page can't see (a game installed, the app back at the front)
+    // the host knows something changed that a page can't see (the app back at the front)
     refresh,
     // download what's wanted now (after test() changes, say); resolves the ids fetched, as settled() then does
     prefetch: refetch,

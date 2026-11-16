@@ -42,7 +42,7 @@ A game with no bundler takes this repo as a git submodule and imports `core/inde
 
 ## In a Capacitor app
 
-Add `capacitor/` as a dependency (`"house-ads-capacitor": "file:…/sdk/capacitor"`), run `npx cap sync`, and pass `native: capacitorNative()` (from `capacitor/index.js`). The app then shows the App Store sheet over the game, leaves out games already installed (Android), and doesn't download on mobile data. `node tools/native-queries.mjs catalogue.json --host <id> --android …/AndroidManifest.xml` writes the list Android needs before it'll say whether a game is installed. iOS isn't asked: Apple's review guidelines (5.1.2 iv) keep what else is on a device out of advertising, so there a game's daily cap and its rest are what spare a player who has it.
+Add `capacitor/` as a dependency (`"house-ads-capacitor": "file:…/sdk/capacitor"`), run `npx cap sync`, and pass `native: capacitorNative()` (from `capacitor/index.js`). The app then shows the App Store sheet over the game, and doesn't download on mobile data. What else is on the device is never asked: a game's daily cap and its rest are what spare a player who already has it.
 
 ## In a Unity game
 
@@ -70,7 +70,7 @@ const { granted, via } = await ads.show('saveMe', { paid: () => myNetwork.showRe
 const { share, available, owed } = await ads.demand('saveMe');
 ```
 
-`available` is how many creatives this player could be shown here now: none if they have every game installed (Android: iOS isn't asked), or have seen each as often as it may be shown today, or have seen the game's `perDay` of house ads today, or every game left is resting (below), or nothing is downloaded yet. `share` (0–1) is what the network asks of this placement's slots, and is 0 when nothing is available.
+`available` is how many creatives this player could be shown here now: none if they have seen each as often as it may be shown today, or have seen the game's `perDay` of house ads today, or every game left is resting (below), or nothing is downloaded yet. `share` (0–1) is what the network asks of this placement's slots, and is 0 when nothing is available.
 
 The share is the catalogue's to set, so it changes with no release of any game (`core/exchange.js`):
 
@@ -87,7 +87,7 @@ A game may be given its own settings (`hosts`), and a placement of it its own sh
 Two limits keep a player from being shown the same few games' ads for months. Both are counted on the device, in the game's own storage, since the network keeps nothing about any one player:
 
 - `perDay`: the most house ads a player is shown in 24 hours in one game. Left out, no limit.
-- `fatigue`: a game whose ads a player has been shown `after` times with no tap on its store button **rests**, not shown to them, for `rest` days; each time again, `grow` times longer, up to 180 days. A store tap starts it over (and a game installed isn't shown anyway). When every game rests there is nothing available, and the host's paid network has all its slots. Left out, 6, 14 and 2; `after: 0` turns it off.
+- `fatigue`: a game whose ads a player has been shown `after` times with no tap on its store button **rests**, not shown to them, for `rest` days; each time again, `grow` times longer, up to 180 days. A store tap starts it over. When every game rests there is nothing available, and the host's paid network has all its slots. Left out, 6, 14 and 2; `after: 0` turns it off.
 
 A developer's test (`test()`) is held to neither.
 
@@ -119,7 +119,7 @@ One JSON file on a server, shared by every game, so changing what's shown never 
 }
 ```
 
-Which creative shows is decided in `core/pick.js`: in date, not the host, not rated above it, not installed, under its daily cap, the right shape, no longer than the placement takes; then by weight, and never the same one twice running.
+Which creative shows is decided in `core/pick.js`: in date, not the host, not rated above it, not resting, under its daily cap, the right shape, no longer than the placement takes; then by weight, and never the same one twice running.
 
 ## Creatives
 

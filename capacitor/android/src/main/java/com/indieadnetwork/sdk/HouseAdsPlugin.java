@@ -2,7 +2,6 @@ package com.indieadnetwork.sdk;
 
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.net.ConnectivityManager;
 import android.net.Uri;
 import com.getcapacitor.JSObject;
@@ -37,27 +36,6 @@ public class HouseAdsPlugin extends Plugin {
         } catch (Exception e) {   // no Play Store on this device, or nothing that opens the link
             return false;
         }
-    }
-
-    /**
-     * `package`: whether it's installed. On Android 11 and up the package must be listed in the
-     * app manifest's queries element, or the answer is always no.
-     */
-    @PluginMethod
-    public void isInstalled(PluginCall call) {
-        String name = call.getString("package");
-        boolean installed = false;
-        if (name != null) {
-            try {
-                getContext().getPackageManager().getPackageInfo(name, 0);
-                installed = true;
-            } catch (PackageManager.NameNotFoundException e) {
-                // not installed, or not ours to see
-            }
-        }
-        JSObject out = new JSObject();
-        out.put("installed", installed);
-        call.resolve(out);
     }
 
     /** `metered`: mobile data, or a Wi-Fi network marked as metered. */

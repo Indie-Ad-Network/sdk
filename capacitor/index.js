@@ -7,9 +7,6 @@
 //               campaign and provider tokens), resolving when it's put away, so the player
 //               never leaves; a tracking link, or a product the sheet can't load, opens
 //               outside. Android: Google Play, by market://
-//   isInstalled Android: whether the game's package is there (each must be in the manifest's
-//               <queries>, which tools/native-queries.mjs writes). Not on iOS: Apple's review
-//               guidelines (5.1.2 iv) keep what else is on the device out of advertising
 //   metered     whether the network costs the player (cellular, a hotspot, Low Data Mode):
 //               creatives aren't downloaded ahead on one
 //
@@ -20,13 +17,12 @@
 
 export function capacitorNative(Capacitor = globalThis.Capacitor) {
   if (!Capacitor?.isNativePlatform?.() || !Capacitor.isPluginAvailable?.('HouseAds')) return {};
-  const plugin = Capacitor.Plugins.HouseAds, ios = Capacitor.getPlatform() === 'ios';
+  const plugin = Capacitor.Plugins.HouseAds;
   return {
     openStore: link => plugin.openStore({
       url: link.url, fallback: link.fallback ?? link.url,
       ...(link.sheet && { id: String(link.sheet.id), ct: link.sheet.ct, ...(link.sheet.pt != null && { pt: String(link.sheet.pt) }) }),
     }),
-    ...(!ios && { isInstalled: async app => !!app.android?.package && (await plugin.isInstalled({ package: app.android.package })).installed }),
     metered: async () => (await plugin.network()).metered,
   };
 }

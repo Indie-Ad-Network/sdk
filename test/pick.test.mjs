@@ -29,9 +29,12 @@ test('in date', () => {
   assert.deepEqual(ids({ now: Date.UTC(2026, 11, 27) }), ['pr-play', 'rodeo-15', 'tcb-15', 'tcb-30-wide']);
 });
 
-test('never the host itself, nor a game already installed', () => {
+// a player's history with these games resting: shown too often with no store tap
+const resting = (...games) => ({ shown: {}, apps: Object.fromEntries(games.map(id => [id, { n: 0, rests: 1, until: NOW + 1000 }])) });
+test('never the host itself, nor a game that is resting; and what else is on the device is never asked', () => {
   assert.deepEqual(ids({ host: 'tcb' }), ['pr-play', 'rodeo-15']);
-  assert.deepEqual(ids({ installed: new Set(['pr', 'rodeo']) }), ['tcb-15', 'tcb-30-wide']);
+  assert.deepEqual(ids({ history: resting('pr', 'rodeo') }), ['tcb-15', 'tcb-30-wide']);
+  assert.deepEqual(ids({ installed: new Set(['pr', 'rodeo']) }), ids(), 'a caller that still says which games are installed is not listened to');
 });
 
 test('nothing rated above the host; no partner ads for a player under 13', () => {
@@ -53,12 +56,12 @@ test('twice in 24 hours is the cap; a day on it shows again', () => {
   assert.deepEqual(ids({ history }), ['pr-play', 'rodeo-15', 'tcb-30-wide']);
 });
 
-test("a developer's test: the host's own, games installed and creatives at their cap all play", () => {
-  const history = { shown: { 'tcb-15': [NOW - 1000, NOW - 2000] } };
+test("a developer's test: the host's own, games resting and creatives at their cap all play", () => {
+  const history = { ...resting('pr', 'rodeo'), shown: { 'tcb-15': [NOW - 1000, NOW - 2000] } };
   const all = ['pr-play', 'rodeo-15', 'tcb-15', 'tcb-30-wide'];
-  assert.deepEqual(ids({ host: 'tcb', installed: new Set(['pr', 'rodeo']), history, test: true }), all);
-  assert.deepEqual(ids({ host: 'tcb', installed: new Set(['tcb', 'pr', 'rodeo']), test: false }), []);
-  assert.equal(cardFor({ ...base, host: 'tcb', installed: new Set(['tcb', 'pr', 'rodeo']), test: true, rand: () => 0 }).app, 'tcb');
+  assert.deepEqual(ids({ host: 'tcb', history, test: true }), all);
+  assert.deepEqual(ids({ host: 'tcb', history: resting('pr', 'rodeo'), test: false }), []);
+  assert.equal(cardFor({ ...base, host: 'tcb', history: resting('pr', 'rodeo'), test: true, rand: () => 0 }).app, 'tcb');
 });
 
 test('a test still keeps to the dates, the ratings, and what the placement takes and is ready', () => {
@@ -87,14 +90,14 @@ test("by weight: a game of the host's own studio counts double there and nowhere
   assert.deepEqual(count('16:9', 1100), { 'tcb-15': 200, 'tcb-30-wide': 400, 'pr-play': 400, 'rodeo-15': 100 });
   // in another studio's game `own` counts for nothing, and that studio's own game is the one that counts double
   assert.deepEqual(count('9:16', 900, 'rodeo2'), { 'tcb-15': 200, 'tcb-30-wide': 100, 'pr-play': 200, 'rodeo-15': 400 });
-  assert.equal(cardFor({ ...base, catalogue, host: 'rodeo2', installed: new Set(['tca']), rand: () => 0.6 }).app, 'rodeo');   // of tcb, pr, rodeo × 2: the still card likewise
+  assert.equal(cardFor({ ...base, catalogue, host: 'rodeo2', rand: () => 0.6 }).app, 'rodeo');   // of tcb, pr, rodeo × 2: the still card likewise
   assert.deepEqual(count('9:16', 700, 'elsewhere'), { 'tcb-15': 200, 'tcb-30-wide': 100, 'pr-play': 200, 'rodeo-15': 200 });
 });
 
 test('nothing to show: null, and the card is any game the player may see', () => {
   assert.equal(pick({ ...base, ready: () => false }), null);
-  assert.equal(cardFor({ ...base, installed: new Set(['tcb', 'rodeo']) }).app, 'pr');
-  assert.equal(cardFor({ ...base, installed: new Set(['tcb', 'pr', 'rodeo']) }), null);
+  assert.equal(cardFor({ ...base, history: resting('tcb', 'rodeo') }).app, 'pr');
+  assert.equal(cardFor({ ...base, history: resting('tcb', 'pr', 'rodeo') }), null);
   assert.deepEqual(cardFor({ ...base, age: 9, rand: () => 0 }), { id: 'tcb-card', app: 'tcb', kind: 'card' });
 });
 

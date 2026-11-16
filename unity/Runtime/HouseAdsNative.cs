@@ -7,15 +7,11 @@ using System.Runtime.InteropServices;
 namespace HouseAdsNetwork
 {
 	/// <summary>
-	/// What the device is asked, on the page's behalf: which of the catalogue's games are installed, whether the
-	/// network costs the player, and to open a store.
+	/// What the device is asked, on the page's behalf: whether the network costs the player, and to open a store.
+	/// What else is on the device is never asked: a game's daily cap and its rest are what spare a player who has it.
 	///
-	/// iOS (Plugins/iOS/HouseAdsNative.mm): the store is the App Store sheet over the game. Which games are installed
-	/// isn't asked: Apple's review guidelines (5.1.2 iv) keep what else is on the device out of advertising, so on
-	/// iOS no game counts as installed, and a game's daily cap and its rest are what spare a player who has it.
-	/// Android: a game is installed if its package is there, which Android 11 and up answers only for packages in
-	/// the manifest's queries element (Editor/HouseAdsBuildProcessor writes it from the catalogue the game ships);
-	/// the store is Google Play, by market://.
+	/// iOS (Plugins/iOS/HouseAdsNative.mm): the store is the App Store sheet over the game.
+	/// Android: the store is Google Play, by market://.
 	/// </summary>
 	public static class HouseAdsNative
 	{
@@ -37,33 +33,6 @@ namespace HouseAdsNetwork
 				return false;
 #endif
 			}
-		}
-
-		/// Android only: iOS isn't asked (see above), and the answer there is always no.
-		public static bool IsInstalled(string androidPackage)
-		{
-#if UNITY_EDITOR
-			return false;
-#elif UNITY_ANDROID
-			if (string.IsNullOrEmpty(androidPackage))
-			{
-				return false;
-			}
-			try
-			{
-				using (AndroidJavaObject packages = Activity().Call<AndroidJavaObject>("getPackageManager"))
-				using (AndroidJavaObject info = packages.Call<AndroidJavaObject>("getPackageInfo", androidPackage, 0))
-				{
-					return info != null;
-				}
-			}
-			catch (AndroidJavaException)
-			{
-				return false;   // NameNotFoundException: not installed, or not ours to see
-			}
-#else
-			return false;
-#endif
 		}
 
 		/// Mobile data, a hotspot, a metered Wi-Fi network, Low Data Mode: creatives aren't downloaded ahead on one.

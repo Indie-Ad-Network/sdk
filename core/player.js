@@ -400,12 +400,17 @@ export function play({ creative, app, html, link, ctaText, reward, format = 'rew
     }).catch(() => {});
   } else if (kind === 'playable') {
     frame = doc.createElement('iframe');
-    frame.setAttribute('sandbox', 'allow-scripts');   // scripts, and nothing else: no origin, no popups, no navigation
+    frame.setAttribute('sandbox', 'allow-scripts');   // scripts, and nothing else: no origin, no popups, no navigating the game's page; and nothing fetched (mraidShim.js LOCKED)
     frame.setAttribute('allow', 'autoplay');
     frame.srcdoc = withShim(html); html = null;   // the frame has it now: no second copy held for the length of the ad
     stage.insertBefore(frame, end);
     wait('loading', true);   // the countdown is for playing, not for the page arriving
-    frame.addEventListener('load', () => { toFrame('volume', muted ? 0 : 100); wait('loading', false); });
+    let arrived = false;
+    frame.addEventListener('load', () => {
+      // a second arrival is the frame gone to another address, which nothing can forbid it: it's emptied, and said
+      if (arrived) { if (frame.getAttribute('srcdoc')) { frame.setAttribute('srcdoc', ''); emit('fail', { why: 'playable', message: 'left its page' }); } return; }
+      arrived = true; toFrame('volume', muted ? 0 : 100); wait('loading', false);
+    });
   } else toCard();
 
   // ---- what the playable says ----

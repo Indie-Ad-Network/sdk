@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { validate, loadCatalogue } from '../core/catalogue.js';
-import { withShim, shim } from '../core/mraidShim.js';
+import { withShim, shim, LOCKED } from '../core/mraidShim.js';
 import { openHistory, memoryStorage as memory } from '../core/history.js';
 import { DAY } from '../core/pick.js';
 
@@ -103,10 +103,19 @@ test("the shim says 'ready' to each who asks, once, however many ask", async () 
 test("the shim goes in ahead of the playable's own scripts, and the network's mraid.js tag comes out", () => {
   const out = withShim('<!DOCTYPE html><html><head><meta charset="utf-8"><script src="mraid.js"></script><script>go()</script></head></html>');
   assert.ok(!out.includes('src="mraid.js"'));
-  assert.ok(out.startsWith('<!DOCTYPE html><html><head><script>(function shim()'));
+  const lock = `<meta http-equiv="Content-Security-Policy" content="${LOCKED}">`;
+  assert.ok(out.startsWith(`<!DOCTYPE html><html><head>${lock}<script>(function shim()`));
   assert.ok(out.indexOf('window.mraid') < out.indexOf('go()'));
-  assert.ok(withShim('<div>bare</div>').startsWith('<script>'));
-  assert.ok(withShim('<!doctype html><p>').startsWith('<!doctype html><script>'), 'never ahead of the doctype');
+  assert.ok(withShim('<div>bare</div>').startsWith(lock + '<script>'));
+  assert.ok(withShim('<!doctype html><p>').startsWith(`<!doctype html>${lock}<script>`), 'never ahead of the doctype');
+});
+
+test('a playable may load what is written into it and nothing fetched: its policy is ahead of everything of its own', () => {
+  const out = withShim('<html><head><link rel="stylesheet" href="https://fonts.example/a.css"><script src="https://cdn.example/x.js"></script></head></html>');
+  assert.ok(out.indexOf('Content-Security-Policy') < out.indexOf('fonts.example'), 'a policy holds only for what comes after it');
+  assert.ok(LOCKED.startsWith("default-src 'none'") && !/https?:|\*|'self'/.test(LOCKED), 'nothing by address: no origin, no wildcard, not even its own (it has none)');
+  for (const kind of ['script-src', 'style-src', 'img-src', 'media-src', 'font-src', 'connect-src']) assert.match(LOCKED, new RegExp(`${kind} [^;]*data: blob:`), `${kind}: what the page carries`);
+  assert.ok(!LOCKED.includes('"'), 'it sits in an attribute');
 });
 
 test('history: showings a day old stop counting; the last shown and the watched are kept', () => {

@@ -60,7 +60,6 @@ test("wanted: every placement's likeliest first, then the likeliest of the rest,
   // the 15 s placement can only take the short ones: its best is kept, though two longer ones outweigh it
   assert.deepEqual(ids({ placements: { saveMe: { maxSecs: 30 }, jobs: { maxSecs: 15 } }, keep: 2 }), ['tcb-30', 'rodeo-15']);
   assert.deepEqual(ids({ placements: { saveMe: { maxSecs: 30 }, jobs: { maxSecs: 15 } } }), ['tcb-30', 'rodeo-15', 'tcb-play']);
-  assert.deepEqual(ids({ installed: new Set(['tcb']) }), ['rodeo-15']);
 });
 
 // As much of IndexedDB as the cache uses: two stores, requests that succeed a moment later.

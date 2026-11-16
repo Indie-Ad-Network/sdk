@@ -7,7 +7,7 @@
 //   2. it advertises the host itself       6. not ready to play (`ready(creative)`: the cache's word)
 //   3. rated above the host; or not one    7. longer than the placement takes (`maxSecs`: but a video marked `overrun`), or not a kind it takes
 //      for a player under 13, who is one   8. the one shown last, if there's another
-//   4. its game is already installed, or resting: shown too often with no store tap (history.js)
+//   4. its game is resting: shown too often with no store tap (history.js)
 // Of those left, one by weight: its own `weight`, a game of the host's own studio × OWN_BOOST, and a video of the
 // wrong shape for the screen × WRONG_SHAPE (it plays letterboxed: worse, but not nothing), and
 // `boost[app]` where the exchange says a game is owed showings (exchange.js).
@@ -32,20 +32,20 @@ export const shownToday = (history, now) => Object.values(history?.shown ?? {}).
 export const resting = (history, app, now) => (history?.apps?.[app]?.until ?? 0) > now;
 
 // The apps this player may be shown at all: rules 2–4.
-function appOk(app, { host, rating, age, installed, history, now, test = false }) {
+function appOk(app, { host, rating, age, history, now, test = false }) {
   if (!app || (!test && app.id === host)) return false;
   if (rating != null && ageOf(app.rating) > ageOf(rating)) return false;
   if (age != null && age < CHILD && !app.under13) return false;
-  return test || (!installed?.has(app.id) && !resting(history, app.id, now));
+  return test || !resting(history, app.id, now);
 }
 
-export function eligible({ catalogue, host, placement = {}, rating, age, installed, history, lang = null, now = Date.now(), ready = () => true, test = false, perDay = null, among = null }) {
+export function eligible({ catalogue, host, placement = {}, rating, age, history, lang = null, now = Date.now(), ready = () => true, test = false, perDay = null, among = null }) {
   if (!test && perDay != null && shownToday(history, now) >= perDay) return [];
   return catalogue.creatives.filter(c => {
     const app = catalogue.apps[c.app];
     if (among && !among.has(c.app)) return false;
     if ((c.from && now < Date.parse(c.from)) || (c.to && now >= Date.parse(c.to))) return false;
-    if (!appOk(app, { host, rating, age, installed, history, now, test })) return false;
+    if (!appOk(app, { host, rating, age, history, now, test })) return false;
     if (!test && c.hosts && !c.hosts.includes(host)) return false;
     if (c.langs && lang && !c.langs.some(l => String(l).toLowerCase().split('-')[0] === lang.toLowerCase().split('-')[0])) return false;   // a creative with words in it, for those who read them
     if (rating != null && c.rating && ageOf(c.rating) > ageOf(rating)) return false;
@@ -88,8 +88,8 @@ export function wanted({ placements = {}, keep = 3, ...o }) {
 
 // With nothing to play, a game to put on the still card: any the player may be shown, whatever
 // its creatives' caps and whether or not their files are here (not one resting). null when there is none.
-export function cardFor({ catalogue, host, rating, age, installed, history, now = Date.now(), rand = Math.random, test = false }) {
-  const apps = Object.values(catalogue.apps).filter(a => appOk(a, { host, rating, age, installed, history, now, test }));
+export function cardFor({ catalogue, host, rating, age, history, now = Date.now(), rand = Math.random, test = false }) {
+  const apps = Object.values(catalogue.apps).filter(a => appOk(a, { host, rating, age, history, now, test }));
   if (!apps.length) return null;
   const app = weighted(apps, a => appWeight(catalogue, host, a.id), rand).id;
   return { id: `${app}-card`, app, kind: 'card' };

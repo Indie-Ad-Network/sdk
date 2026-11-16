@@ -68,7 +68,7 @@ namespace HouseAdsNetwork
 		public float refreshAfterSeconds = 600f;
 		/// Seconds for an ad to start before it's given up as failed.
 		public float showTimeout = 6f;
-		/// A developer trying the ads out (HouseAds.SetTest changes it later): the game's own ads, games already installed
+		/// A developer trying the ads out (HouseAds.SetTest changes it later): the game's own ads, games that are resting
 		/// and creatives at their daily cap all count, and nothing is sent to the ingest. Never on in a player's game.
 		public bool test;
 		/// Log to the Unity console and the device log: what the page says, its warnings and its web view's console.
@@ -229,7 +229,7 @@ namespace HouseAdsNetwork
 		string pageKey;
 		readonly List<string> waitingCalls = new List<string>();
 		readonly Dictionary<string, HouseAdDemand> demand = new Dictionary<string, HouseAdDemand>();
-		AppRef[] apps;
+		bool asked;   // the page has asked what it can't know: it's told again whenever that may have changed
 		float demandTime;
 
 		bool showing;
@@ -347,8 +347,8 @@ namespace HouseAdsNetwork
 					}
 					waitingCalls.Clear();
 					break;
-				case "apps":
-					apps = m.apps;
+				case "device":
+					asked = true;
 					TellDevice();
 					break;
 				case "demand":
@@ -446,22 +446,11 @@ namespace HouseAdsNetwork
 
 		void TellDevice()
 		{
-			if (view == null || apps == null)
+			if (view == null || !asked)
 			{
 				return;
 			}
-			StringBuilder json = new StringBuilder("{\"installed\":[");
-			bool any = false;
-			for (int i = 0; i < apps.Length; i++)
-			{
-				if (HouseAdsNative.IsInstalled(apps[i].package))
-				{
-					json.Append(any ? "," : "").Append(Quote(apps[i].id));
-					any = true;
-				}
-			}
-			json.Append("],\"metered\":").Append(HouseAdsNative.IsMetered() ? "true" : "false").Append("}");
-			Call("device", json.ToString());
+			Call("device", HouseAdsNative.IsMetered() ? "{\"metered\":true}" : "{\"metered\":false}");
 		}
 
 		void OnApplicationFocus(bool focused)
@@ -481,7 +470,7 @@ namespace HouseAdsNetwork
 			{
 				return;
 			}
-			// Back at the front: a game may have been installed (perhaps from our own ad), and a day-old cap may have lapsed.
+			// Back at the front: the network may have changed, and a day-old cap may have lapsed.
 			if (view != null)
 			{
 				TellDevice();
@@ -658,16 +647,9 @@ namespace HouseAdsNetwork
 			public bool shown, granted;
 			public string creative, app, kind;
 			public float watchedSecs;
-			public AppRef[] apps;
 			public DemandRow[] demand;
 			public HouseAdEvent e;
 			public Link link;
-		}
-
-		[Serializable]
-		class AppRef
-		{
-			public string id, package;
 		}
 
 		[Serializable]

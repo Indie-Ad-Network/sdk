@@ -8,9 +8,9 @@ Where the SDK stands, what was put off, and what it can't do. The server's own l
 |---|---|
 | **The core**: player, store links, pick, catalogue, MRAID shim | Node tests; checked in headless Chrome and in a Capacitor app on an Android phone |
 | **The cache** (`core/cache.js`): creatives downloaded ahead into IndexedDB and played from the device; the catalogue from the server, then its last copy, then one shipped with the game | Node tests; checked in headless Chrome and on an Android phone |
-| **The Capacitor plugin** (`capacitor/`): App Store sheet, installed-game check (Android), metered-network check | Android checked on a phone with real taps. **iOS builds and installs, but nobody has yet tapped through it**: the App Store sheet and sound on a video want checking by hand |
+| **The Capacitor plugin** (`capacitor/`): App Store sheet, metered-network check | Android checked on a phone with real taps. **iOS builds and installs, but nobody has yet tapped through it**: the App Store sheet and sound on a video want checking by hand |
 | **Analytics** (`core/analytics.js`, `core/wire.js`): what was shown, sent to the network's server ([SERVER.md](SERVER.md)), nothing about a player | Node tests; running in production |
-| **The Unity package** (`unity/`): the player as one page in the package's own web view, the App Store sheet, the installed-game (Android) and metered-network checks, a build step for `<queries>` | The page checked in headless Chrome, driven as Unity drives it; **shipping in a released game**: about 12,000 showings from 70,000 offers by 2026-11-16 |
+| **The Unity package** (`unity/`): the player as one page in the package's own web view, the App Store sheet, the metered-network check | The page checked in headless Chrome, driven as Unity drives it; **shipping in a released game**: about 12,000 showings from 70,000 offers by 2026-11-16 |
 | **Interstitials** (`format: 'interstitial'`) | Checked in headless Chrome |
 | **A creative's own way of being shown** (0.5.0: the end card's art and the store button's place and picture; a video's backdrop, fade, loop, taps and `overrun`; these kept in the cache) | Node tests; each checked in headless Chrome with a real video. **Not yet seen on a phone**: the loop's seek, the fade (iOS keeps a video's volume to itself) and the backdrop want watching on both platforms before a creative that uses them goes live |
 | **Languages**: the player's own words in 19 languages (`strings/`, `core/locale.js`) | Node tests |
@@ -33,7 +33,6 @@ Each is worth doing, but not where it was found.
 | **A 9:16 cut tool** (master → 9:16 and 16:9, 15 s and 30 s, with ffmpeg) | Wide videos play letterboxed in portrait games | Creative work |
 | **Let the host say when to download** (an `idle()` option, or `ads.prefetch()` called from menus) | A fill straight after boot or an ad can land mid-game: a multi-MB fetch, a hash and an IndexedDB write beside a 60 fps game | Wants measuring on slow phones first |
 | **Split `tools/publish` into the rule and the transport** | Files first, catalogue last, CORS open and the catalogue uncached are the package's rules; FTPS by curl and Apache's `.htaccess` are one host's | When someone publishes a folder some other way |
-| **One native call for "which of these are installed"** | Several bridge calls where one would do | Asked once each time the game comes to the front, so cheap enough |
 | **`store_open`'s `via` from what the shell did**, not what was planned | On iOS a sheet that can't load falls back to the App Store app, but the event still says `sheet` | Needs the plugin to answer |
 | **The package says which of its files a game ships** (a `runtime` list, or a small manifest) | A game with no bundler copies the package's folder into its build, and must leave out the tests, tools and native sources | Wants agreeing across the games that take the package |
 

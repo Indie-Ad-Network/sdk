@@ -61,7 +61,9 @@ early when its code never closes.
 2. Insert the shim as an inline `<script>` straight after `<head>` (else after `<html>`, else
    after the doctype, else at the very start), so it runs before anything of the playable's.
 3. Show it in `<iframe sandbox="allow-scripts" allow="autoplay">` with the result as `srcdoc`.
-   The sandbox has no origin: no cookies, no storage, no popups, no navigation.
+   The sandbox has no origin: no cookies, no storage, no popups, no navigation. The player also gives
+   the page a policy ahead of everything of its own (`LOCKED` in `core/mraidShim.js`), so it loads only
+   what's written into it and nothing fetched: do the same, and a playable can tell no one it was shown.
 4. Because storage throws in that sandbox, the shim replaces `localStorage` and
    `sessionStorage` with in-memory stand-ins when touching them throws.
 5. The frame sits **below** the host's bar (close button, countdown), not under it, so the

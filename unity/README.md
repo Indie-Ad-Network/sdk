@@ -13,7 +13,7 @@ https://github.com/Indie-Ad-Network/sdk.git?path=/unity#v0.5.0
 What follows the `#` is the release (`CHANGELOG.md` has each): it's how a game stays on the version it was tested with. Then:
 
 1. If the Android build is minified, keep the web view's Java side, which is reached by name: `-keep class com.indieadnetwork.sdk.** { *; }` in `proguard-user.txt`.
-2. Ship a copy of the catalogue as `Resources/house-ads-catalogue.json`. It's what a first run with no server shows, and what the build reads for the games to ask Android about: `Editor/HouseAdsBuildProcessor` adds each package to the manifest's `<queries>`, so a game the player has isn't advertised to them. iOS isn't asked which games are installed (Apple's review guidelines, 5.1.2 iv), and nothing is added to its `Info.plist`.
+2. Ship a copy of the catalogue as `Resources/house-ads-catalogue.json`. It's what a first run with no server shows. The package never asks what else is on a device, so nothing is added to the Android manifest's `<queries>` or to `Info.plist`.
 
 ## Use
 
@@ -74,5 +74,5 @@ For the ads themselves, see [Creatives](../CREATIVES.md) and the [playable kit](
 - **An ad that hasn't started in `showTimeout` seconds (6) is given up**: the callback gets `shown == false`.
 - **A playable can't speak for the page.** It runs in a sandboxed frame, and though a frame can reach `postMessage` on Android, the game acts only on messages carrying a key made for each page and given to the page alone; on iOS only the page's own frame is heard at all.
 - **In the Editor there is no web view**: `Demand` is always nothing, so every ad is the paid network's.
-- **Trying the ads out**: `HouseAdsConfig.test`, or `HouseAds.SetTest(true)` from a debug menu, plays the game's own ads too, on a device that has every game, and past a creative's daily cap. Nothing it shows is sent to the ingest, so it never counts in what studios owe each other. Never turn it on in a player's game.
+- **Trying the ads out**: `HouseAdsConfig.test`, or `HouseAds.SetTest(true)` from a debug menu, plays the game's own ads too, games that are resting, and past a creative's daily cap. Nothing it shows is sent to the ingest, so it never counts in what studios owe each other. Never turn it on in a player's game.
 - After a change to `core/` or `web/`: `node tools/build-player.mjs`, and commit the page it writes.

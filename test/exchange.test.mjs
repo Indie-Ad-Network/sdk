@@ -88,7 +88,7 @@ test('a resting game is shown nowhere, nor on the still card, until its rest is 
   assert.deepEqual(ids(), ['tca-15', 'rodeo-15']);
   assert.deepEqual(ids({ now: now + 1000 }), ['tca-15', 'pone-15', 'rodeo-15']);
   assert.deepEqual(ids({ test: true }), ['tca-15', 'pone-15', 'rodeo-15']);
-  assert.notEqual(cardFor({ catalogue, host: 'tcb', now, history, installed: new Set(['tca', 'rodeo']) })?.app, 'pone');
+  assert.notEqual(cardFor({ catalogue, host: 'tcb', now, history })?.app, 'pone');
 });
 
 test('a boosted game is picked more often', () => {
@@ -106,8 +106,8 @@ const ads = more => createHouseAds({ host: 'tcb', os: 'ios', catalogue: raw, cac
 test('demand: what this player could be shown here, and the share asked for; no share of nothing', async () => {
   assert.deepEqual(await ads().demand('tile'), { share: 0.1, available: 3, apps: ['tca', 'pone', 'rodeo'], owed: [] });
   assert.deepEqual(await ads().demand('short'), { share: 0, available: 0, apps: [], owed: [] });
-  const all = { isInstalled: async () => true };
-  assert.deepEqual(await ads({ native: all }).demand('tile'), { share: 0, available: 0, apps: [], owed: [] });
+  const all = { isInstalled: async () => true };   // a shell from 0.5.0 or before, which could say what's on the device: not asked
+  assert.deepEqual(await ads({ native: all }).demand('tile'), { share: 0.1, available: 3, apps: ['tca', 'pone', 'rodeo'], owed: [] });
 });
 
 test("demand: the ingest's answer when there is one, the last it gave when there isn't", async () => {
@@ -146,8 +146,6 @@ test('demand: the games owed showings, of those this player could be shown', asy
   assert.deepEqual((await ads({ mix: 'https://x.test/mix', fetch: owing }).demand('tile')).owed, ['pone']);
   const older = async url => String(url).includes('/mix') ? { ok: true, json: async () => ({ share: 0.1, boost: { pone: 2.5, rodeo: 1 } }) } : Promise.reject(new Error('offline'));
   assert.deepEqual((await ads({ mix: 'https://x.test/mix', fetch: older }).demand('tile')).owed, ['pone'], 'a server from before owedTo: those it made likelier');
-  const has = { isInstalled: async a => a.id === 'pone' };
-  assert.deepEqual((await ads({ mix: 'https://x.test/mix', fetch: owing, native: has }).demand('tile')).owed, [], 'owed, but on the device already');
   assert.equal(pick({ catalogue, host: 'tcb', now: Date.UTC(2026, 10, 11), among: new Set(['pone']), rand: () => 0 }).app, 'pone', 'the game owed, not merely likelier');
 });
 

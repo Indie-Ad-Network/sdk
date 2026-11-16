@@ -6,6 +6,23 @@ The repository has one version, [Semantic Versioning](https://semver.org), and a
 
 Two numbers are not this one, and change only when a format does: `VERSION` in `core/wire.js` (what games send the ingest) and the catalogue's `version`. Games already released go on sending and reading the old ones.
 
+## [Unreleased]
+
+What else is on a player's device is no longer asked.
+
+### To take it
+- **A Unity game needs nothing done**: the build no longer adds the catalogue's games to the Android manifest's `<queries>`. A manifest kept by hand that has them still: take them out.
+- **A Capacitor app runs `npx cap sync`**, and once `node tools/native-queries.mjs --android …/AndroidManifest.xml`, which takes out the `<queries>` that tool wrote for older releases. It no longer writes any.
+
+### Removed
+- **Android is no longer asked which of the network's games are installed.** It was asked so that a game a player has wasn't advertised to them, and the answer never left the device; but which games someone has is theirs to know, and reading it for advertising is the kind of thing the law in the UK and the EEA wants a player's agreement for. iOS hasn't been asked since 0.3.0. A game's daily cap and its rest (shown too often with no store tap) are what spare a player who already has it, as on iOS.
+- With it go `HouseAdsNative.IsInstalled` (Unity), the Capacitor plugin's `isInstalled`, `isInstalled` in `createHouseAds`'s `native` option (one given is not called), and `installed` in `core/pick.js`.
+- `tools/native-queries.mjs` only takes out what it wrote before.
+
+### Changed
+- **A playable can ask for nothing outside itself.** Its frame was already kept from the game's page, its storage and its windows; now its page is also given a policy that lets it load only what's written into it (inline, `data:` and `blob:`). MRAID asks no such thing, so a playable made for another network that fetches a font, a script or a picture, or calls its maker's server, goes without: as it would with no signal. `playable-kit/tools/check.mjs` already says of a page that it "reaches outside itself". One thing can't be forbidden a frame, sending itself to another address: the player empties a frame that does, and says so (`fail`, `why: "playable"`).
+- **Unity: the page asks the game for what it can't know with `{ type: 'device' }`**, where it sent the catalogue's games (`{ type: 'apps' }`), and is answered with whether the network costs the player and no more. The page and the package go together, so nothing is to be done.
+
 ## [0.5.0] - 2026-11-16
 
 The SDK in its own repository and under its own name, and a creative that says how it's shown. (There is no 0.4.0.)

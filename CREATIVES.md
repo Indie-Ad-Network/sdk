@@ -64,7 +64,7 @@ A playable is a short piece of your game that the player really plays. There are
 
 What every playable should know:
 
-- **It runs in a sandbox**: scripts, and nothing else. No network, no storage, no popups. The store link opened is the network's, never one the playable supplies.
+- **It runs in a sandbox**: scripts, and nothing else. No network (what isn't written into the file isn't loaded: no font, script or picture from another address, no call to a server), no storage, no popups. The store link opened is the network's, never one the playable supplies.
 - **It can report a funnel.** `window.houseAds?.step('board2')` counts how far each showing got, and the dashboard draws the steps between first touch and store tap. On another network the call does nothing.
 - **It carries two flags**, boxes on the upload form that are filled in from the page when it's picked: "finish early" (reaching the end gives the reward at once; without it the end card shows and the countdown runs on), ticked only if its `<meta name="house-ads">` tag asks for it, and "keep playing" (the player may play on when time is up), ticked if it pauses when told it isn't viewable, unless the tag says not ([Settings from the page](PLAYABLE_HOST.md#settings-from-the-page)).
 
