@@ -6,6 +6,13 @@ The repository has one version, [Semantic Versioning](https://semver.org), and a
 
 Two numbers are not this one, and change only when a format does: `VERSION` in `core/wire.js` (what games send the ingest) and the catalogue's `version`. Games already released go on sending and reading the old ones.
 
+## [0.6.4] - 2026-11-17
+
+Who the Unity package says it is by. Nothing to do to take it, and nothing in a game changes.
+
+### Changed
+- **The Unity package's author is Indie Ad Network** (`unity/package.json`), with the network's address: it's what Unity's Package Manager shows under the package's name. It said the studio that began it.
+
 ## [0.6.3] - 2026-11-17
 
 Ads in the Unity Editor, and how long an ad holds a player. Nothing to do to take it; an interstitial's way out changes for players (below).
