@@ -102,3 +102,14 @@ test('weights that come to nothing still give one, not an error', () => {
   const none = { ...cat, creatives: cat.creatives.map(c => ({ ...c, weight: 0 })) };
   assert.ok(pick({ catalogue: none, host: 'x', now: Date.parse('2026-06-01'), rand: () => 0.5 }));
 });
+
+test("a video marked overrun is let into a placement shorter than it; no other is, nor a playable so marked", () => {
+  const cat = validate({ apps: { a: { name: 'A', ios: { id: 1 } } }, creatives: [
+    { id: 'long', app: 'a', kind: 'video', secs: 45, src: 'l.mp4', overrun: true }, { id: 'plain', app: 'a', kind: 'video', secs: 45, src: 'p.mp4' },
+    { id: 'said-not', app: 'a', kind: 'video', secs: 45, src: 'n.mp4', overrun: false }, { id: 'fits', app: 'a', kind: 'video', secs: 30, src: 'f.mp4' },
+    { id: 'play', app: 'a', kind: 'playable', secs: 45, src: 'p.html', overrun: true }] }, 'https://x.test/c.json');
+  const ids = placement => eligible({ catalogue: cat, host: 'h', placement }).map(c => c.id);
+  assert.deepEqual(ids({ maxSecs: 30 }), ['long', 'fits']);
+  assert.deepEqual(ids({ maxSecs: 60 }), ['long', 'plain', 'said-not', 'fits', 'play']);
+  assert.deepEqual(ids({ maxSecs: 30, kinds: ['playable'] }), []);
+});

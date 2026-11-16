@@ -4,6 +4,14 @@
 // places: how long is left (the ring, top right) and a way out (✕, top left).
 //
 //   video     the ring follows the video; at its end, the reward, and an end card with the store button.
+//             What a creative may ask besides (catalogue.js; none of it unless it does):
+//               backdrop 'video'  its own picture, blurred, behind it where it doesn't fill the screen
+//               fade              the card comes up, and the sound goes down, over its last seconds
+//               loop { from }     at its end it plays on from there, silent, the store button over it, and no card
+//               tap               when the store button is there, and from when a tap anywhere on it opens the store
+//               overrun           shown in a placement shorter than it (`limit`), the reward comes at the placement's
+//                                 time and the video plays on; ✕ or ✓ then is to its end (the card, or the loop), not out
+//             One that stands still for STALL_SECS, as one that can't be played, gives way to the still card.
 //             One marked `ownEndCard` ends on a card of its own making: the player's isn't put over
 //             it, the video rests on its last frame, and a tap anywhere on the video, from its first
 //             frame to that one, opens the store
@@ -41,6 +49,7 @@ import { stringsFor, say } from './locale.js';
 const R = 19, C = 2 * Math.PI * R;   // the ring
 const TICK = 100, GAP = 250;         // ms: the clock's step; a longer gap was time off screen, not time watched
 const CARD_SECS = 5;                 // how long the still card stands in for a creative
+const STALL_SECS = 12;               // a video on screen and not moving for this long isn't going to
 const SKIP_SECS = 5;                 // an interstitial: how long before it can be closed
 const KEEP_SECS = 120;               // how long a playable may be played on past its time, at most
 const NETWORK = 'Indie Ad Network';  // whose ads these are: a name, the same in every language
@@ -83,6 +92,7 @@ button { font-family: inherit; cursor: pointer; }
 .get:not(:has(img)) { padding-left: 16px; }
 .stage { position: relative; flex: 1; min-height: 0; overflow: hidden; }
 .blur { position: absolute; top: -40px; right: -40px; bottom: -40px; left: -40px; background: center / cover no-repeat; filter: blur(24px) brightness(.55); }
+canvas.blur { width: calc(100% + 80px); height: calc(100% + 80px); object-fit: cover; }
 .playable .stage::before { content: attr(data-loading); position: absolute; top: 0; right: 0; bottom: 0; left: 0; display: flex; align-items: center; justify-content: center; opacity: .7; }
 video, iframe { position: absolute; top: 0; right: 0; bottom: 0; left: 0; width: 100%; height: 100%; border: 0; }
 video { object-fit: contain; }
@@ -128,7 +138,8 @@ video.go { cursor: pointer; }
 [hidden] { display: none !important; }
 `;
 
-// creative: { kind, secs, src, poster, line, finishEarly, keepPlaying, ownEndCard }; app: the game's record; `html` a playable's
+// creative: { kind, secs, src, poster, line, finishEarly, keepPlaying, ownEndCard, and what catalogue.js reads of how it's shown }; `limit`: the
+// seconds at which the reward comes if that's before the creative's end: the caller's to give, and only for a video marked `overrun`; app: the game's record; `html` a playable's
 // page, already fetched; `link` from storeLinks (null: no store button); `openStore(link)` may
 // return a promise that settles when the store is put away; `emit(event, fields)` for analytics.
 // `report({ message, secs, kind })`: the player has reported this ad, in these words (or none).
@@ -137,7 +148,7 @@ video.go { cursor: pointer; }
 // stands ended, over the end card or a video's own, and taken away with null.
 // Resolves { granted, watchedSecs, kind }: `kind` is what was shown in the end, 'card' if it came to that;
 // `granted` of an interstitial says only that it stayed up until it could be closed.
-export function play({ creative, app, html, link, ctaText, reward, format = 'rewarded', skipAfter = SKIP_SECS, muted = false, emit = () => {}, openStore, banner = null, report = null, words = stringsFor('en') }) {
+export function play({ creative, app, html, link, ctaText, reward, format = 'rewarded', skipAfter = SKIP_SECS, limit = null, muted = false, emit = () => {}, openStore, banner = null, report = null, words = stringsFor('en') }) {
   const { t } = words;   // the player's own words, in the player's language (locale.js)
   const doc = document;
   let { kind } = creative;
@@ -169,10 +180,11 @@ export function play({ creative, app, html, link, ctaText, reward, format = 'rew
   if (app.art) end.style.setProperty('--art', cssUrl(app.art));
 
   let total = creative.secs, elapsed = 0, shownLeft = null, granted = false, closed = false, video = null, frame = null;
+  let over = false;   // a video's showing is past its playing: at its end, or left for it (an overrun video, once the reward is in)
   // a `keepPlaying` playable past its time: 'resting' under the end card, then 'kept' when the player plays on
   let overtime = null;
   const rewarded = format !== 'interstitial';
-  const need = () => rewarded ? total : Math.min(skipAfter, total);   // seconds until the way out is free
+  const need = () => Math.min(total, rewarded ? limit ?? Infinity : skipAfter);   // seconds until the way out is free
   const secs = () => Math.round(elapsed);
   const waits = new Set();   // why the clock stands still: 'hidden', 'ask', 'info', 'store', 'loading'
   let finish;
@@ -188,7 +200,7 @@ export function play({ creative, app, html, link, ctaText, reward, format = 'rew
     if (granted) return;
     granted = true;
     if (!rewarded) { ring.hidden = true; $('.x').hidden = false; return; }   // free to go: nothing earned, and the clock runs on for how long they stayed
-    if (!(kind === 'playable' && creative.keepPlaying)) clearInterval(clock);   // nothing left to count; but one that may be played on counts on, for how long it was
+    if (!(kind === 'playable' && creative.keepPlaying) && !video) clearInterval(clock);   // nothing left to count; but one that may be played on counts on, for how long it was, and a video's stops at its end (toEnd)
     ring.classList.add('done'); number.textContent = '✓';
     ring.disabled = false; ring.removeAttribute('role'); ring.setAttribute('aria-label', t.done);   // a button now: the way back to the game
     $('.earned').hidden = false;
@@ -202,8 +214,13 @@ export function play({ creative, app, html, link, ctaText, reward, format = 'rew
     try { banner(on ? link : null); } catch { /* no banner: the card's button is there */ }
     if (on && !counted) { counted = true; emit('store_banner', { secs: secs() }); }   // once a showing: asked for, which is all a page hears of it
   }
-  // the ad stands ended: on the player's card, or (`card` false) on a video's own
-  function endCard(card = true) { if (card) end.hidden = false; $('.store')?.setAttribute('hidden', ''); $('.sound')?.remove(); storeBanner(true); }
+  // the ad stands ended, on `ends`: the player's 'card'; a video's 'own' last frame, nothing of the player's over it; or a video's 'loop', the store button over it and no banner under that
+  function endCard(ends = 'card') {
+    if (ends === 'card') end.hidden = false;
+    end.style.opacity = end.style.pointerEvents = '';   // whatever a fade left it at
+    if ($('.store')) $('.store').hidden = ends !== 'loop';
+    $('.sound')?.remove(); storeBanner(ends !== 'loop');
+  }
   // the video gone, and its decoder and download with it; `video` is null first, so its last events are heard by no one
   const dropVideo = () => { const v = video; if (!v) return; video = null; v.pause(); v.removeAttribute('src'); v.load(); v.remove(); };
   // what the playable is told (mraidShim.js hears it): whether it's seen, and how loud it may be
@@ -242,6 +259,8 @@ export function play({ creative, app, html, link, ctaText, reward, format = 'rew
   }
   // the still card in the creative's place, for CARD_SECS more
   function toCard() { dropVideo(); kind = 'card'; total = Math.min(total || Infinity, elapsed + CARD_SECS); endCard(); }
+  // a video that won't play, or has stopped: no reason to keep the player waiting. The still card; or, the reward already in, the end card as it would have come
+  function broken(why) { emit('fail', { why }); if (granted) { dropVideo(); endCard(); } else toCard(); }
   function close() {
     if (closed) return;
     closed = true; storeBanner(false);
@@ -255,7 +274,7 @@ export function play({ creative, app, html, link, ctaText, reward, format = 'rew
     if (on) waits.add(why); else waits.delete(why);
     const now = waits.size > 0;
     if (was === now) return;
-    if (video && !video.ended) { if (now) video.pause(); else video.play().catch(() => {}); }
+    if (video && !video.ended && (!over || creative.loop)) { if (now) video.pause(); else video.play().catch(() => {}); }   // not one left standing under its card
     if (overtime !== 'resting') toFrame('viewable', !now);   // one paused under the card stays paused
   }
   const seen = () => wait('hidden', doc.hidden);
@@ -264,31 +283,64 @@ export function play({ creative, app, html, link, ctaText, reward, format = 'rew
   const clock = setInterval(() => {
     const now = performance.now(), dt = Math.min(now - last, GAP) / 1000;
     last = now;
-    if (video) elapsed = video.currentTime;
+    if (video) { if (!over) { elapsed = video.currentTime; during(dt); } }
     else if (!waits.size && !(granted && rewarded && overtime !== 'kept')) elapsed += dt;
-    if (!granted && elapsed >= need()) { if (rewarded) elapsed = total; grant(); }
+    if (!granted && elapsed >= need()) { if (rewarded && !video) elapsed = total; grant(); }
     if (frame && overtime !== 'resting' && elapsed >= total) endPlayable({ rest: !overtime });   // its time is up (an interstitial's playable runs on past its ✕, to here): a rest the first time, the end if it was played on
     draw();
   }, TICK);
 
   // ---- the creative ----
+  let during, toEnd;   // a video's: what each tick of its playing does; and, the reward in and more of it to play, the way to its end (false: there's none to go to)
   if (kind === 'video') {
+    const { tap = {}, loop, fade = 0 } = creative, ends = creative.ownEndCard ? 'own' : loop ? 'loop' : 'card';   // what it ends on: one that ends on its own card is left standing there, with nothing of the player's over it
     if (creative.poster) { stage.insertAdjacentHTML('afterbegin', '<div class="blur"></div>'); $('.blur').style.backgroundImage = cssUrl(creative.poster); }
     video = doc.createElement('video');
     Object.assign(video, { src: creative.src, playsInline: true, preload: 'auto', muted, poster: creative.poster ?? '' });
     video.setAttribute('playsinline', ''); video.setAttribute('webkit-playsinline', '');
     stage.insertBefore(video, end);
-    $('.store')?.removeAttribute('hidden');
     const quartiles = [0.25, 0.5, 0.75];
     const on = (event, f) => { const v = video; v.addEventListener(event, () => { if (video === v) f(); }); };   // not after it's dropped
     on('loadedmetadata', () => { if (isFinite(video.duration) && video.duration > 0) total = video.duration; });
     on('timeupdate', () => { while (quartiles.length && video.currentTime >= quartiles[0] * total) emit(`q${quartiles.shift() * 100}`); });
-    // one that ends on its own card: all of it is the store button, and at its end it's left standing, with nothing of the player's over it
-    const own = !!creative.ownEndCard;
-    if (own && link) { video.classList.add('go'); video.addEventListener('click', store); }
-    on('ended', () => { emit('q100'); elapsed = total; grant(); endCard(!own); });
-    // a video that won't play is no reason to keep the player waiting
-    on('error', () => { emit('fail', { why: 'video' }); toCard(); });
+    // its own picture behind it, small and blurred, over the poster's (which stands wherever this can't be drawn); not where it fills the screen, and none of that would show
+    if (creative.backdrop === 'video') on('loadedmetadata', () => {
+      const shape = video.videoWidth / video.videoHeight, room = stage.clientWidth / stage.clientHeight;
+      if (!(Math.abs(shape / room - 1) > 0.03)) return;
+      const back = doc.createElement('canvas'), pen = back.getContext('2d');
+      back.className = 'blur'; back.width = 64; back.height = Math.max(1, Math.round(64 / shape)); stage.insertBefore(back, video);
+      const paint = () => { try { pen.drawImage(video, 0, 0, back.width, back.height); } catch { /* not a frame it can draw: the poster stays */ } };
+      on('loadeddata', paint); on('timeupdate', paint);
+    });
+    // When a tap opens the store: on the button (from the start, unless `tap.button` says when), and anywhere on the video from `tap.whole`.
+    // One that ends on its own card is all store button, from its first frame to its last
+    const from = when => when === 'end' ? Infinity : when, pill = $('.store'), buttonFrom = from(tap.button ?? 0), wholeFrom = ends === 'own' ? 0 : from(tap.whole);
+    const whole = () => over || video.currentTime >= wholeFrom;
+    let go = () => {};   // the video shown as something to tap, once it is
+    if (link && wholeFrom != null) { go = () => video.classList.toggle('go', whole()); video.addEventListener('click', () => { if (whole()) store(); }); }
+    // Past its playing: the reward if it isn't in, and what it ends on: the card, its own last frame, or its loop
+    const again = () => { video.muted = true; video.currentTime = loop.from; video.play().catch(() => broken('loop')); };
+    const videoOver = () => {
+      over = true; grant(); if (rewarded) clearInterval(clock);
+      if (loop) again(); else video.pause();
+      go(); endCard(ends);
+    };
+    toEnd = () => { if (!rewarded || over || ends === 'own') return false; videoOver(); return true; };   // an interstitial's ✕ is out; and one's own card is at its last frame, not here
+    on('ended', () => { if (over) { if (loop) again(); return; } emit('q100'); elapsed = total; videoOver(); });
+    on('error', () => broken('video'));
+    let at = -1, still = 0;
+    during = dt => {
+      const now = video.currentTime;
+      // on screen and not moving: it isn't going to (a play() refused, a download that stopped)
+      if (now !== at) { at = now; still = 0; } else if (!waits.size && (still += dt) >= STALL_SECS) return broken('stall');
+      if (pill && now >= buttonFrom) pill.hidden = false;
+      go();
+      const faded = fade ? Math.min(1, Math.max(0, (now - (total - fade)) / fade)) : 0;
+      if (faded) {
+        try { video.volume = 1 - faded; } catch { /* iOS keeps the volume to itself */ }
+        if (ends === 'card') { end.hidden = false; end.style.opacity = faded; end.style.pointerEvents = 'none'; }   // the card coming up: to be seen, not yet to be touched
+      }
+    };
     // sound needs the tap that opened the ad to still count; where it doesn't, start silent and,
     // unless the host itself is muted, offer it
     video.play().catch(() => {
@@ -336,7 +388,7 @@ export function play({ creative, app, html, link, ctaText, reward, format = 'rew
     if (under && !closed) storeBanner(true);
   }
   function ask() {
-    if (granted) return close();
+    if (granted) { if (!(video && toEnd())) close(); return; }   // a video with more to play: to its end first, where the store button is; then out
     if (!rewarded) return;   // not yet: there's nothing to ask about
     $('.ask').hidden = false; wait('ask', true);
   }

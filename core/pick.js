@@ -5,7 +5,7 @@
 // Otherwise a creative is out if any of these says so, in this order:
 //   1. out of its dates                    5. shown `capPerDay` times in 24 h
 //   2. it advertises the host itself       6. not ready to play (`ready(creative)`: the cache's word)
-//   3. rated above the host; or not one    7. longer than the placement takes (`maxSecs`), or not a kind it takes
+//   3. rated above the host; or not one    7. longer than the placement takes (`maxSecs`: but a video marked `overrun`), or not a kind it takes
 //      for a player under 13, who is one   8. the one shown last, if there's another
 //   4. its game is already installed, or resting: shown too often with no store tap (history.js)
 // Of those left, one by weight: its own `weight`, a game of the host's own studio × OWN_BOOST, and a video of the
@@ -52,7 +52,7 @@ export function eligible({ catalogue, host, placement = {}, rating, age, install
     if (!test && recent(history?.shown?.[c.id], now).length >= (c.capPerDay ?? CAP_PER_DAY)) return false;
     if (!ready(c)) return false;
     if (placement.kinds && !placement.kinds.includes(c.kind)) return false;
-    return !(placement.maxSecs && c.secs > placement.maxSecs);
+    return !(placement.maxSecs && c.secs > placement.maxSecs && !c.overrun);   // only a video has it (catalogue.js)
   });
 }
 

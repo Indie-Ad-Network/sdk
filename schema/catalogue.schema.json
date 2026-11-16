@@ -138,7 +138,7 @@
             "description": "video: when a tap opens the store. Each is seconds in, or \"end\": with the end card. Read from 0.5.0.",
             "type": "object",
             "properties": {
-              "button": { "description": "When the store button is there. Left out: \"end\".", "oneOf": [{ "type": "number", "minimum": 0 }, { "const": "end" }] },
+              "button": { "description": "When the store button is there. Left out: from the start.", "oneOf": [{ "type": "number", "minimum": 0 }, { "const": "end" }] },
               "whole": { "description": "From when a tap anywhere on the video opens the store. Left out: never (but for one marked ownEndCard, where it's always).", "oneOf": [{ "type": "number", "minimum": 0 }, { "const": "end" }] }
             }
           },
