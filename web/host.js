@@ -67,7 +67,8 @@ window.houseAdsHost = {
   // config: { key, lang, host, rating, os, catalogue (URL), shipped (the catalogue object the game shipped with, or null),
   //           ingest, reports, mix (URLs or null; reports: where a report of an ad goes, else /flag beside ingest), placements, age (the player's, or null), test (a developer trying the ads out),
   //           wide (the game's screen is wider than tall: a web view not yet shown can't see its own shape),
-//           signedBy (the network's public key, or null: the server's catalogue is taken only if signed by it) }
+//           signedBy (the network's public key, or null: the server's catalogue is taken only if signed by it),
+  //           consent (false: the player hasn't agreed to anything being kept on the device; core/consent.js) }
   start(config) {
     if (ads) return;
     key = String(config.key ?? '');
@@ -78,6 +79,7 @@ window.houseAdsHost = {
       host: config.host, rating: config.rating ?? null, os: config.os, placements,
       catalogue: config.shipped ? [config.catalogue, config.shipped] : config.catalogue,
       ingest: config.ingest ?? null, reports: config.reports ?? null, mix: config.mix ?? null, signedBy: config.signedBy ?? null,
+      consent: config.consent !== false,
       native, age: () => config.age ?? null, aspect: () => config.wide == null ? null : config.wide ? '16:9' : '9:16', muted: () => muted, lang: () => lang, test: () => testing,
       onEvent: e => post('event', { e }),
     });

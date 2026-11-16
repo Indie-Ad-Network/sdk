@@ -13,6 +13,7 @@ Rewarded ads and interstitials for our own and our friends' games, for any game 
 |---|---|
 | Put ads in a web or Capacitor game | This page: [Use](#use), [In a Capacitor app](#in-a-capacitor-app) |
 | Put ads in a Unity game | [Unity](unity/README.md) |
+| Ask a player's consent, where the law wants it | [Consent](#consent) |
 | Make a video or a playable for your game | [Creatives](CREATIVES.md) |
 | Build a playable with a narrator | [The playable kit](playable-kit/README.md) |
 | Run these playables in another ad player | [Hosting a playable](PLAYABLE_HOST.md) |
@@ -90,6 +91,34 @@ Two limits keep a player from being shown the same few games' ads for months. Bo
 - `fatigue`: a game whose ads a player has been shown `after` times with no tap on its store button **rests**, not shown to them, for `rest` days; each time again, `grow` times longer, up to 180 days. A store tap starts it over. When every game rests there is nothing available, and the host's paid network has all its slots. Left out, 6, 14 and 2; `after: 0` turns it off.
 
 A developer's test (`test()`) is held to neither.
+
+## Consent
+
+In the UK and the EEA the law asks for a player's agreement before anything is kept on their device for advertising, or read from it. The SDK keeps ads downloaded ahead, which ads it has shown and when, and counts waiting to be sent. The game is the one with a screen to ask on, so the game asks, and tells the SDK what was answered:
+
+```js
+createHouseAds({ …, consent: false })   // the player hasn't agreed
+```
+
+Without consent nothing is kept there: ads are streamed (on mobile data too: there's nothing downloaded ahead), what's been shown is remembered only until the game closes, and what an earlier session kept is taken away, counts not yet sent among it. Left out, or `true`, it's as ever, so **a game with players in the UK or the EEA must say**. It's read once: when the answer changes, make the SDK again in a page loaded afresh. [Privacy](https://indieadnetwork.com/privacy) has what's kept and what's sent.
+
+**A game with a consent platform** (Google's User Messaging Platform, or any other built on the IAB's Transparency and Consent Framework) needn't ask twice. The platform already knows whether the law applies to this player and what they agreed to, and `cmpConsent()` reads it: `true` (agreed, or somewhere that needn't be asked), `false`, or `null` where no platform has said.
+
+```js
+import { cmpConsent } from './vendor/sdk/capacitor/index.js';   // in a browser: from core/index.js
+
+const agreed = await cmpConsent();   // once the platform's own dialog has been answered
+const ads = createHouseAds({ …, consent: agreed ?? false });
+```
+
+What to set up in the platform, with Google's as the example (AdMob → Privacy & messaging):
+
+1. **Make a European regulations message** for the app and publish it. It's what asks, and it's shown only to players the law covers.
+2. **Leave "Store and/or access information on a device" in it.** That is the framework's purpose 1, the one this SDK goes by. It's in every such message unless taken out.
+3. **Name Indie Ad Network where you list who shows ads in your game**: in your privacy policy, and in the message's ad partners if your platform lets you add one of your own. It isn't on Google's list or the IAB's.
+4. **Ask before the SDK starts**: wait for the platform to say the dialog is done, then `cmpConsent()`.
+
+**A game with no consent platform** asks in a dialog of its own: what's kept and why, a No as easy as the Yes, before the SDK starts, and a way to change the answer later in its settings.
 
 ## Languages
 

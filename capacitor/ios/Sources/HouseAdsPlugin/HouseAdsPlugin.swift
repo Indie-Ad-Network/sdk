@@ -11,7 +11,8 @@ public class HouseAdsPlugin: CAPPlugin, CAPBridgedPlugin, SKStoreProductViewCont
     public let jsName = "HouseAds"
     public let pluginMethods: [CAPPluginMethod] = [
         CAPPluginMethod(name: "openStore", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "network", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "network", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "consent", returnType: CAPPluginReturnPromise)
     ]
 
     private let monitor = NWPathMonitor()
@@ -77,6 +78,16 @@ public class HouseAdsPlugin: CAPPlugin, CAPBridgedPlugin, SKStoreProductViewCont
         var top = bridge?.viewController
         while let presented = top?.presentedViewController { top = presented }
         return top
+    }
+
+    /// What a consent platform has kept of the player's answer, by the IAB framework's names, where the framework says
+    /// they're kept (the standard defaults): `applies` (1: the law asks for consent here; left out where no platform
+    /// has said) and `purposes` (a character a purpose, "1" first where storing on the device is agreed).
+    @objc func consent(_ call: CAPPluginCall) {
+        let kept = UserDefaults.standard
+        var out: [String: Any] = ["purposes": kept.string(forKey: "IABTCF_PurposeConsents") ?? ""]
+        if kept.object(forKey: "IABTCF_gdprApplies") != nil { out["applies"] = kept.integer(forKey: "IABTCF_gdprApplies") }
+        call.resolve(out)
     }
 
     /// `metered`: cellular, a personal hotspot, or Low Data Mode.

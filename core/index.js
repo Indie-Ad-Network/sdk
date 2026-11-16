@@ -73,6 +73,12 @@
 // screen's shape, for a page that can't yet see its own), `cache: false` (keep nothing, always
 // stream), `storage`, `fetch`, `now`, `rand`.
 //
+// `consent: false` where the player hasn't agreed to anything being kept on their device (the UK and the EEA ask
+// it for advertising: consent.js, whose cmpConsent() reads a consent platform's answer). Nothing is then kept
+// there, nor read back: ads stream, what's been shown is remembered until the game closes, and what an earlier
+// session kept is taken away, counts not yet sent among it. Left out, or true: as ever. It's read once: when the
+// answer changes, make this again in a page loaded afresh (one made before goes on as it was until its page goes).
+//
 // `test()`, true while a developer is trying the ads out: the host's own ads, games that are
 // resting and creatives at their daily cap all count (pick.js), and nothing is sent to the
 // ingest, so a test showing is never counted as one a studio owes or is owed. ads.prefetch()
@@ -86,8 +92,8 @@ import { loadCatalogue, validate, within, secure, filesOf } from './catalogue.js
 import { pick, eligible, cardFor, wanted } from './pick.js';
 import { mix as mixOf, believed, shareOf, turn, settings as settingsOf } from './exchange.js';
 import { storeLink, cta } from './storeLinks.js';
-import { openHistory, safeStorage } from './history.js';
-import { openCache } from './cache.js';
+import { openHistory, safeStorage, memoryStorage, forget } from './history.js';
+import { openCache, forgetCache } from './cache.js';
 import { createReporter } from './analytics.js';
 import { VERSION, SDK } from './wire.js';
 import { play } from './player.js';
@@ -95,6 +101,7 @@ import { stringsFor, localised } from './locale.js';
 
 export { storeLink, cta } from './storeLinks.js';
 export { validate } from './catalogue.js';
+export { cmpConsent } from './consent.js';
 
 const guessOs = () => /android/i.test(navigator.userAgent) ? 'android' : 'ios';   // a desktop browser gets the App Store's web page
 // The screen's shape: the page's own, once it has been laid out. A web view not yet shown hasn't (0 × 0), which is
@@ -107,7 +114,11 @@ const WEB = {
 };
 
 export function createHouseAds({ host, rating = null, catalogue, placements = {}, onEvent, ingest: ingestAt = null, reports: reportsAt = null, mix: mixFrom = null, signedBy = null, lang = null, os = guessOs(), native = {}, age = () => null, muted = () => false, aspect = () => null,
-  test = () => false, cache: keep = true, storage = safeStorage(), fetch = globalThis.fetch?.bind(globalThis), now = Date.now, rand = Math.random }) {
+  test = () => false, consent, cache: wantsCache = true, storage: given, fetch = globalThis.fetch?.bind(globalThis), now = Date.now, rand = Math.random }) {
+  // Has the player agreed to anything being kept on the device (consent.js)? Said once, here: a game whose player
+  // changes their mind makes this again. Without it: memory for storage, nothing cached, and what was kept before taken away.
+  const agreed = consent !== false, keep = agreed && wantsCache, storage = agreed ? given ?? safeStorage() : memoryStorage();
+  if (!agreed) { forget(given); forgetCache(); }
   const https = (what, u) => { if (u == null || secure(String(u))) return u; console.error(`[house-ads] ${what} isn't https, and isn't used: ${u}`); return null; };
   const ingest = https('ingest', ingestAt), mixUrl = https('mix', mixFrom);
   const shell = { ...WEB, ...native }, inApp = !!native.openStore;
@@ -181,6 +192,7 @@ export function createHouseAds({ host, rating = null, catalogue, placements = {}
   // Download what's wanted next, if the network costs the player nothing. Resolves the ids fetched.
   async function prefetch() {
     const [cat, cache] = await Promise.all([loaded, cached]);
+    if (!keep) return [];   // nothing is kept, so nothing is downloaded ahead: the network needn't be asked about
     try { if (await shell.metered()) return []; } catch { /* can't tell: go ahead */ }
     return cache.fill({ creatives: cat.creatives, wanted: wanted({ ...await audience(cat), placements }) });
   }

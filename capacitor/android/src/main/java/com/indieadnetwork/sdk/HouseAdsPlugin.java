@@ -2,8 +2,10 @@ package com.indieadnetwork.sdk;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.Uri;
+import android.preference.PreferenceManager;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
@@ -36,6 +38,24 @@ public class HouseAdsPlugin extends Plugin {
         } catch (Exception e) {   // no Play Store on this device, or nothing that opens the link
             return false;
         }
+    }
+
+    /**
+     * What a consent platform has kept of the player's answer, by the IAB framework's names, where the framework
+     * says they're kept (the app's default preferences): `applies` (1: the law asks for consent here; left out where
+     * no platform has said) and `purposes` (a character a purpose, "1" first where storing on the device is agreed).
+     */
+    @PluginMethod
+    public void consent(PluginCall call) {
+        JSObject out = new JSObject();
+        try {
+            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getContext());
+            if (prefs.contains("IABTCF_gdprApplies")) out.put("applies", prefs.getInt("IABTCF_gdprApplies", 0));
+            out.put("purposes", prefs.getString("IABTCF_PurposeConsents", ""));
+        } catch (ClassCastException e) {
+            // kept as something else than the framework says: as if no platform had said
+        }
+        call.resolve(out);
     }
 
     /** `metered`: mobile data, or a Wi-Fi network marked as metered. */

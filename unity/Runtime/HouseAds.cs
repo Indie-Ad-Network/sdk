@@ -68,6 +68,11 @@ namespace HouseAdsNetwork
 		public float refreshAfterSeconds = 600f;
 		/// Seconds for an ad to start before it's given up as failed.
 		public float showTimeout = 6f;
+		/// Has the player agreed to anything being kept on their device? The UK and the EEA ask it for advertising. False:
+		/// nothing is kept there (ads stream, what's been shown is remembered until the game closes, for which the web
+		/// view is kept between ads, and what an earlier session kept is taken away). Say it at Init, not after. HouseAds.SetConsent changes it later; HouseAds.CmpConsent reads a consent
+		/// platform's answer. True unless said, as ever.
+		public bool consent = true;
 		/// A developer trying the ads out (HouseAds.SetTest changes it later): the game's own ads, games that are resting
 		/// and creatives at their daily cap all count, and nothing is sent to the ingest. Never on in a player's game.
 		public bool test;
@@ -205,6 +210,32 @@ namespace HouseAdsNetwork
 			}
 		}
 
+		/// The player's answer on things being kept on their device (HouseAdsConfig.consent) has changed. The page is made
+		/// again with it, at once, or when the ad that's up has closed.
+		public static void SetConsent(bool agreed)
+		{
+			if (instance == null || instance.config.consent == agreed)
+			{
+				return;
+			}
+			instance.config.consent = agreed;
+			if (instance.showing)
+			{
+				instance.remake = true;
+				return;
+			}
+			instance.RemakePage();
+		}
+
+		/// What the game's consent platform (Google's, or any on the IAB's framework) has kept of the player's answer:
+		/// true (agreed to things being kept on the device, or somewhere that needn't be asked), false (asked, and not
+		/// agreed), or null where no platform has said, and the game must go by its own means. Ask once the platform's
+		/// dialog has been answered: `consent = HouseAds.CmpConsent() ?? myOwnAnswer`.
+		public static bool? CmpConsent()
+		{
+			return HouseAdsNative.CmpConsent();
+		}
+
 		/// A placement's button was put in front of the player (once per time it's put there): shows over offers is the opt-in rate.
 		public static void Offered(string placement)
 		{
@@ -233,6 +264,7 @@ namespace HouseAdsNetwork
 		float demandTime;
 
 		bool showing;
+		bool remake;   // the page is to be made again once the ad that's up has closed: the player's consent changed
 		int? sleepTimeoutWas;   // the game's own Screen.sleepTimeout while an ad has the screen kept on, put back when it closes
 		bool showStarted;
 		int showNumber;
@@ -266,6 +298,12 @@ namespace HouseAdsNetwork
 			// The catalogue's origin is the page's: its history, downloads and unsent analytics are kept under it.
 			view.LoadHtml(page.text, new Uri(new Uri(config.catalogueUrl), "/").AbsoluteUri);
 			return true;
+		}
+
+		void RemakePage()
+		{
+			DropPage();
+			EnsurePage();
 		}
 
 		void DropPage()
@@ -392,7 +430,8 @@ namespace HouseAdsNetwork
 					}
 					break;
 				case "idle":
-					if (!showing && !config.keepWebView)
+					// without the player's consent what's been shown is remembered in the page alone, so the page is kept
+					if (!showing && !config.keepWebView && config.consent)
 					{
 						DropPage();
 					}
@@ -415,6 +454,7 @@ namespace HouseAdsNetwork
 			json.Append(",\"signedBy\":").Append(Quote(config.catalogueKey));
 			json.Append(",\"age\":").Append(config.age > 0 ? config.age.ToString() : "null");
 			json.Append(",\"test\":").Append(config.test ? "true" : "false");
+			json.Append(",\"consent\":").Append(config.consent ? "true" : "false");
 			json.Append(",\"wide\":").Append(Screen.width > Screen.height ? "true" : "false");   // the page can't see its own shape until it's shown
 			json.Append(",\"placements\":{");
 			for (int i = 0; config.placements != null && i < config.placements.Length; i++)
@@ -526,6 +566,11 @@ namespace HouseAdsNetwork
 			if (wasShown)
 			{
 				OnHidden?.Invoke();
+			}
+			if (remake)   // the player's consent changed while the ad was up
+			{
+				remake = false;
+				RemakePage();
 			}
 			done?.Invoke(result);
 		}

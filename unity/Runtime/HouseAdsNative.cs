@@ -35,6 +35,48 @@ namespace HouseAdsNetwork
 			}
 		}
 
+		/// What a consent platform has kept of the player's answer, by the IAB framework's names, where the framework says
+		/// they're kept: Android's default preferences, and on iOS the standard defaults, which are PlayerPrefs' own.
+		/// IABTCF_gdprApplies is 1 where the law asks for consent; IABTCF_PurposeConsents has a character a purpose, "1"
+		/// first where storing on the device is agreed. → true (agreed, or needn't be asked), false, or null: no platform has said.
+		const string Applies = "IABTCF_gdprApplies", Purposes = "IABTCF_PurposeConsents";
+
+		public static bool? CmpConsent()
+		{
+#if UNITY_EDITOR
+			return null;
+#elif UNITY_ANDROID
+			try
+			{
+				using (AndroidJavaClass manager = new AndroidJavaClass("android.preference.PreferenceManager"))
+				using (AndroidJavaObject activity = Activity())
+				using (AndroidJavaObject kept = manager.CallStatic<AndroidJavaObject>("getDefaultSharedPreferences", activity))
+				{
+					if (!kept.Call<bool>("contains", Applies))
+					{
+						return null;
+					}
+					return Agreed(kept.Call<int>("getInt", Applies, 0), kept.Call<string>("getString", Purposes, ""));
+				}
+			}
+			catch (AndroidJavaException)   // kept as something else than the framework says: as if no platform had said
+			{
+				return null;
+			}
+#else
+			if (!PlayerPrefs.HasKey(Applies))
+			{
+				return null;
+			}
+			return Agreed(PlayerPrefs.GetInt(Applies, 0), PlayerPrefs.GetString(Purposes, ""));
+#endif
+		}
+
+		static bool Agreed(int applies, string purposes)
+		{
+			return applies == 0 || (!string.IsNullOrEmpty(purposes) && purposes[0] == '1');
+		}
+
 		/// Mobile data, a hotspot, a metered Wi-Fi network, Low Data Mode: creatives aren't downloaded ahead on one.
 		public static bool IsMetered()
 		{

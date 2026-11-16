@@ -78,6 +78,9 @@ const streaming = fetch => ({
   },
 });
 
+// Everything the cache has kept, gone: for a player who hasn't agreed to anything being kept (consent.js).
+export const forgetCache = () => { try { globalThis.indexedDB?.deleteDatabase(DB); } catch { /* none here */ } };
+
 // `keep: false` for the streaming source outright. `more(creative)`: its other files to keep, [[field, URL]].
 export async function openCache({ fetch = globalThis.fetch?.bind(globalThis), now = Date.now, keep = true, more = () => [] } = {}) {
   let db, meta;
@@ -86,6 +89,7 @@ export async function openCache({ fetch = globalThis.fetch?.bind(globalThis), no
     const open = indexedDB.open(DB, 1);
     open.onupgradeneeded = () => { open.result.createObjectStore(META, { keyPath: 'id' }); open.result.createObjectStore(BLOBS); };
     db = await done(open);
+    db.onversionchange = () => db.close();   // it's being taken away (forgetCache, from this page or another): not held open against that
     meta = new Map((await done(db.transaction(META).objectStore(META).getAll())).map(e => [e.id, e]));
   } catch { return streaming(fetch); }
 

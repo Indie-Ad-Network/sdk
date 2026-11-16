@@ -46,6 +46,19 @@ if (HouseAds.Wants("FreeCoins")) {
 
 `HouseAds.OnEvent` hears every event of the player, for the game's own analytics.
 
+## Consent
+
+In the UK and the EEA the law asks for a player's agreement before anything is kept on their device for advertising ([the SDK's README](../README.md#consent) has what, and what to set up in a consent platform). Say what was answered:
+
+```csharp
+HouseAds.Init(new HouseAdsConfig { …, consent = HouseAds.CmpConsent() ?? false });
+
+// and when the answer changes (the platform's dialog answered, or changed in your settings):
+HouseAds.SetConsent(HouseAds.CmpConsent() ?? false);
+```
+
+`HouseAds.CmpConsent()` reads what the game's consent platform has kept (Google's User Messaging Platform, or any other on the IAB's framework): `true` where the player agreed or needn't be asked, `false`, or `null` where no platform has said, as in the Editor. A game with no platform passes its own dialog's answer. Without consent nothing is kept on the device: ads stream, and what's been shown is remembered only until the game closes (the web view is kept between ads for it, whatever `keepWebView` says). `consent` is true unless said, so a game with players in the UK or the EEA must say, and at `Init`: a page made before the answer has already kept things.
+
 `HouseAds.OnShown` and `HouseAds.OnHidden` say an ad is on screen and has gone, whoever showed it: a game pauses its music and sound on the one and resumes them on the other, once, rather than in every place that calls `Show`. The ad plays in a web view over the game, which keeps running under it (no other activity or window takes the app's place, as a paid network's ad does), so nothing else quiets the game. `OnHidden` comes before `Show`'s `done`, and only for an ad that appeared. `HouseAds.Offered(placement)` when a placement's button is put in front of the player.
 
 ## The web view
