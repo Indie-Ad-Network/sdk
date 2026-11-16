@@ -6,9 +6,9 @@ The repository has one version, [Semantic Versioning](https://semver.org), and a
 
 Two numbers are not this one, and change only when a format does: `VERSION` in `core/wire.js` (what games send the ingest) and the catalogue's `version`. Games already released go on sending and reading the old ones.
 
-## [Unreleased]
+## [0.5.1] - 2026-11-16
 
-What else is on a player's device is no longer asked.
+For a player's privacy: what else is on their device is no longer asked, a playable can ask for nothing outside itself, and a game says whether the player agreed to anything being kept. It takes things out of 0.5.0, which no game shipped, so it's a patch all the same.
 
 ### To take it
 - **A Unity game needs nothing done**: the build no longer adds the catalogue's games to the Android manifest's `<queries>`. A manifest kept by hand that has them still: take them out.

@@ -1,6 +1,6 @@
 {
   "name": "house-ads-capacitor",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "license": "MIT",
   "description": "house-ads' native side for a Capacitor app: the App Store sheet, and whether the network is metered.",
   "type": "module",

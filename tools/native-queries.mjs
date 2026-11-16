@@ -3,7 +3,7 @@
  * Takes out of an app's AndroidManifest.xml and Info.plist what this tool wrote there for releases up to 0.5.0,
  * which asked Android whether the catalogue's games were installed (and, before 0.3.0, iOS): the <queries> and
  * the LSApplicationQueriesSchemes between its markers. The package no longer asks what else is on a device, so
- * neither is needed. Anything else in the files is left as it is. Run it once, on a game moving past 0.5.0.
+ * neither is needed. Anything else in the files is left as it is. Run it once, on a game moving to 0.5.1.
  *
  * Usage: node tools/native-queries.mjs [--android path/AndroidManifest.xml] [--ios path/Info.plist]
  */
