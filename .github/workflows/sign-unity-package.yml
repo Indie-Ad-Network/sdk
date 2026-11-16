@@ -1,0 +1,80 @@
+# The Unity package, packed and signed by Unity for the network's Unity organization, and attached to a GitHub Release
+# of the same tag: OpenUPM takes that file as it is and republishes it (its listing is `trackingMode: githubRelease`),
+# so the Package Manager in Unity 6.3 and later shows the package as signed.
+#
+#   a tag vX.Y.Z pushed   → the signed .tgz on a release of that tag
+#   run by hand           → the signed .tgz as an artifact of the run, and no release: to try the signing itself
+#
+# What it needs, in the repository's settings (Secrets and variables → Actions):
+#   secrets   UPM_SERVICE_ACCOUNT_KEY_ID, UPM_SERVICE_ACCOUNT_KEY_SECRET   a Unity service account's key, with the
+#             organization role Package Manager → "Package Manager Package Signer"
+#   variable  UPM_ORG_ID                                                   the Unity organization that signs
+name: Sign the Unity package
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write   # to make the release
+
+jobs:
+  sign:
+    runs-on: ubuntu-latest
+    env:
+      UPM_SERVICE_ACCOUNT_KEY_ID: ${{ secrets.UPM_SERVICE_ACCOUNT_KEY_ID }}
+      UPM_SERVICE_ACCOUNT_KEY_SECRET: ${{ secrets.UPM_SERVICE_ACCOUNT_KEY_SECRET }}
+      UPM_ORG_ID: ${{ vars.UPM_ORG_ID }}
+      DIST: ${{ runner.temp }}/signed
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: What is being signed
+        run: |
+          name="$(jq -r .name unity/package.json)"; version="$(jq -r .version unity/package.json)"
+          echo "PACKAGE=$name" >> "$GITHUB_ENV"; echo "VERSION=$version" >> "$GITHUB_ENV"
+          echo "$name $version"
+          # a release is of the version its tag names, or OpenUPM would publish one under the other's name
+          if [ "$GITHUB_REF_TYPE" = tag ] && [ "$GITHUB_REF_NAME" != "v$version" ]; then
+            echo "::error::the tag is $GITHUB_REF_NAME, and unity/package.json says $version"; exit 1
+          fi
+          for needed in UPM_SERVICE_ACCOUNT_KEY_ID UPM_SERVICE_ACCOUNT_KEY_SECRET UPM_ORG_ID; do
+            if [ -z "${!needed}" ]; then echo "::error::$needed isn't set in the repository's settings"; exit 1; fi
+          done
+
+      - name: Unity's package tool
+        run: |
+          curl -fsSL https://cdn.packages.unity.com/upm-cli/install.sh -o "$RUNNER_TEMP/install-upm.sh"
+          bash "$RUNNER_TEMP/install-upm.sh"
+          echo "$HOME/.upm/bin" >> "$GITHUB_PATH"
+
+      - name: Pack and sign
+        run: |
+          upm --version
+          mkdir -p "$DIST"
+          upm pack ./unity --organization-id "$UPM_ORG_ID" --destination "$DIST"
+
+      - name: It is this package, this version, and signed
+        run: |
+          shopt -s nullglob
+          made=("$DIST"/*.tgz "$DIST"/*.tar.gz)
+          if [ "${#made[@]}" -ne 1 ]; then echo "::error::one archive was expected, and ${#made[@]} were made"; exit 1; fi
+          archive="${made[0]}"
+          tar -tzf "$archive" | grep -qx 'package/.attestation.p7m' || { echo "::error::the archive has no signature (package/.attestation.p7m)"; exit 1; }
+          [ "$(tar -xOzf "$archive" package/package.json | jq -r '.name + " " + .version')" = "$PACKAGE $VERSION" ] || { echo "::error::the archive isn't $PACKAGE $VERSION"; exit 1; }
+          echo "ARCHIVE=$archive" >> "$GITHUB_ENV"
+          echo "$(basename "$archive"): $(tar -tzf "$archive" | wc -l) files, $(du -h "$archive" | cut -f1)"
+
+      - name: Onto the release of its tag
+        if: github.ref_type == 'tag'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ env.ARCHIVE }}
+
+      - name: Kept with this run, where it was run by hand
+        if: github.ref_type != 'tag'
+        uses: actions/upload-artifact@v4
+        with:
+          name: signed-unity-package
+          path: ${{ env.ARCHIVE }}
