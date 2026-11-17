@@ -99,13 +99,6 @@ For the ads themselves, see [Creatives](../CREATIVES.md) and the [playable kit](
 - **Trying the ads out**: `IndieAdsConfig.test`, or `IndieAds.SetTest(true)` from a debug menu, plays the game's own ads too, games that are resting, and past a creative's daily cap. Nothing it shows is sent to the ingest, so it never counts in what studios owe each other. Never turn it on in a player's game.
 - After a change to `core/` or `web/`: `node tools/build-player.mjs`, and commit the page it writes.
 
-Editor video controls share artwork and visual dimensions with the web player: edit
-`core/controlIcons.js` / `core/controlTheme.js`, then run `npm run build:player`.
-That command produces both the embedded HTML and `Runtime/EditorAdAssets.cs`;
-`node tools/build-player.mjs --check` checks both outputs. `EditorAdChrome` is the
-Unity IMGUI/Handles renderer for that generated data. Media playback and rendering
-remain platform-specific; this is not a web view or an exact font rendering test.
-
-AD, info and timer text use the bundled Cairo Black font. The build step embeds
-the same TTF in core/controlFont.js for offline web playback; Unity loads the
-source from Resources/IndieAds/Cairo-Black.ttf. Its OFL license is included there.
+The device overlay embeds Cairo Black for AD, info and timer text. The build
+step reads core/fonts/Cairo-Black.ttf and generates core/controlFont.js for offline
+web playback. The package includes the font's license in Cairo-OFL.txt.

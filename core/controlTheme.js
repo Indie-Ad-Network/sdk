@@ -1,4 +1,4 @@
-// Shared dimensions in CSS pixels. Unity scales these together for the Game view.
+// Web overlay dimensions in CSS pixels.
 export const CONTROL_THEME = Object.freeze({
   size: 44, radius: 19, iconSize: 24, stroke: 4, timerBackgroundSize: 36,
   backgroundAlpha: 170 / 255, trackAlpha: 68 / 255,

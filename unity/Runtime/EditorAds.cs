@@ -24,7 +24,7 @@ namespace IndieAdNetwork
 	/// WebP (Unity reads JPEG and PNG), caps, resting, languages and the mix (the share is the catalogue's own, what a
 	/// studio owes left out), and it sends nothing to the ingest. With no video to show, a rewarded placement gets a
 	/// card that counts down, as a phone with no ad ready does, and an interstitial nothing.
-	/// Two debug buttons under its AD/info controls are for whoever is testing: the ad's end now, and "nothing was shown".
+	/// Two buttons under its label are for whoever is testing: the ad's end now, and "nothing was shown".
 	///
 	/// Compiled only in the Editor, and only where the Video, IMGUI and UnityWebRequest modules are in the project
 	/// (pictures need Image Conversion too).
@@ -330,9 +330,6 @@ namespace IndieAdNetwork
 
 		Ad ad;
 		VideoPlayer video;
-		readonly EditorAdChrome chrome = new EditorAdChrome();
-		bool infoOpen, resumeAfterInfo;
-		float infoStarted;
 
 		// a second of the video, or 'end': never while it plays
 		static float From(object when, float otherwise) => when is double secs ? (float)secs : when as string == "end" ? float.PositiveInfinity : otherwise;
@@ -561,7 +558,7 @@ namespace IndieAdNetwork
 
 		void Update()
 		{
-			if (ad == null || !ad.started || infoOpen)
+			if (ad == null || !ad.started)
 			{
 				return;
 			}
@@ -677,33 +674,8 @@ namespace IndieAdNetwork
 			}
 		}
 
-		void OnDestroy()
-		{
-			Clear();
-			chrome.Dispose();
-		}
-
-		void SetInfo(bool open)
-		{
-			if (infoOpen == open) return;
-			infoOpen = open;
-			if (open)
-			{
-				infoStarted = Time.unscaledTime;
-				resumeAfterInfo = video != null && video.isPlaying;
-				if (resumeAfterInfo) video.Pause();
-			}
-			else
-			{
-				if (ad != null && ad.kind == "card") ad.cardStarted += Time.unscaledTime - infoStarted;
-				if (resumeAfterInfo && video != null) video.Play();
-				resumeAfterInfo = false;
-			}
-		}
-
 		void Clear()
 		{
-			infoOpen = resumeAfterInfo = false;
 			if (ad != null)
 			{
 				Destroy(ad.art);
@@ -800,14 +772,6 @@ namespace IndieAdNetwork
 			{
 				GUI.Label(all, "Loading the ad…", label);
 			}
-			if (infoOpen)
-			{
-				Fill(all, new Color(0, 0, 0, 0.8f));
-				GUI.Label(new Rect(pad, h * 0.25f, w - 2 * pad, unit * 3), "Indie Ad Network", title);
-				GUI.Label(new Rect(pad, h * 0.4f, w - 2 * pad, unit * 5), "Editor video preview\n" + ad.name + "\n" + ad.creative + "\nNo impressions or reports are sent.", label);
-				if (GUI.Button(new Rect(w * 0.3f, h * 0.7f, w * 0.4f, unit * 3), "Close", button)) SetInfo(false);
-				return;
-			}
 			float watched = Watched;
 			bool still = ad.kind == "card", over = ad.ended && !still;
 
@@ -851,31 +815,55 @@ namespace IndieAdNetwork
 				}
 			}
 
-			// Match the device overlay; debug shortcuts remain below the ad controls.
-			float uiScale = Mathf.Max(1f, Mathf.Min(w, h) / 390f);
-			float control = EditorAdAssets.Size * uiScale;
-			var aboutTextColor = new Color(EditorAdAssets.AboutTextGrey, EditorAdAssets.AboutTextGrey, EditorAdAssets.AboutTextGrey, 1f);
-			var adText = new GUIStyle(small) { fontStyle = FontStyle.Normal, fontSize = Mathf.RoundToInt(EditorAdAssets.AdSize * uiScale), normal = { textColor = aboutTextColor } };
-			var infoText = new GUIStyle(small) { fontStyle = FontStyle.Bold, fontSize = Mathf.RoundToInt(EditorAdAssets.InfoSize * uiScale), normal = { textColor = aboutTextColor } };
-			var timerText = new GUIStyle(pill) { fontSize = Mathf.RoundToInt(EditorAdAssets.NumberSize * uiScale) };
-			if (chrome.About(new Rect(pad, pad, control * 3, EditorAdAssets.AboutSize * uiScale), adText, infoText) && ad.started) SetInfo(true);
-			Rect debug = new Rect(pad, pad + control + unit, unit * 11, unit * 1.8f);
-			bool skip = ad.started && !ad.ended && GUI.Button(debug, "Test: skip to its end", smallButton);
-			debug.y += unit * 2.2f;
-			bool nothing = GUI.Button(debug, "Test: nothing was shown", smallButton);
-			Rect corner = new Rect(w - pad - control, pad, control, control);
-			bool playing = !still && !ad.ended;
-			float left = Mathf.Max(ad.hold, ad.rewarded && !ad.granted ? ad.rewardAt - watched : playing && !ad.rewarded ? Mathf.Min(ad.skipAt, ad.length) - watched : 0f);
-			bool ready = ad.started && left <= 0f;
-			// The arc tracks all of playback, while the number tracks eligibility.
-			float progress = playing ? watched / Mathf.Max(0.001f, ad.length) : ad.hold > 0 ? 1 - ad.hold / Mathf.Max(0.001f, ad.endSecs) : 1;
-			bool hit = chrome.Timer(corner, progress, ready, ready && !playing, Mathf.CeilToInt(Mathf.Max(0, left)), timerText);
-			bool close = hit && !playing, toEnd = hit && playing;
+			// top left: what this is, and for whoever is testing the ad's end now, or as if nothing had been shown
+			Rect tag = new Rect(pad, pad, unit * 11, unit * 1.8f);
+			Fill(tag, new Color(0f, 0f, 0f, 0.55f));
+			GUI.Label(tag, "Ad · Editor stand-in", small);
+			bool skip = ad.started && !ad.ended && GUI.Button(new Rect(pad, tag.yMax + unit * 0.4f, tag.width, unit * 1.8f), "Test: skip to its end", smallButton);
+			bool nothing = GUI.Button(new Rect(pad, tag.yMax + unit * 2.6f, tag.width, unit * 1.8f), "Test: nothing was shown", smallButton);
+
+			// top right: the countdown, then the way out
+			// A rewarded ad: the reward's countdown and a way to leave without it; the reward in, ✓, which takes a video with more to
+			// play to its end card first, and from there ✕. An interstitial's video: Skip, at the game's time, which takes
+			// it to its end, where ✕ is HoldSecs later; one that got to its end by itself has ✕ at once.
+			Rect corner = new Rect(w - pad - unit * 9, pad, unit * 9, unit * 2.4f);
+			bool leave = false, close = false, toEnd = false;
+			bool playing = !still && !ad.ended, canEnd = ad.ends == Ends.Card || ad.loopFrom >= 0f;   // one that rests on its own card, or is one, has no end to go to
+			float left = ad.rewarded ? ad.rewardAt - watched : ad.hold > 0f ? ad.hold : playing ? Mathf.Min(ad.skipAt, ad.length) - watched : 0f;
+			if (ad.modern)
+			{
+				left = Mathf.Max(ad.hold, ad.rewarded && !ad.granted ? ad.rewardAt - watched : playing && !ad.rewarded ? Mathf.Min(ad.skipAt, ad.length) - watched : 0f);
+				if (ad.started && left > 0f) { Fill(corner, new Color(0f, 0f, 0f, 0.55f)); GUI.Label(corner, Mathf.CeilToInt(left).ToString(), small); }
+				else if (ad.started && playing) toEnd = GUI.Button(corner, "Skip  ▸", button);
+				else if (ad.started) close = GUI.Button(corner, "✕  Close", button);
+			}
+			else if (!ad.started)
+			{
+				// nothing to press until there's something to leave
+			}
+			else if (left > 0f && !ad.granted)
+			{
+				Fill(corner, new Color(0f, 0f, 0f, 0.55f));
+				GUI.Label(corner, (ad.rewarded ? (string.IsNullOrEmpty(ad.reward) ? "Reward" : ad.reward) + " in " : ad.hold > 0f ? "Close in " : "Skip in ") + Mathf.CeilToInt(left), small);
+				leave = ad.rewarded && GUI.Button(new Rect(corner.x, corner.yMax + unit * 0.4f, corner.width, unit * 2f), "✕  Leave, no reward", smallButton);
+			}
+			else if (playing && !ad.rewarded)
+			{
+				toEnd = GUI.Button(corner, "Skip  ▸", button);
+			}
+			else if (playing && canEnd)
+			{
+				toEnd = GUI.Button(corner, "✓  Reward earned", button);
+			}
+			else
+			{
+				close = GUI.Button(corner, ad.rewarded && !ad.ended ? "✓  Close" : "✕  Close", button);
+			}
 
 			// last, so every button above has the tap first: the video itself as a store button, from when the creative says
 			bool whole = ad.started && ad.store != null && !still && watched >= ad.wholeFrom && GUI.Button(all, GUIContent.none, GUIStyle.none);
 
-			if (close)
+			if (leave || close)
 			{
 				Close(true);
 			}

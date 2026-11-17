@@ -3,14 +3,16 @@
 <style>body { margin: 0; background: #c4d2df; color: white; font: 16px system-ui; display: grid; place-items: center; height: 100vh; }</style>
 <body><p>Press Play to test the overlay.</p>
 <script type="module">
-import { play } from '../core/player.js?v=20261117-lighter-labels';
+const playerModule = import(`../core/player.js?preview=${Date.now()}`);
+const run = new URL(location.href).searchParams.get('run');
 let running = false;
-const log = previewEvent => parent.postMessage({ previewEvent }, location.origin);
+const log = previewEvent => parent.postMessage({ previewEvent, run }, location.origin);
 addEventListener('message', async event => {
-  if (event.source !== parent || event.origin !== location.origin || !event.data?.preview || running) return;
+  if (event.source !== parent || event.origin !== location.origin || event.data?.run !== run || !event.data?.preview || running) return;
   running = true;
   const c = event.data.preview;
   try {
+    const { play } = await playerModule;
     const playback = play({
       creative: { id: 'local-preview', kind: c.kind, secs: c.secs, src: c.src,
         skipFrom: c.skip, endCardSecs: c.hold, endCardCta: { type: c.cta },
@@ -31,4 +33,7 @@ addEventListener('message', async event => {
     log({ done: true, ...result });
   } catch (error) { log({ event: 'error', message: error.message }); }
 });
+// Ready means the listener is registered, not merely that the frame fired load.
+parent.postMessage({ previewReady: true, run }, location.origin);
+playerModule.catch(error => log({ event: 'error', message: error.message }));
 </script></body></html>

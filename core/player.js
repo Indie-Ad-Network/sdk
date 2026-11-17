@@ -99,7 +99,7 @@ button { font-family: inherit; cursor: pointer; }
 /* Match the internal SDK's sliced label corners without stretching its outline. */
 .about i::before { content: ""; position: absolute; z-index: -1; top: 0; right: 0; bottom: 0; left: 0; border: ${UI.tagBorder}px solid transparent; border-image: url("${AD_LABEL_BG}") ${UI.tagSlice} fill / ${UI.tagBorder}px; pointer-events: none; }
 .about b { display: flex; align-items: center; justify-content: center; width: ${UI.aboutSize}px; height: ${UI.aboutSize}px; background: url("${INFO_BG}") center / 100% 100% no-repeat; }
-.about b span { font: 900 ${UI.infoSize}px/1 "IndieAdsCairoBlack", system-ui, sans-serif; text-align: center; }
+.about b span { font: italic 700 ${UI.infoSize}px/1 Georgia, "Times New Roman", serif; text-align: center; }
 .ring { position: relative; width: ${UI.size}px; height: ${UI.size}px; flex: none; padding: 0; border: 0; background: url("${INFO_BG}") center / ${UI.timerBackgroundSize}px ${UI.timerBackgroundSize}px no-repeat; color: inherit; }
 .ring svg { position: absolute; top: 0; right: 0; bottom: 0; left: 0; transform: rotate(-90deg); }
 .ring circle { fill: none; stroke: #fff; stroke-width: ${UI.stroke}; }
