@@ -110,6 +110,9 @@ button { font-family: inherit; cursor: pointer; }
 .ring.closable .left { stroke-dashoffset: 0 !important; }
 .ring.closable b { font-size: 22px; }
 .ring b { position: absolute; top: 0; right: 0; bottom: 0; left: 0; display: flex; align-items: center; justify-content: center; font: 900 ${UI.numberSize}px/1 "IndieAdsCairoBlack", system-ui, sans-serif; font-variant-numeric: tabular-nums; }
+/* Optical correction for the italic info glyph and countdown digits, measured
+   against the iPhone circles. AD and the background skip/close icons stay put. */
+.about b canvas, .ring b canvas { transform: translate(-.5px, -.5px); }
 .get { height: 44px; flex: none; display: flex; align-items: center; gap: 8px; padding: 4px 16px 4px 4px; border: 0; border-radius: 999px; background: #1f6fd6; color: #fff; font-weight: 900; font-size: 15px; line-height: 1; white-space: nowrap; box-shadow: 0 2px 8px #0006; }
 .get:not(:has(img)) { padding-left: 16px; }
 .stage { position: relative; flex: 1; min-height: 0; overflow: hidden; }
