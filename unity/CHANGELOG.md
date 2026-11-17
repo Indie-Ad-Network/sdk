@@ -6,6 +6,11 @@ The repository has one version, [Semantic Versioning](https://semver.org), and a
 
 Two numbers are not this one, and change only when a format does: `VERSION` in `core/wire.js` (what games send the ingest) and the catalogue's `version`. Games already released go on sending and reading the old ones.
 
+## [0.6.13] - 2026-11-17
+
+- Draw AD, info and timer backgrounds with CSS using the original half-transparent black and rounded corners; remove the background bitmap assets.
+- Center text using painted canvas bounds inside fixed text surfaces. Retry initial countdown rendering after attachment, fixing a misplaced initial 5 when font metrics were unavailable before the overlay was mounted.
+
 ## [0.6.12] - 2026-11-17
 
 - Center AD, info and countdown text by the visible glyph bounds instead of the font line box, including remeasurement after the embedded font loads. This addresses differences between browser previews and device web views without shifting the backgrounds or icons.

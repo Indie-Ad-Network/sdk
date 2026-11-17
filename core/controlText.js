@@ -1,35 +1,51 @@
-// Center the painted glyphs rather than the font's line box. Cairo's generous
-// ascender/descender metrics otherwise put labels low in some device web views.
+// Fixed text surfaces prevent font-load/layout races from moving a countdown
+// outside its control. Canvas exposes the painted ink bounds, unlike SVG getBBox
+// which can include the font's full ascender/descender box on some browsers.
 const labels = new WeakMap();
 export function controlText(element, value, doc = document) {
   if (!element) return;
-  const word = String(value), previous = labels.get(element);
-  if (previous?.word === word) return;
+  const word = String(value);
+  if (labels.get(element) === word) return;
+  labels.set(element, word);
   element.textContent = value;
-  labels.set(element, { word });
-  if (!word || !doc.createElementNS) return;
-  const style = getComputedStyle(element), ns = 'http://www.w3.org/2000/svg';
-  const svg = doc.createElementNS(ns, 'svg'), text = doc.createElementNS(ns, 'text');
-  const height = parseFloat(style.fontSize);
-  svg.setAttribute('height', height);
-  svg.setAttribute('width', 1);
-  svg.style.display = 'block';
-  svg.style.overflow = 'visible';
-  text.style.font = style.font;
-  text.style.letterSpacing = style.letterSpacing;
-  text.setAttribute('fill', style.color);
-  text.textContent = word;
-  svg.appendChild(text);
+  if (!word) return;
+  // Some creatives draw before their host is attached. Computed fonts are empty
+  // there; do not cache that initial value or leave an unpainted default canvas.
+  if (element.isConnected === false) { labels.delete(element); return; }
+  const canvas = doc.createElement('canvas'), context = canvas.getContext?.('2d');
+  if (!context) return;
+  const style = getComputedStyle(element);
+  const font = `${style.fontStyle} ${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+  const color = style.color, size = parseFloat(style.fontSize);
+  const text = style.textTransform === 'uppercase' ? word.toLocaleUpperCase() : word;
+  const spacing = style.letterSpacing;
+  canvas.textContent = word;
+  canvas.style.display = 'block';
+  canvas.style.flex = 'none';
   element.textContent = '';
-  element.appendChild(svg);
-  const center = () => {
-    if (!svg.isConnected) return;
-    const box = text.getBBox(), width = Math.max(1, box.width);
-    svg.setAttribute('width', width);
-    svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
-    text.setAttribute('transform', `translate(${-box.x},${height / 2 - box.y - box.height / 2})`);
+  element.appendChild(canvas);
+  const paint = () => {
+    if (!canvas.isConnected) return;
+    context.font = font;
+    if ('letterSpacing' in context) context.letterSpacing = spacing === 'normal' ? '0px' : spacing;
+    const m = context.measureText(text);
+    const left = m.actualBoundingBoxLeft, right = m.actualBoundingBoxRight;
+    const ascent = m.actualBoundingBoxAscent, descent = m.actualBoundingBoxDescent;
+    const width = Math.ceil(Math.max(size, m.width, left + right));
+    const height = Math.ceil(Math.max(size, ascent + descent));
+    const ratio = globalThis.devicePixelRatio || 1;
+    canvas.width = Math.ceil(width * ratio);
+    canvas.height = Math.ceil(height * ratio);
+    canvas.style.width = `${width}px`;
+    canvas.style.height = `${height}px`;
+    context.setTransform(canvas.width / width, 0, 0, canvas.height / height, 0, 0);
+    context.font = font;
+    context.fillStyle = color;
+    context.textBaseline = 'alphabetic';
+    if ('letterSpacing' in context) context.letterSpacing = spacing === 'normal' ? '0px' : spacing;
+    context.fillText(text, (width + left - right) / 2, (height + ascent - descent) / 2);
   };
-  center();
-  // Re-measure after the embedded font is ready; the initial layout may use a fallback.
-  doc.fonts?.ready.then(center);
+  paint();
+  // Explicitly request this exact face, then repaint once its real metrics are available.
+  doc.fonts?.load(font, text).then(paint).catch(() => {});
 }

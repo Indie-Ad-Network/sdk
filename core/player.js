@@ -66,7 +66,7 @@ import { controlText } from './controlText.js';
 import { CONTROL_FONT } from './controlFont.js';
 import { CONTROL_THEME as UI } from './controlTheme.js';
 import { MARK } from './mark.js';
-import { SKIP_ICON, CLOSE_ICON, AD_LABEL_BG, INFO_BG } from './controlIcons.js';
+import { SKIP_ICON, CLOSE_ICON } from './controlIcons.js';
 
 const R = UI.radius, C = 2 * Math.PI * R;   // the ring
 const TICK = 100, GAP = 250;         // ms: the clock's step; a longer gap was time off screen, not time watched
@@ -96,12 +96,11 @@ button { font-family: inherit; cursor: pointer; }
 }
 .bar-space { flex: 1; }
 .about { flex: none; display: flex; align-items: center; gap: ${UI.aboutGap}px; height: ${UI.size}px; margin: 0 -4px; padding: 0 4px; border: 0; background: none; color: rgb(${Math.round(UI.aboutTextGrey * 255)},${Math.round(UI.aboutTextGrey * 255)},${Math.round(UI.aboutTextGrey * 255)}); text-shadow: none; }
-.about i { position: relative; isolation: isolate; display: flex; align-items: center; height: ${UI.aboutSize}px; padding: 0 ${UI.tagPadding}px; font: 900 ${UI.adSize}px/1 "IndieAdsCairoBlack", system-ui, sans-serif; letter-spacing: .1em; text-transform: uppercase; }
-/* Match the internal SDK's sliced label corners without stretching its outline. */
-.about i::before { content: ""; position: absolute; z-index: -1; top: 0; right: 0; bottom: 0; left: 0; border: ${UI.tagBorder}px solid transparent; border-image: url("${AD_LABEL_BG}") ${UI.tagSlice} fill / ${UI.tagBorder}px; pointer-events: none; }
-.about b { display: flex; align-items: center; justify-content: center; width: ${UI.aboutSize}px; height: ${UI.aboutSize}px; background: url("${INFO_BG}") center / 100% 100% no-repeat; }
+.about i { position: relative; display: flex; align-items: center; height: ${UI.aboutSize}px; padding: 0 ${UI.tagPadding}px; font: 900 ${UI.adSize}px/1 "IndieAdsCairoBlack", system-ui, sans-serif; letter-spacing: .1em; text-transform: uppercase; background: rgba(0,0,0,${UI.backgroundAlpha}); border-radius: ${UI.tagRadius}px; }
+.about b { display: flex; align-items: center; justify-content: center; width: ${UI.aboutSize}px; height: ${UI.aboutSize}px; background: rgba(0,0,0,${UI.backgroundAlpha}); border-radius: 50%; }
 .about b span { font: italic 700 ${UI.infoSize}px/1 Georgia, "Times New Roman", serif; text-align: center; }
-.ring { position: relative; width: ${UI.size}px; height: ${UI.size}px; flex: none; padding: 0; border: 0; background: url("${INFO_BG}") center / ${UI.timerBackgroundSize}px ${UI.timerBackgroundSize}px no-repeat; color: inherit; }
+.ring { position: relative; width: ${UI.size}px; height: ${UI.size}px; flex: none; padding: 0; border: 0; background: none; color: inherit; }
+.ring::before { content: ""; position: absolute; top: 50%; left: 50%; width: ${UI.timerBackgroundSize}px; height: ${UI.timerBackgroundSize}px; transform: translate(-50%, -50%); border-radius: 50%; background: rgba(0,0,0,${UI.backgroundAlpha}); }
 .ring > svg { position: absolute; top: 0; right: 0; bottom: 0; left: 0; transform: rotate(-90deg); }
 .ring circle { fill: none; stroke: #fff; stroke-width: ${UI.stroke}; }
 .ring .left { fill: none; stroke: #fff; stroke-linecap: round; stroke-dasharray: ${C}; transition: stroke-dashoffset ${TICK}ms linear; }
