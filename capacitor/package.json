@@ -1,6 +1,6 @@
 {
   "name": "indie-ads-capacitor",
-  "version": "0.6.7",
+  "version": "0.6.8",
   "license": "MIT",
   "description": "indie-ads' native side for a Capacitor app: the App Store sheet, and whether the network is metered.",
   "type": "module",

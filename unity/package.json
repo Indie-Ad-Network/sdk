@@ -1,6 +1,6 @@
 {
   "name": "com.indieadnetwork.sdk",
-  "version": "0.6.7",
+  "version": "0.6.8",
   "license": "MIT",
   "displayName": "Indie Ads",
   "description": "Rewarded and interstitial ads for our own and our friends' games (videos and MRAID playables), played in the package's own web view (the system's, on iOS and Android), with a say in how they're mixed with a paid ad network's. The Unity side of the indie-ads package.",
