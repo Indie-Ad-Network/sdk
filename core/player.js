@@ -458,7 +458,7 @@ export function play({ creative, app, html, link, ctaText, reward, format = 'rew
   function close() {
     if (closed) return;
     closed = true; storeBanner(false);
-    clearInterval(clock); removeEventListener('resize', dress); doc.removeEventListener('visibilitychange', seen); removeEventListener('message', heard); doc.removeEventListener('keydown', key, true);
+    clearInterval(clock); removeEventListener('resize', dress); removeEventListener('resize', fill); doc.removeEventListener('visibilitychange', seen); removeEventListener('message', heard); doc.removeEventListener('keydown', key, true);
     dropVideo(); host.remove();
     finish({ granted, watchedSecs: secs(), kind });
   }
@@ -592,15 +592,27 @@ export function play({ creative, app, html, link, ctaText, reward, format = 'rew
   }
   addEventListener('message', heard);
 
+  // The store's sheet may turn the screen under it (iOS: to portrait, over a landscape game), and a playable, paused, would
+  // be stretched to the new shape. It's held at the size it had, filling the screen, until the store is put away.
+  let held = null;   // the size it's kept at
+  function hold(on) {
+    held = on && frame ? [stage.clientWidth, stage.clientHeight] : null;
+    (held ? addEventListener : removeEventListener)('resize', fill);
+    fill();
+  }
+  function fill() {
+    if (frame) frame.style.cssText = held ? `width: ${held[0]}px; height: ${held[1]}px; top: 50%; right: auto; bottom: auto; left: 50%; transform: translate(-50%, -50%) scale(${Math.max(stage.clientWidth / held[0], stage.clientHeight / held[1])});` : '';
+  }
+
   // ---- the buttons ----
   // `tapped`: what was (wire.js FROM), sent as the event's `from`
   async function store(tapped) {
     if (!link || waits.has('store')) return;
     emit('store_open', { via: link.via, from: tapped });
     const under = bannered; storeBanner(false);   // the sheet is the whole store: no banner beside it
-    wait('store', true);
+    wait('store', true); hold(true);
     try { await openStore(link); } catch { /* the store didn't open: carry on */ }
-    wait('store', false);
+    hold(false); wait('store', false);
     if (under && !closed) storeBanner(true);
   }
   function ask() {

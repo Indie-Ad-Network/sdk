@@ -35,7 +35,7 @@ function showing(t, creative, options = {}) {
     click() { if (!this.disabled) for (const fn of root.listeners.get('click') ?? []) fn({ target: this }); }
   }
   const root = new Element();
-  for (const selector of ['.stage', '.end', '.ring', '.ring b', '.left', '.more', '.ask', '.info']) nodes.set(selector, new Element(['.ring', '.more'].includes(selector) ? 'button' : 'div', selector));
+  for (const selector of ['.stage', '.end', '.ring', '.ring b', '.left', '.more', '.go', '.ask', '.info']) nodes.set(selector, new Element(['.ring', '.more', '.go'].includes(selector) ? 'button' : 'div', selector));
   nodes.get('.ring').disabled = true;
   const document = {
     hidden: false, body: { append(el) { host = el; } }, addEventListener(type, fn) { listeners.set(type, fn); }, removeEventListener(type) { listeners.delete(type); },
@@ -50,7 +50,7 @@ function showing(t, creative, options = {}) {
   }
   const result = play({ creative: { kind: 'video', secs: 30, endCardMode: 'orientation', endCardSecs: 0, src: 'https://example.test/video.mp4', ...creative }, app: { name: 'Test' }, emit: (name, data) => events.push({ name, ...data }), ...options });
   frame?.dispatch('load');
-  return { result, events, root, nodes, get video() { return video; }, get closed() { return !!host.removed; },
+  return { result, events, root, nodes, get video() { return video; }, get frame() { return frame; }, resize() { listeners.get('resize')?.(); }, get closed() { return !!host.removed; },
     get ring() { return nodes.get('.ring'); }, get label() { return nodes.get('.ring b').textContent; },
     click() { nodes.get('.ring').click(); },
     advance(seconds) { for (let elapsed = 0; elapsed < seconds - 0.0001; elapsed += 0.1) { now += 100; tick?.(); } },
@@ -205,3 +205,16 @@ for (const format of ['rewarded', 'interstitial']) {
     s.video.dispatch('ended'); s.click(); await s.result;
   });
 }
+
+test('a playable keeps its size while the store is over it, whichever way the screen turns', async t => {
+  let closeStore;
+  const ad = showing(t, { kind: 'playable', secs: 30 }, { html: '<p></p>', link: { url: 'https://example.test/app', via: 'sheet' }, openStore: () => new Promise(done => { closeStore = done; }) });
+  const stage = ad.nodes.get('.stage');
+  stage.clientWidth = 844; stage.clientHeight = 390;
+  ad.nodes.get('.go').click();
+  assert.match(ad.frame.style.cssText, /width: 844px; height: 390px;.*scale\(1\)/);
+  stage.clientWidth = 390; stage.clientHeight = 844; ad.resize();
+  assert.match(ad.frame.style.cssText, /width: 844px; height: 390px;.*scale\(2\.16/);   // 844 / 390: filling the portrait screen, its own shape kept
+  closeStore(); await new Promise(setImmediate);
+  assert.equal(ad.frame.style.cssText, '');
+});
