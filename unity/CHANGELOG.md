@@ -6,6 +6,12 @@ The repository has one version, [Semantic Versioning](https://semver.org), and a
 
 Two numbers are not this one, and change only when a format does: `VERSION` in `core/wire.js` (what games send the ingest) and the catalogue's `version`. Games already released go on sending and reading the old ones.
 
+## [0.6.14] - 2026-11-17
+
+- Center AD, info and countdown text using the rasterized ink bounds, with font-load repainting retained. This corrects the remaining device alignment differences after 0.6.13.
+- Apply a small optical correction to the info glyph and timer digits; their alignment has been confirmed on iPhone.
+- Rebuild games using the Unity package to include the updated embedded player. Existing placements and integration code remain compatible.
+
 ## [0.6.13] - 2026-11-17
 
 - Draw AD, info and timer backgrounds with CSS using the original half-transparent black and rounded corners; remove the background bitmap assets.
