@@ -120,6 +120,15 @@ test("a video marked overrun is let into a placement shorter than it; no other i
 test('a placement\'s least time, and who fits it: skipFrom and minSecs', async () => {
   const { leastOf } = await import('../core/pick.js'), { leastSaid } = await import('../core/exchange.js');
   assert.deepEqual([leastOf({}), leastOf({ minSecs: 15 }), leastOf({ format: 'interstitial' }), leastOf({ format: 'interstitial', skipAfter: 8 }), leastOf({ format: 'interstitial', skipAfter: 8, minSecs: 0 }), leastOf({ format: 'interstitial', minSecs: 40 })], [null, 15, 5, 8, 0, 15]);
+  // a video kept to its own shape of screen isn't shown on the other; one not so kept is, and a game that hasn't said its shape gets both
+  const cuts = { apps: { a: { name: 'A', ios: { id: 1 }, android: { package: 'a' } } }, creatives: [{ id: 'tall', app: 'a', kind: 'video', secs: 15, aspect: '9:16', aspectOnly: true, src: 'x' }, { id: 'wide', app: 'a', kind: 'video', secs: 15, aspect: '16:9', src: 'x' }] };
+  const shown = aspect => eligible({ catalogue: cuts, host: 'h', aspect }).map(c => c.id).sort();
+  assert.deepEqual([shown('9:16'), shown('16:9'), shown(null)], [['tall', 'wide'], ['wide'], ['tall', 'wide']]);
+  const { validate } = await import('../core/catalogue.js');   // a playable's too: read, and kept to its shape
+  const read = validate({ version: 1, apps: { a: { name: 'A', ios: { id: 1 } } }, creatives: [{ id: 'p', app: 'a', kind: 'playable', secs: 30, src: 'p.html', aspect: '9:16', aspectOnly: true }] }, 'https://x.example/c.json');
+  assert.deepEqual([read.dropped, read.creatives[0].aspectOnly, eligible({ catalogue: read, host: 'h', aspect: '16:9' }).length, eligible({ catalogue: read, host: 'h', aspect: '9:16' }).length], [[], true, 0, 1]);
+  const { skipAtOf } = await import('../core/pick.js');   // Skip at the game's time, 12 s in at the latest: whatever it's handed
+  assert.deepEqual([0, 3, 5, 10, 12, 13, 15, 40].map(skipAtOf), [0, 3, 5, 10, 12, 12, 12, 12]);
   const catalogue = { apps: { a: { name: 'A', ios: { id: 1 }, android: { package: 'a' } } }, creatives: [
     { id: 'plain', app: 'a', kind: 'video', secs: 30, src: 'x' }, { id: 'early', app: 'a', kind: 'video', secs: 30, skipFrom: 5, src: 'x' }, { id: 'late', app: 'a', kind: 'video', secs: 30, skipFrom: 10, src: 'x' }] };
   const ids = placement => eligible({ catalogue, host: 'h', placement }).map(c => c.id).sort();

@@ -21,7 +21,7 @@ const ASPECTS = ['9:16', '16:9'];
 const strings = x => Array.isArray(x) && x.every(s => typeof s === 'string'), count = x => Number.isFinite(x) && x >= 0;
 const TYPED = { langs: [strings, 'a list of strings'], hosts: [strings, 'a list of strings'], weight: [count, 'a number, 0 or more'], capPerDay: [count, 'a number, 0 or more'], bytes: [count, 'a number, 0 or more'] };
 // How a creative asks to be shown, beyond the player's own way (0.5.0): endCard, storeButton, and for a video loop,
-// tap, overrun, fade, backdrop and (0.6.3) skipFrom, each as schema/catalogue.schema.json describes it (test/catalogue.test.mjs holds
+// tap, overrun, fade, backdrop, (0.6.3) skipFrom and (0.6.8) aspectOnly, each as schema/catalogue.schema.json describes it (test/catalogue.test.mjs holds
 // these to the schema's bounds). Each is optional, and none is a reason to lose an ad: one that can't be read is left
 // out and named in `dropped`, and the creative plays as it would without it. What's left unsaid is the player's to
 // fill in. A release from before 0.5.0 reads none of them, and plays the creative its own way.
@@ -31,6 +31,7 @@ const when = v => v === 'end' || count(v);
 const place = p => obj(p) && (p.anchor == null || ANCHOR.test(p.anchor)) && (p.width == null || between(p.width, 64, 1000)) && ['x', 'y'].every(k => p[k] == null || between(p[k], -1280, 1280));
 const only = (o, keys) => Object.fromEntries(keys.filter(k => o[k] != null).map(k => [k, o[k]]));
 const ANY = {
+  aspectOnly: v => typeof v === 'boolean' ? v : BAD,   // a video's or a playable's: kept to the shape of screen it says (`aspect`)
   endCard(v, c, file) {
     if (!obj(v)) return BAD;
     const art = { portrait: file(v.portrait), landscape: file(v.landscape) };

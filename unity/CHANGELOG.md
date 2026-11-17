@@ -10,6 +10,10 @@ Two numbers are not this one, and change only when a format does: `VERSION` in `
 
 ### Added
 - Unity: `IndieAds.Shutdown()` closes the current session for logout, ad opt-out or profile changes, allowing a fresh `Init`. Pending ads finish once without a reward; shown ads send `OnHidden` first. Cleanup hides/disposes the ad and More games web views, restores sleep timeout, removes the store banner and dismisses the session's iOS App Store sheet. Late page/store callbacks cannot address a replacement session. Event subscriptions and persistent storage are retained.
+- **A video can be kept to its own shape of screen: `aspectOnly`.** A video cut for portrait has always been shown in landscape games too (and the other way), letterboxed, at half its weight. One marked `aspectOnly` isn't: it is shown only where the screen is the shape it was cut for. A playable may say a shape and be kept to it the same way; one that says none is shown in both, as before. Both are set in a creative's form on the network's dashboard.
+
+### Changed
+- **An interstitial's video shows Skip at the game's time, not 3 seconds before it.** From 0.6.3 Skip came 3 s ahead of the placement's least time, which with nothing said was 2 s in: too soon for an ad to have been seen. Now it comes at that time (5 s with nothing said), 12 s in at the latest, and ✕ on the end card 3 s after Skip, as before: so the way out is never later than 15 s. Players wait longer for Skip than in 0.6.3 to 0.6.7.
 
 ## [0.6.7] - 2026-11-17
 

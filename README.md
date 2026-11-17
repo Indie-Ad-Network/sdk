@@ -51,7 +51,7 @@ Add `capacitor/` as a dependency (`"indie-ads-capacitor": "file:…/sdk/capacito
 
 ## Interstitials
 
-A placement with `format: 'interstitial'` is the game's choice, not the player's: no reward and no "Leave now?". The game says the least time it holds the player, `minSecs` (5 unless said, 15 at most; `skipAfter` is its name before 0.6.3, still read). A video shows **Skip** 3 seconds before that time (at once, under 3): Skip takes the video to its end card, and ✕ is there 3 seconds later. A video that reaches its end by itself has ✕ at once. A playable, or the still card, has ✕ at the game's time. With nothing ready it shows nothing: `show()` resolves `{ shown: false }`, and the game carries on (or shows its paid network's).
+A placement with `format: 'interstitial'` is the game's choice, not the player's: no reward and no "Leave now?". The game says the least time it holds the player, `minSecs` (5 unless said, 15 at most; `skipAfter` is its name before 0.6.3, still read). A video shows **Skip** at that time: Skip takes the video to its end card, and ✕ is there 3 seconds later. Skip is 12 seconds in at the latest, so the way out is never later than 15. A video that reaches its end by itself has ✕ at once. A playable, or the still card, has ✕ at the game's time. With nothing ready it shows nothing: `show()` resolves `{ shown: false }`, and the game carries on (or shows its paid network's).
 
 ```js
 placements: { betweenLevels: { format: 'interstitial', maxSecs: 30, minSecs: 5 } }
@@ -68,7 +68,7 @@ Two things say, and the game's comes first:
 |---|---|---|
 | **Rewarded video** | The reward can be claimed at that time, or at the creative's `skipFrom` if that is later | At the creative's `skipFrom`; with none, at its end |
 | **Rewarded playable** | At the playable's own time (`secs`), or when it says it's done if it's marked `finishEarly` | The same |
-| **Interstitial video** | Skip 3 s before that time, ✕ on the end card 3 s after Skip. A creative whose `skipFrom` is later isn't shown there | As 5 s |
+| **Interstitial video** | Skip at that time (12 s at the latest), ✕ on the end card 3 s after Skip. A creative whose `skipFrom` is later isn't shown there | As 5 s |
 | **Interstitial playable** | ✕ at that time, which closes it | As 5 s |
 
 A reward claimed before a video's end takes the video to its end card, and the player leaves from there; one who watches to the end leaves from the same card.
@@ -164,7 +164,7 @@ One JSON file on a server, shared by every game, so changing what's shown never 
 }
 ```
 
-Which creative shows is decided in `core/pick.js`: in date, not the host, not rated above it, not resting, under its daily cap, no longer than the placement takes; then by weight, and never the same one twice running. A video cut for the other shape of screen isn't left out: it plays letterboxed, and counts for half its weight.
+Which creative shows is decided in `core/pick.js`: in date, not the host, not rated above it, not resting, under its daily cap, no longer than the placement takes; then by weight, and never the same one twice running. A video cut for the other shape of screen isn't left out: it plays letterboxed, and counts for half its weight. Unless its studio says never (`aspectOnly`): then it's shown only where the screen is its shape.
 
 ## Creatives
 

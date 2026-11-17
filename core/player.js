@@ -38,9 +38,9 @@
 // Two formats. `rewarded` (the default) is the player's choice, and watching to the end of the
 // countdown earns the host's reward. `interstitial` is the host's choice, between two things
 // the player was doing: there's no reward and nothing to forfeit. The game says the least time it
-// holds the player (`least`: 5 s unless it says). A video shows Skip 3 s before that (at once, if the
-// time is under 3 s): Skip takes it to its end, the end card or whatever it ends on, and ✕ is there
-// 3 s later. A video that reaches its end by itself has ✕ at once. A playable or a still card has
+// holds the player (`least`: 5 s unless it says). A video shows Skip at that time, 12 s in at the
+// latest (pick.js skipAtOf): Skip takes it to its end, the end card or whatever it ends on, and ✕ is
+// there 3 s later. A video that reaches its end by itself has ✕ at once. A playable or a still card has
 // ✕ at the game's time, and it closes at once. Until then there is no ✕ to press.
 // A rewarded video's reward comes at the game's time, if it says one (`least`), or at the creative's
 // own earliest (`skipFrom`), and with both at the later; with neither, at its end. A reward in
@@ -61,7 +61,7 @@
 // In a shadow root, so the host's CSS can't reach in, and this CSS can't leak out.
 import { withShim } from './mraidShim.js';
 import { STEP, STEP_NAME, STEPS_MAX, SDK, REASONS } from './wire.js';
-import { leastOf } from './pick.js';
+import { leastOf, skipAtOf, HOLD_SECS } from './pick.js';   // HOLD_SECS: an interstitial's video left by Skip, how long its end stands before ✕ is there
 import { stringsFor, say } from './locale.js';
 import { MARK } from './mark.js';
 
@@ -69,7 +69,6 @@ const R = 19, C = 2 * Math.PI * R;   // the ring
 const TICK = 100, GAP = 250;         // ms: the clock's step; a longer gap was time off screen, not time watched
 const CARD_SECS = 5;                 // how long the still card stands in for a creative
 const STALL_SECS = 12;               // a video on screen and not moving for this long isn't going to
-const HOLD_SECS = 3;                 // an interstitial's video left by Skip: how long its end stands before ✕ is there, and how long before the game's time Skip is
 const KEEP_SECS = 120;               // how long a playable may be played on past its time, at most
 const NETWORK = 'Indie Ad Network';  // whose ads these are: a name, the same in every language
 const WORDS_MAX = 200;               // a report's own words, at most
@@ -262,8 +261,8 @@ export function play({ creative, app, html, link, ctaText, reward, format = 'rew
   const rewarded = format !== 'interstitial';
   // The least time the game holds the player to this ad (`least`, the placement's: pick.js leastOf, which is what a caller that says none gets).
   // A rewarded ad's is null where the game has said none.
-  const min = least ?? leastOf({ format }), skipAt = Math.max(0, min - HOLD_SECS);
-  // An interstitial's video isn't closed from where it plays: Skip is there HOLD_SECS before the game's time, and takes it to its end, where ✕ is
+  const min = least ?? leastOf({ format }), skipAt = skipAtOf(min);
+  // An interstitial's video isn't closed from where it plays: Skip is there at the game's time (skipAtOf), and takes it to its end, where ✕ is
   // HOLD_SECS later (`hold` counts them). One that reaches its end by itself has ✕ at once. Anything else of an interstitial's has ✕ at the game's time.
   const skips = () => !rewarded && !!video && !over;
   let hold = 0, offered = false;

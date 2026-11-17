@@ -38,8 +38,12 @@ namespace IndieAdNetwork
 		public event Action Lost;
 #pragma warning restore 67
 
-		const float HoldSecs = 3f;           // an interstitial's video left by Skip: how long its end stands before ✕, and how long before the game's time Skip is
+		const float HoldSecs = 3f;           // an interstitial's video left by Skip: how long its end stands before ✕
 		const float SkipSecs = 5f, SkipMost = 15f;   // an interstitial's least time where no one says, and the most it may be (core/pick.js)
+		const float SkipBy = SkipMost - HoldSecs;    // the latest Skip is shown, so that ✕, HoldSecs after it, is never later than SkipMost
+
+		// The shape of the Game view, as a creative says its own.
+		static string Shape => Screen.width > Screen.height ? "16:9" : "9:16";
 		const float Slack = 0.05f;           // two times this near are the same time (core/pick.js SLACK)
 		const float StillCardSecs = 5f;      // what a rewarded placement with no video counts down
 		const float CatalogueWait = 4f;      // how long a Show waits on the catalogue before going without
@@ -211,6 +215,11 @@ namespace IndieAdNetwork
 				{
 					continue;
 				}
+				// cut for one shape of screen and kept to it (`aspectOnly`): not for a screen the other way up
+				if (Json.Bool(c, "aspectOnly") && Json.Str(c, "aspect") != null && Json.Str(c, "aspect") != Shape)
+				{
+					continue;
+				}
 				// as core/pick.js: an interstitial's time is the game's, so one not to be left before a later second isn't shown there;
 				// and one longer than the placement takes is shown only if it may be left by then, or may run on
 				double skipFrom = Json.Num(c, "skipFrom", -1);
@@ -302,7 +311,7 @@ namespace IndieAdNetwork
 			public string placement, creative, app, kind, name, line, store, reward;
 			public bool rewarded, started, granted, ended, muted;
 			public float rewardAt, cardStarted, length;
-			// an interstitial's video (core/player.js): Skip is there at `skipAt`, HoldSecs before the game's time; Skip takes it to its end,
+			// an interstitial's video (core/player.js): Skip is there at `skipAt`, the game's time (SkipBy in at the latest); Skip takes it to its end,
 			// where ✕ is `hold` seconds later. One that reaches its end by itself has ✕ at once. `leftAt`: where it was skipped from
 			public float skipAt, hold, leftAt = -1f;
 			public bool rests;   // it ends on a card of its own (`ownCard`), and rests on its last frame
@@ -334,7 +343,7 @@ namespace IndieAdNetwork
 			ad = next;
 			enabled = true;
 			float least = Least(placement);   // once the catalogue is in: it may say the time
-			ad.skipAt = Mathf.Max(0f, least - HoldSecs);
+			ad.skipAt = Mathf.Clamp(least, 0f, SkipBy);   // core/pick.js skipAtOf: at the game's time, SkipBy in at the latest
 			List<Dictionary<string, object>> videos = Videos(placement);
 			if (videos.Count == 0)
 			{
@@ -342,7 +351,7 @@ namespace IndieAdNetwork
 				yield break;
 			}
 			// the screen's own shape first, if there is one of it
-			string shape = Screen.width > Screen.height ? "16:9" : "9:16";
+			string shape = Shape;
 			List<Dictionary<string, object>> fits = videos.FindAll(v => Json.Str(v, "aspect") == shape);
 			List<Dictionary<string, object>> pool = fits.Count > 0 ? fits : videos;
 			Dictionary<string, object> c = pool[UnityEngine.Random.Range(0, pool.Count)], app = Json.Dict(Json.Dict(catalogue, "apps"), Json.Str(c, "app"));
@@ -782,7 +791,7 @@ namespace IndieAdNetwork
 
 			// top right: the countdown, then the way out
 			// A rewarded ad: the reward's countdown and a way to leave without it; the reward in, ✓, which takes a video with more to
-			// play to its end card first, and from there ✕. An interstitial's video: Skip, HoldSecs before the game's time, which takes
+			// play to its end card first, and from there ✕. An interstitial's video: Skip, at the game's time, which takes
 			// it to its end, where ✕ is HoldSecs later; one that got to its end by itself has ✕ at once.
 			Rect corner = new Rect(w - pad - unit * 9, pad, unit * 9, unit * 2.4f);
 			bool leave = false, close = false, toEnd = false;

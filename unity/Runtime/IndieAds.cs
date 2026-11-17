@@ -30,7 +30,7 @@ namespace IndieAdNetwork
 		public IndieAdFormat format = IndieAdFormat.Rewarded;
 		[Tooltip("The longest creative this placement takes, in seconds. 0 = any.")]
 		public int maxSecs = 30;
-		[Tooltip("The least time this placement holds the player to an ad, in seconds. -1 = unsaid. Interstitial: a video offers Skip 3 s before it, and ✕ is on its end card 3 s after Skip (unsaid: skipAfter; 15 at most). Rewarded: the reward can be claimed from then (unsaid: the creative's own time, its end unless it says earlier). The dashboard can say another for a placement, by its name.")]
+		[Tooltip("The least time this placement holds the player to an ad, in seconds. -1 = unsaid. Interstitial: a video offers Skip at that time (12 s at the latest), and ✕ is on its end card 3 s after Skip (unsaid: skipAfter; 15 at most). Rewarded: the reward can be claimed from then (unsaid: the creative's own time, its end unless it says earlier). The dashboard can say another for a placement, by its name.")]
 		public float minSecs = -1f;
 		[Tooltip("Interstitial: minSecs, as it was called before 0.6.3. Read where minSecs is unsaid.")]
 		public float skipAfter = 5f;

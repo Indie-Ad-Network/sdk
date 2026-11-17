@@ -100,7 +100,7 @@
           "secs": { "description": "A video's length; how long a playable runs before the reward.", "type": "number", "minimum": 5, "maximum": 60 },
           "src": { "description": "video: MP4, H.264 + AAC. playable: one self-contained HTML file, MRAID 2/3.", "type": "string" },
           "poster": { "description": "video: a still, shown before it plays and blurred behind it.", "type": "string" },
-          "aspect": { "description": "video: its shape. Left out, it suits any host.", "enum": ["9:16", "16:9"] },
+          "aspect": { "description": "The shape of screen it is made for: a video's own shape, or the way up a playable is meant to be held. Left out, it suits any host.", "enum": ["9:16", "16:9"] },
           "line": { "description": "One line for the end card. One string, or one per language, as an app's.", "type": ["string", "object"], "additionalProperties": { "type": "string" } },
           "langs": { "description": "Only for players in these languages (\"en\", \"es\"): for a creative with words in it. Left out: for all.", "type": "array", "items": { "type": "string" } },
           "finishEarly": { "description": "playable: the reward lands when it calls mraid.close(), if that's before `secs`.", "type": "boolean" },
@@ -147,6 +147,7 @@
           },
           "overrun": { "description": "video: it may be shown in a placement shorter than it (`maxSecs` under its `secs`). The reward comes at the placement's time, and the video plays on: the player may watch to its end or leave by the end card. Read from 0.5.0; a release before it shows the video only where it fits.", "type": "boolean" },
           "skipFrom": { "description": "video: the earliest second it may be left at; no later than `secs`. Rewarded: the reward comes then, or at the placement's own least time (`minSecs`) if that is later, and the player may leave for the end card. Interstitial: it isn't shown in a placement whose least time is shorter than this. It may also be shown in a placement shorter than it (`maxSecs`), if it may be left by then. Left out: a rewarded one is watched to its end unless the placement says a time, and an interstitial is the placement's to time. Read from 0.6.3; a release before plays it as one without.", "type": "number", "minimum": 0 },
+          "aspectOnly": { "description": "With `aspect`: it is shown only where the screen is that shape. Left out: a screen of the other shape may be shown it too (a video letterboxed), at half its weight. Read from 0.6.8; a release before shows it either way.", "type": "boolean" },
           "fade": { "description": "video: the seconds at its end over which the end card comes up and the sound goes down. Left out: none, a cut. Read from 0.5.0.", "type": "number", "minimum": 0, "maximum": 5 },
           "backdrop": { "description": "video: what's behind it where it doesn't fill the screen. \"video\": its own picture, blurred, as it plays. Left out: its poster, blurred. Read from 0.5.0.", "enum": ["poster", "video"] }
         }

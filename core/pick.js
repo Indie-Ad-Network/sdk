@@ -11,7 +11,7 @@
 //      for a player under 13, who is one   8. the one shown last, if there's another
 //   4. its game is resting: shown too often with no store tap (history.js)
 // Of those left, one by weight: its own `weight`, a game of the host's own studio × OWN_BOOST, and a video of the
-// wrong shape for the screen × WRONG_SHAPE (it plays letterboxed: worse, but not nothing), and
+// wrong shape for the screen × WRONG_SHAPE (it plays letterboxed: worse, but not nothing; one marked `aspectOnly` isn't shown at all), and
 // `boost[app]` where the exchange says a game is owed showings (exchange.js).
 //
 // `among`, a set of games: only theirs (index.js, when a game owed showings goes first), and
@@ -48,12 +48,19 @@ function appOk(app, { host, rating, age, history, now, test = false }) {
 // is as long as Google Play lets a full-screen ad go unclosable. A rewarded ad's is null where the game says none: its
 // creative's own time rules then (player.js).
 export const SKIP_SECS = 5, SKIP_MOST = 15;
+// When an interstitial's video shows Skip, for a placement that holds the player `least` seconds: at that time, and SKIP_BY in at the
+// latest. Skip takes the video to its end, where ✕ is HOLD_SECS later: so the way out is never later than SKIP_MOST.
+export const HOLD_SECS = 3, SKIP_BY = SKIP_MOST - HOLD_SECS;
+export const skipAtOf = least => Math.min(SKIP_BY, Math.max(0, least));
 // Two times within SLACK seconds are the same time: a creative that may be left at 5 fits a 5 s slot, however either was rounded on its way here.
 export const SLACK = 0.05;
 const secsOr = (v, otherwise) => Number.isFinite(v) && v >= 0 ? v : otherwise;
 export const leastOf = (placement = {}) => placement.format === 'interstitial' ? Math.min(SKIP_MOST, secsOr(placement.minSecs, secsOr(placement.skipAfter, SKIP_SECS))) : secsOr(placement.minSecs, null);
 
-export function eligible({ catalogue, host, placement = {}, rating, age, history, lang = null, now = Date.now(), ready = () => true, test = false, perDay = null, among = null }) {
+// cut for the other shape of screen than the one it would be shown on; one that says no shape, or a screen that says none, never is
+const wrongShape = (c, aspect) => !!c.aspect && !!aspect && c.aspect !== aspect;
+
+export function eligible({ catalogue, host, placement = {}, rating, age, history, lang = null, now = Date.now(), ready = () => true, test = false, perDay = null, among = null, aspect = null }) {
   if (!test && perDay != null && shownToday(history, now) >= perDay) return [];
   const least = placement.format === 'interstitial' ? leastOf(placement) : null;
   return catalogue.creatives.filter(c => {
@@ -67,6 +74,8 @@ export function eligible({ catalogue, host, placement = {}, rating, age, history
     if (!test && recent(history?.shown?.[c.id], now).length >= (c.capPerDay ?? CAP_PER_DAY)) return false;
     if (!ready(c)) return false;
     if (placement.kinds && !placement.kinds.includes(c.kind)) return false;
+    // cut for one shape of screen, and its studio would have it shown on no other (`aspectOnly`): without that, the wrong shape only halves its weight
+    if (c.aspectOnly && wrongShape(c, aspect)) return false;
     // an interstitial's time is the game's to say: a creative that mustn't be left before a later second than that isn't shown there
     if (c.skipFrom != null && least != null && c.skipFrom > least + SLACK) return false;
     // longer than the placement takes: unless it says it may be left by then (`skipFrom`), or may run on past it (`overrun`). Only a video has either (catalogue.js)
@@ -82,7 +91,7 @@ const weighted = (list, weightOf, rand) => {
 // a game of the host's own studio, in any studio's games: its own come first there, and nowhere else
 const appWeight = (catalogue, host, app) => studioOf(catalogue, app) === studioOf(catalogue, host) ? OWN_BOOST : 1;
 
-const creativeWeight = (c, o) => (c.weight ?? 1) * appWeight(o.catalogue, o.host, c.app) * (o.boost?.[c.app] ?? 1) * (c.aspect && o.aspect && c.aspect !== o.aspect ? WRONG_SHAPE : 1);
+const creativeWeight = (c, o) => (c.weight ?? 1) * appWeight(o.catalogue, o.host, c.app) * (o.boost?.[c.app] ?? 1) * (wrongShape(c, o.aspect) ? WRONG_SHAPE : 1);
 
 // One of them, by weight; `rand` is Math.random's shape. null when there's nothing to show.
 export function pick(o) {
