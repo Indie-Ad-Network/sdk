@@ -2,8 +2,10 @@
 # of the same tag: OpenUPM takes that file as it is and republishes it (its listing is `trackingMode: githubRelease`),
 # so the Package Manager in Unity 6.3 and later shows the package as signed.
 #
-#   a tag vX.Y.Z pushed   → the signed .tgz on a release of that tag
+#   a tag vX.Y.Z pushed   → the signed .tgz on a release of that tag, if the tag is on main and names the package's version
 #   run by hand           → the signed .tgz as an artifact of the run, and no release: to try the signing itself
+#
+# Nothing is signed that doesn't pass the tests (`npm test`).
 #
 # What it needs, in the repository's settings (Secrets and variables → Actions):
 #   secrets   UPM_SERVICE_ACCOUNT_KEY_ID, UPM_SERVICE_ACCOUNT_KEY_SECRET   a Unity service account's key, with the
@@ -28,6 +30,8 @@ jobs:
       UPM_ORG_ID: ${{ vars.UPM_ORG_ID }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # main's history, to see the tag is on it
 
       - name: What is being signed
         run: |
@@ -41,6 +45,18 @@ jobs:
           for needed in UPM_SERVICE_ACCOUNT_KEY_ID UPM_SERVICE_ACCOUNT_KEY_SECRET UPM_ORG_ID; do
             if [ -z "${!needed}" ]; then echo "::error::$needed isn't set in the repository's settings"; exit 1; fi
           done
+          # and a release is of what's on main: a tag put on a commit that never got there would publish work nobody merged
+          if [ "$GITHUB_REF_TYPE" = tag ]; then
+            git fetch --quiet origin main
+            if ! git merge-base --is-ancestor HEAD origin/main; then echo "::error::$GITHUB_REF_NAME is on a commit that isn't on main"; exit 1; fi
+          fi
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Tests
+        run: npm test
 
       - name: Unity's package tool
         run: |
