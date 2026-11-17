@@ -24,7 +24,7 @@ export const VERSION = 1;
 // Why a player reports an ad: one is picked before a report is sent (player.js), and goes with it as `reason`. A report
 // from before 0.6.2 has none. The words for each are the player's (strings/ `why…`); these names are what's kept.
 export const REASONS = ['broken', 'stuck', 'inappropriate', 'misleading', 'other'];
-export const SDK = '0.6.14';   // this release, as package.json has it (test/version.test.mjs): said with a report of an ad
+export const SDK = '0.6.15';   // this release, as package.json has it (test/version.test.mjs): said with a report of an ad
 export const EVENTS = ['offer', 'show', 'cache_miss', 'q25', 'q50', 'q75', 'q100', 'first_touch', 'complete', 'reward', 'exit_kept', 'exit_early', 'store_open', 'fail', 'keep_playing', 'store_banner', 'skip', 'paid'];
 export const KINDS = ['video', 'playable', 'card'];
 export const OS = ['ios', 'android'];

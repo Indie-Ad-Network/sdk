@@ -6,7 +6,7 @@ The repository has one version, [Semantic Versioning](https://semver.org), and a
 
 Two numbers are not this one, and change only when a format does: `VERSION` in `core/wire.js` (what games send the ingest) and the catalogue's `version`. Games already released go on sending and reading the old ones.
 
-## [Unreleased]
+## [0.6.15] - 2026-11-17
 
 ### Fixed
 - **A playable was stretched behind the App Store's sheet when the sheet turned the screen.** On an iPhone the sheet is upright, so over a landscape game the screen turns to portrait; the playable, paused under it, was left drawn for landscape and pulled to the new shape. It now keeps the size it had, filling the screen, until the store is put away.
