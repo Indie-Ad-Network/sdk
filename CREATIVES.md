@@ -34,7 +34,7 @@ The dashboard offers **Static Final Frame** (`ownCard: true`), **Looping Video**
 
 Earlier `type: "custom"` records remain readable: `image`, `anchor`, `width`, `x`, `y`, and optional `pulse: {maxSize: 105, secs: 1}`. The image is cached with the creative. The dashboard no longer offers this style.
 
-SDK 0.6.9–0.6.10 enabled these controls only when new display fields were present; that restriction is removed in the next release. Games on older SDK releases keep the player they shipped with. Device builds use the shared JavaScript player bundled into the Unity resource; the Editor's simulated ad is a stand-in, not a web view.
+SDK 0.6.9–0.6.10 enabled these controls only when new display fields were present; that restriction is removed in 0.6.11. Games on older SDK releases keep the player they shipped with. Device builds use the shared JavaScript player bundled into the Unity resource; the Editor's simulated ad is a stand-in, not a web view.
 
 ## Dressing the end card, and how a video is shown
 
