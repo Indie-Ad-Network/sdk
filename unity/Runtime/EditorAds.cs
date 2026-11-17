@@ -171,6 +171,9 @@ namespace IndieAdNetwork
 				}
 			}
 			loading = false;
+			// the page of the games this one shows, for a button of the game's own (IndieAds.GetMoreGamesURL): its address, or none
+			string more = Json.Str(catalogue, "more");
+			Say("{\"type\":\"more\",\"link\":{\"url\":" + IndieAds.Quote(more != null ? more + UnityWebRequest.EscapeURL(host ?? "") : null) + "}}");
 			SayDemand();
 		}
 

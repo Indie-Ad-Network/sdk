@@ -199,6 +199,14 @@ export function createIndieAds({ host, rating = null, catalogue, placements = {}
   // studio's to set for each of its game's placements, by name, with no release of the game).
   const placed = (cat, name) => { const p = placements[name], said = leastSaid(cat, host, name, p?.format); return said == null ? p : { ...p, minSecs: said }; };
 
+  // The network's page of the games this one shows (the catalogue's `more`, and this game's id): its address, or null where
+  // there's none to offer: a catalogue that names no such page, or a player the game says is under 13.
+  const moreGamesAt = cat => cat.more && !isChild(age()) ? cat.more + encodeURIComponent(host) : null;
+  // Opened outside the game, as a game's own page is (storeLinks.js 'web'): no store's sheet, and no tap counted.
+  const openGames = async url => { try { await shell.openStore({ via: 'web', url, fallback: url }); } catch { /* nothing here opens it */ } };
+  // For a game's own "more games" button: opens that page. Resolves whether there was one to open.
+  async function showMoreGames() { const url = moreGamesAt(await loaded); if (url) await openGames(url); return !!url; }
+
   // Download what's wanted next, if the network costs the player nothing. Resolves the ids fetched.
   async function prefetch() {
     const [cat, cache] = await Promise.all([loaded, cached]);
@@ -258,7 +266,7 @@ export function createIndieAds({ host, rating = null, catalogue, placements = {}
       const link = storeLink(app, { os, native: inApp, host, campaign: creative.campaign, creative: creative.id, placement, pt: app.own ? cat.pt : null });
       const said = words(), inWords = x => ({ ...x, line: localised(x.line, said.locale) });
       // the link to more games behind the ⓘ: the network's page of the games this one shows, opened outside the game. Not offered to a child.
-      const games = cat.more && !isChild(who.age) ? cat.more + encodeURIComponent(host) : null, more = games && (() => { try { Promise.resolve(shell.openStore({ via: 'web', url: games, fallback: games })).catch(() => {}); } catch { /* nothing here opens it */ } });   // as a game's own page is opened (storeLinks.js 'web'): no store's sheet, no tap counted
+      const games = moreGamesAt(cat), more = games && (() => { openGames(games); });
       // as it's on the device: the file it plays, and what dresses its card, each from the cache where it's there
       const here = (field, url) => media?.files?.[field] ?? url;
       const local = { ...creative, ...(media?.src && { src: media.src }), ...(creative.endCard && { endCard: Object.fromEntries(Object.entries(creative.endCard).map(([shape, url]) => [shape, here(`endCard.${shape}`, url)])) }) };
@@ -287,6 +295,9 @@ export function createIndieAds({ host, rating = null, catalogue, placements = {}
     prefetch: refetch,
     // a placement's button is in front of the player (once per time it's put there)
     offered: placement => tell('offer', placement),
+    // the network's page of the games this one shows, for a button of the game's own: opened (resolves false where there's none to
+    // open), or only its address (null likewise), for a game that would rather show the button only when there is one
+    showMoreGames, moreGames: async () => moreGamesAt(await loaded),
     // how many of each game's ads this player has watched to the end: { tcb: 3, … }
     watched: () => ({ ...history.get().watched }),
   };

@@ -9,7 +9,15 @@ Two numbers are not this one, and change only when a format does: `VERSION` in `
 ## [Unreleased]
 
 ### Added
-- Unity: `IndieAds.Shutdown()` closes the current session for logout, ad opt-out or profile changes, allowing a fresh `Init`. Pending ads finish once without a reward; shown ads send `OnHidden` first. Cleanup hides/disposes the web view, restores sleep timeout, removes the store banner and dismisses the session's iOS App Store sheet. Late page/store callbacks cannot address a replacement session. Event subscriptions and persistent storage are retained.
+- Unity: `IndieAds.Shutdown()` closes the current session for logout, ad opt-out or profile changes, allowing a fresh `Init`. Pending ads finish once without a reward; shown ads send `OnHidden` first. Cleanup hides/disposes the ad and More games web views, restores sleep timeout, removes the store banner and dismisses the session's iOS App Store sheet. Late page/store callbacks cannot address a replacement session. Event subscriptions and persistent storage are retained.
+
+## [0.6.7] - 2026-11-17
+
+A game's own "More games" button. Nothing to do to take it.
+
+### Added
+- **A game's own way to the page of more games** (Unity). `IndieAds.ShowMoreGames()` opens the network's page of the games this one shows the ads of, the page an ad's ⓘ leads to: in the device's browser, or with `IndieAdsOpenIn.Game` in a web view over the game, closed by the page's own ✕ or the back button. `IndieAds.GetMoreGamesURL()` is its address, for a game that would do something of its own with it. Both have nothing (false, null) until the catalogue is in, for a player the game has said is under 13, and where the catalogue names no such page.
+- The same in the web core: `ads.showMoreGames()` opens it and resolves whether there was one to open, and `ads.moreGames()` resolves its address or null.
 
 ## [0.6.6] - 2026-11-17
 

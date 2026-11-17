@@ -121,6 +121,25 @@ static class Program
         finally { IndieAds.OnEvent -= handler; }
         Check(done == 1 && view.disposals == 1, "batched message continued after shutdown");
         Reset();
+        foreach (bool ready in new[] { false, true })
+        {
+            view = Start();
+            view.Emit(new { type = "more", link = new { url = "https://example.com/games/first" } });
+            var games = new NativeWebView(); NativeWebView.next = games;
+            Check(IndieAds.ShowMoreGames(IndieAdsOpenIn.Game), "games page did not open");
+            if (ready) games.Emit("indie-ads:games-ready");
+            Check(games.visible == ready, "games readiness fixture");
+            var lateReady = games.CaptureMessage("indie-ads:games-ready");
+            var lateFailure = games.CaptureFailure();
+            int opened = Application.opened.Count;
+            old = Sdk;
+            IndieAds.Shutdown();
+            Check(games.disposed && games.Detached && !games.visible && !IndieAds.IsInitialised, "shutdown retained games web view");
+            Start(); successor = Sdk;
+            lateReady(); lateFailure(); Call(old, "Update"); Call(old, "OnDestroy");
+            Check(!games.visible && Application.opened.Count == opened && ReferenceEquals(Sdk, successor), "late games callback reopened page or affected successor");
+            Reset();
+        }
         Console.WriteLine($"Unity lifecycle harness: {checks} checks passed.");
     }
 }

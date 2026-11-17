@@ -29,7 +29,12 @@ namespace UnityEngine
     public static class Time { public static float realtimeSinceStartup; }
     public static class Random { public static float value => 0; }
     public enum RuntimePlatform { Android, IPhonePlayer }
-    public static class Application { public static RuntimePlatform platform; }
+    public static class Application
+    {
+        public static RuntimePlatform platform;
+        public static readonly List<string> opened = new();
+        public static void OpenURL(string url) { opened.Add(url); }
+    }
     public static class Screen { public static int width = 400, height = 800, sleepTimeout = 30; }
     public static class SleepTimeout { public const int NeverSleep = -1; }
     public static class Debug { public static void Log(object value) {} public static void LogWarning(object value) {} }
@@ -40,10 +45,26 @@ namespace UnityEngine
 }
 namespace IndieAdNetwork
 {
-    public static class NativeWebView
+    public class NativeWebView : IIndieAdsWebView
     {
         public static bool LogConsole;
-        public static IIndieAdsWebView Create() => null;
+        public static NativeWebView next;
+        public static NativeWebView Create() { var result = next; next = null; return result; }
+        public event Action<string> MessageReceived;
+        public event Action BackPressed;
+        public event Action Lost;
+        public event Action<int, string> PageFailed;
+        public bool visible, disposed;
+        public string url;
+        public void LoadHtml(string html, string origin) {}
+        public void LoadUrl(string value) { url = value; }
+        public void Evaluate(string js) {}
+        public void SetVisible(bool value) { visible = value; }
+        public void Dispose() { disposed = true; }
+        public bool Detached => MessageReceived == null && BackPressed == null && Lost == null && PageFailed == null;
+        public void Emit(string message) { MessageReceived?.Invoke(message); }
+        public Action CaptureMessage(string message) { var callback = MessageReceived; return () => callback?.Invoke(message); }
+        public Action CaptureFailure() { var callback = PageFailed; return () => callback?.Invoke(500, "late failure"); }
     }
     public static class IndieAdsNative
     {
