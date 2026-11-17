@@ -62,6 +62,7 @@ import { withShim } from './mraidShim.js';
 import { STEP, STEP_NAME, STEPS_MAX, SDK, REASONS } from './wire.js';
 import { leastOf, skipAtOf, HOLD_SECS } from './pick.js';   // default minimum time on the endcard
 import { stringsFor, say } from './locale.js';
+import { controlText } from './controlText.js';
 import { CONTROL_FONT } from './controlFont.js';
 import { CONTROL_THEME as UI } from './controlTheme.js';
 import { MARK } from './mark.js';
@@ -101,7 +102,7 @@ button { font-family: inherit; cursor: pointer; }
 .about b { display: flex; align-items: center; justify-content: center; width: ${UI.aboutSize}px; height: ${UI.aboutSize}px; background: url("${INFO_BG}") center / 100% 100% no-repeat; }
 .about b span { font: italic 700 ${UI.infoSize}px/1 Georgia, "Times New Roman", serif; text-align: center; }
 .ring { position: relative; width: ${UI.size}px; height: ${UI.size}px; flex: none; padding: 0; border: 0; background: url("${INFO_BG}") center / ${UI.timerBackgroundSize}px ${UI.timerBackgroundSize}px no-repeat; color: inherit; }
-.ring svg { position: absolute; top: 0; right: 0; bottom: 0; left: 0; transform: rotate(-90deg); }
+.ring > svg { position: absolute; top: 0; right: 0; bottom: 0; left: 0; transform: rotate(-90deg); }
 .ring circle { fill: none; stroke: #fff; stroke-width: ${UI.stroke}; }
 .ring .left { fill: none; stroke: #fff; stroke-linecap: round; stroke-dasharray: ${C}; transition: stroke-dashoffset ${TICK}ms linear; }
 .ring.skippable b, .ring.closable b { background: center / ${UI.iconSize}px ${UI.iconSize}px no-repeat; }
@@ -253,7 +254,7 @@ export function play({ creative, app, html, link, ctaText, reward, format = 'rew
   root.innerHTML = `<style>${CSS}</style>
 <div class="layer ${kind}" lang="${esc(words.lang)}" dir="${words.rtl ? 'rtl' : 'ltr'}">
   <div class="bar">
-    <button class="about" aria-label="${esc(t.about)}"><i>${esc(t.ad)}</i><b aria-hidden="true"><span>i</span></b></button>
+    <button class="about" aria-label="${esc(t.about)}"><i><span>${esc(t.ad)}</span></i><b aria-hidden="true"><span>i</span></b></button>
     <span class="bar-space" aria-hidden="true"></span>
     ${link && kind === 'playable' && creative.keepPlaying ? `<button class="get go" hidden>${icon}<span>${esc(ctaText)}</span></button>` : ''}
     <button class="ring" role="timer" disabled><svg viewBox="0 0 44 44"><circle class="left" cx="22" cy="22" r="${R}"/></svg><b></b></button>
@@ -351,12 +352,12 @@ export function play({ creative, app, html, link, ctaText, reward, format = 'rew
     if (ready) {
       ring.removeAttribute('role');
       ring.setAttribute('aria-label', closing ? t.close : t.skip);
-      number.textContent = '';   // SDK icons are centered inside the ring; aria-label names the action.
+      controlText(number, '', doc);   // SDK icons are centered inside the ring; aria-label names the action.
       return;
     }
     ring.setAttribute('role', 'timer'); ring.removeAttribute('aria-label');
     const left = Math.ceil(Math.max(eligibleIn, endRemaining));
-    number.textContent = left;
+    controlText(number, left, doc);
   };
   function offer() { if (offered) return; offered = true; draw(); }
   function grant() {
@@ -645,6 +646,8 @@ export function play({ creative, app, html, link, ctaText, reward, format = 'rew
   if (arts || put) addEventListener('resize', dress);
 
   doc.body.append(host);
+  controlText($('.about i span'), t.ad, doc);
+  controlText($('.about b span'), 'i', doc);
   draw(); seen(); dress();
   return result;
 }

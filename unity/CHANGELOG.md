@@ -6,6 +6,12 @@ The repository has one version, [Semantic Versioning](https://semver.org), and a
 
 Two numbers are not this one, and change only when a format does: `VERSION` in `core/wire.js` (what games send the ingest) and the catalogue's `version`. Games already released go on sending and reading the old ones.
 
+## [0.6.12] - 2026-11-17
+
+- Center AD, info and countdown text by the visible glyph bounds instead of the font line box, including remeasurement after the embedded font loads. This addresses differences between browser previews and device web views without shifting the backgrounds or icons.
+- Keep the existing fonts, colours, control sizes and countdown behavior.
+- Validation: glyph-bound alignment checks and SDK tests pass; device rendering still requires verification in a new game build.
+
 ## [0.6.11] - 2026-11-17
 
 - Refresh the overlay with RocketJump skip/close artwork and AD/info/timer backgrounds, Cairo Black AD/timer text and an italic info glyph, no header game name or gradient, and a clockwise full-video ring that remains visible while skippable. The numeric countdown still tracks skip eligibility.
