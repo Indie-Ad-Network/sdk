@@ -6,7 +6,7 @@ The repository has one version, [Semantic Versioning](https://semver.org), and a
 
 Two numbers are not this one, and change only when a format does: `VERSION` in `core/wire.js` (what games send the ingest) and the catalogue's `version`. Games already released go on sending and reading the old ones.
 
-## [Unreleased]
+## [0.6.16] - 2026-11-18
 
 ### Fixed
 - **A playable that may be played on lost its Keep playing button when its end card had a style.** Since 0.6.9 the end card styles bring a store button of their own and hid the card's buttons, Keep playing among them. A playable marked `keepPlaying` now ends on the large card, whatever style it asks for, with Keep playing under its store button; the card goes while it's played on and comes back, without the button, when that time is up.
