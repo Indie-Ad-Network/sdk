@@ -168,7 +168,7 @@ namespace IndieAdNetwork
 			{
 				return;
 			}
-			GameObject go = new GameObject("IndieAds");
+			GameObject go = new GameObject("IndieAds-" + Guid.NewGuid().ToString("N"));
 			DontDestroyOnLoad(go);
 			instance = go.AddComponent<IndieAds>();
 			instance.config = config;
@@ -178,6 +178,44 @@ namespace IndieAdNetwork
 				config.shippedCatalogueJson = LoadShippedCatalogue();
 			}
 			instance.EnsurePage();
+		}
+
+		/// Stop this session before logout, opt-out or a change of player. An outstanding Show completes once,
+		/// with shown reflecting whether it appeared and granted false. OnHidden precedes that callback if shown.
+		/// Safe to call again; Init may be called afterwards, including from the callback. Call on Unity's main thread.
+		/// Event subscriptions are retained; persistent storage is not erased (use SetConsent for storage consent).
+		public static void Shutdown()
+		{
+			IndieAds previous = instance;
+			if (previous == null) return;
+			try { previous.StopSession(); }
+			finally { Destroy(previous.gameObject); }
+		}
+
+		void OnDestroy() { StopSession(); }
+
+		void StopSession()
+		{
+			if (stopped) return;
+			stopped = true;
+			if (instance == this) instance = null; // A callback may initialize the next player.
+			enabled = false;
+			remake = false;
+			demand.Clear();
+			try
+			{
+				// NativeWebView.Dispose destroys its GameObject at frame end; hide it now.
+				try { if (view != null) view.SetVisible(false); }
+				finally { DropPage(); }
+			}
+			finally
+			{
+				try { IndieAdsNative.CloseStore(gameObject.name); }
+				finally
+				{
+					if (showing) FinishShow(new IndieAdResult { shown = showStarted });
+				}
+			}
 		}
 
 		public static IndieAdDemand Demand(string placement)
@@ -269,6 +307,7 @@ namespace IndieAdNetwork
 		bool asked;   // the page has asked what it can't know: it's told again whenever that may have changed
 		float demandTime;
 
+		bool stopped;
 		bool showing;
 		bool remake;   // the page is to be made again once the ad that's up has closed: the player's consent changed
 		int? sleepTimeoutWas;   // the game's own Screen.sleepTimeout while an ad has the screen kept on, put back when it closes
@@ -285,6 +324,7 @@ namespace IndieAdNetwork
 
 		bool EnsurePage()
 		{
+			if (stopped) return false;
 			if (view != null)
 			{
 				return true;
@@ -320,17 +360,15 @@ namespace IndieAdNetwork
 
 		void DropPage()
 		{
-			if (view == null)
-			{
-				return;
-			}
-			view.MessageReceived -= Receive;
-			view.BackPressed -= HandleBack;
-			view.Lost -= HandleLost;
-			view.Dispose();
+			IIndieAdsWebView previous = view;
 			view = null;
 			pageLoaded = false;
 			waitingCalls.Clear();
+			if (previous == null) return;
+			previous.MessageReceived -= Receive;
+			previous.BackPressed -= HandleBack;
+			previous.Lost -= HandleLost;
+			previous.Dispose();
 		}
 
 		void Call(string function, string arguments)
@@ -348,6 +386,7 @@ namespace IndieAdNetwork
 
 		void Receive(string json)
 		{
+			if (stopped) return;
 			Batch batch;
 			try
 			{
@@ -365,7 +404,7 @@ namespace IndieAdNetwork
 			{
 				return;
 			}
-			for (int i = 0; i < batch.items.Length; i++)
+			for (int i = 0; !stopped && i < batch.items.Length; i++)
 			{
 				// Before start() the page has no key, and all it says is that it's there.
 				bool first = !pageLoaded && batch.items[i].type == "loaded";
@@ -421,7 +460,7 @@ namespace IndieAdNetwork
 						showStarted = true;
 					}
 					OnEvent?.Invoke(m.e);
-					if (shownNow)
+					if (shownNow && !stopped)
 					{
 						OnShown?.Invoke();
 					}
@@ -522,7 +561,7 @@ namespace IndieAdNetwork
 					StoreClosed();
 				}
 			}
-			if (!focused || config == null)
+			if (stopped || !focused || config == null)
 			{
 				return;
 			}
@@ -579,20 +618,21 @@ namespace IndieAdNetwork
 			}
 			Action<IndieAdResult> done = showDone;
 			showDone = null;
-			if (wasShown)
+			try
 			{
-				OnHidden?.Invoke();
+				if (wasShown) OnHidden?.Invoke();
+				if (remake && !stopped)   // the player's consent changed while the ad was up
+				{
+					remake = false;
+					RemakePage();
+				}
 			}
-			if (remake)   // the player's consent changed while the ad was up
-			{
-				remake = false;
-				RemakePage();
-			}
-			done?.Invoke(result);
+			finally { done?.Invoke(result); }
 		}
 
 		void Update()
 		{
+			if (stopped) return;
 			if (showing && !showStarted && Time.realtimeSinceStartup - showRequestedTime > config.showTimeout)
 			{
 				if (Logging)

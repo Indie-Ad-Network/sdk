@@ -5,3 +5,7 @@ node_modules/
 capacitor/android/build/
 capacitor/.build/
 capacitor/ios/.build/
+
+# managed Unity bridge harness output
+test/unity-lifecycle/bin/
+test/unity-lifecycle/obj/

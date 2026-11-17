@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <NuGetAudit>false</NuGetAudit>
+    <NoWarn>CS0649</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../unity/Runtime/IndieAds.cs" Link="IndieAds.cs" />
+    <Compile Include="../../unity/Runtime/IIndieAdsWebView.cs" Link="IIndieAdsWebView.cs" />
+  </ItemGroup>
+</Project>

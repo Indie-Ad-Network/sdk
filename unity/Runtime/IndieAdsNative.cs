@@ -19,6 +19,7 @@ namespace IndieAdNetwork
 		[DllImport("__Internal")] static extern bool _IndieAds_IsMetered();
 		[DllImport("__Internal")] static extern bool _IndieAds_StoreSheetIsUp();
 		[DllImport("__Internal")] static extern void _IndieAds_OpenStore(string id, string ct, string pt, string url, string fallback, string listener);
+		[DllImport("__Internal")] static extern void _IndieAds_CloseStore(string listener);
 		[DllImport("__Internal")] static extern void _IndieAds_StoreBanner(string id, string ct, string pt);
 #endif
 
@@ -106,6 +107,14 @@ namespace IndieAdNetwork
 		{
 #if UNITY_IOS && !UNITY_EDITOR
 			_IndieAds_StoreBanner(id ?? "", ct ?? "", pt ?? "");
+#endif
+		}
+
+		// Cancel this session's App Store sheet, including a product still loading. External stores stay external.
+		internal static void CloseStore(string listener)
+		{
+#if UNITY_IOS && !UNITY_EDITOR
+			_IndieAds_CloseStore(listener);
 #endif
 		}
 

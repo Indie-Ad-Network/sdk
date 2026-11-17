@@ -6,6 +6,11 @@ The repository has one version, [Semantic Versioning](https://semver.org), and a
 
 Two numbers are not this one, and change only when a format does: `VERSION` in `core/wire.js` (what games send the ingest) and the catalogue's `version`. Games already released go on sending and reading the old ones.
 
+## [Unreleased]
+
+### Added
+- Unity: `IndieAds.Shutdown()` closes the current session for logout, ad opt-out or profile changes, allowing a fresh `Init`. Pending ads finish once without a reward; shown ads send `OnHidden` first. Cleanup hides/disposes the web view, restores sleep timeout, removes the store banner and dismisses the session's iOS App Store sheet. Late page/store callbacks cannot address a replacement session. Event subscriptions and persistent storage are retained.
+
 ## [0.6.6] - 2026-11-17
 
 Times that are as good as equal are equal. Nothing to do to take it.

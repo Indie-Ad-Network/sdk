@@ -61,6 +61,14 @@ IndieAds.SetConsent(IndieAds.CmpConsent() ?? false);
 
 `IndieAds.OnShown` and `IndieAds.OnHidden` say an ad is on screen and has gone, whoever showed it: a game pauses its music and sound on the one and resumes them on the other, once, rather than in every place that calls `Show`. The ad plays in a web view over the game, which keeps running under it (no other activity or window takes the app's place, as a paid network's ad does), so nothing else quiets the game. `OnHidden` comes before `Show`'s `done`, and only for an ad that appeared. `IndieAds.Offered(placement)` when a placement's button is put in front of the player.
 
+## Session lifecycle
+
+Call `IndieAds.Shutdown()` on Unity's main thread when a player logs out, opts out of ads, or before initializing a different player/profile. It hides and disposes the web view, dismisses this session's iOS App Store sheet, removes the store banner and restores the game's sleep timeout. An outstanding `Show` completes once with `granted = false`; `shown` says whether the ad had appeared. For an ad that appeared, `OnHidden` comes before the completion callback. With no active ad, neither is called.
+
+Shutdown is safe to repeat. `IsInitialised` and `IsShowing` become false before callbacks; a callback may call `Init` for the next session. `Init` otherwise keeps its existing behavior: another call while initialized is ignored. Event subscriptions survive shutdown, so owners still unsubscribe when destroyed. Destroying the SDK's GameObject also cleans up its session.
+
+Shutdown does not erase persistent storage or change storage consent. Use `SetConsent` for that choice; a store opened outside the game cannot be closed by the SDK. Invalidate the game's pending reward/account ownership before shutdown, since its completion callback runs synchronously.
+
 ## The web view
 
 `NativeWebView` is the system's own web view laid over the game (WKWebView on iOS, `android.webkit.WebView` on Android; `Runtime/Plugins/`), with no third-party plugin between. The ads play in it, and it's plain enough for a game's other pages:

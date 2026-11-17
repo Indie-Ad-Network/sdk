@@ -59,6 +59,7 @@ static void OpenOutside(NSString* url, NSString* fallback, NSString* listener)
 @implementation IndieAdsStoreSheet
 - (void)productViewControllerDidFinish:(SKStoreProductViewController*)viewController
 {
+    if (gSheet != self) { return; }
     [viewController dismissViewControllerAnimated:YES completion:nil];
     NSString* listener = self.listener;
     gSheet = nil;
@@ -102,10 +103,26 @@ void _IndieAds_OpenStore(const char* idC, const char* ctC, const char* ptC, cons
         [holder.sheet loadProductWithParameters:product completionBlock:^(BOOL loaded, NSError* error) {
             if (loaded || gSheet != holder) { return; }
             // no such product, or no network: the sheet away, and the link the ordinary way
-            gSheet = nil;
-            [holder.sheet dismissViewControllerAnimated:YES completion:^{ OpenOutside(url, fallback, listener); }];
+            [holder.sheet dismissViewControllerAnimated:YES completion:^{
+                if (gSheet != holder) { return; } // Shutdown may have cancelled while dismissal was animating.
+                gSheet = nil;
+                OpenOutside(url, fallback, listener);
+            }];
         }];
         [presenter presentViewController:holder.sheet animated:YES completion:nil];
+    });
+}
+
+// Queued after this session's OpenStore. A cancelled load must neither open its fallback nor tell a new session.
+void _IndieAds_CloseStore(const char* listenerC)
+{
+    NSString* listener = Str(listenerC);
+    dispatch_async(dispatch_get_main_queue(), ^{
+        IndieAdsStoreSheet* holder = gSheet;
+        if (!holder || ![holder.listener isEqualToString:listener]) { return; }
+        gSheet = nil;
+        holder.sheet.delegate = nil;
+        [holder.sheet dismissViewControllerAnimated:NO completion:nil];
     });
 }
 
