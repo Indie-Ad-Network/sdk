@@ -41,8 +41,9 @@
 // the player was doing: there's no reward and nothing to forfeit. The game says the least time it
 // holds the player (`least`: 5 s unless it says). A video shows Skip at that time, 12 s in at the
 // latest (pick.js skipAtOf): Skip takes it to its end, the end card or whatever it ends on, and ✕ is
-// there 3 s later. A video that reaches its end by itself has ✕ at once. A playable or a still card has
-// ✕ at the game's time, and it closes at once. Until then there is no ✕ to press.
+// there 3 s later. A video that reaches its end by itself has ✕ at once. A playable is the same: Skip is
+// to its end card, and one that comes to its own time has ✕ there at once; but one with an end card of
+// its own (`ownCard`), like the still card, has ✕ at the game's time, which closes it. Until then there is no ✕ to press.
 // A rewarded video's reward comes at the game's time, if it says one (`least`), or at the creative's
 // own earliest (`skipFrom`), and with both at the later; with neither, at its end. A reward in
 // before a video's end, ✓ takes the video to its end card, and from there the player leaves.
@@ -263,9 +264,11 @@ export function play({ creative, app, html, link, ctaText, reward, format = 'rew
   // The least time the game holds the player to this ad (`least`, the placement's: pick.js leastOf, which is what a caller that says none gets).
   // A rewarded ad's is null where the game has said none.
   const min = least ?? leastOf({ format }), skipAt = skipAtOf(min);
-  // An interstitial's video isn't closed from where it plays: Skip is there at the game's time (skipAtOf), and takes it to its end, where ✕ is
+  // An interstitial's video or playable isn't closed from where it plays: Skip is there at the game's time (skipAtOf), and takes it to its end, where ✕ is
   // HOLD_SECS later (`hold` counts them). One that reaches its end by itself has ✕ at once. Anything else of an interstitial's has ✕ at the game's time.
-  const skips = () => !rewarded && !!video && !over;
+  // A playable likewise, so its end card is never passed by: but not one with a card of its own (`ownCard`: the player has none to show; it has ✕ at
+  // the game's time), nor one past its time (resting under its card, or played on).
+  const skips = () => !rewarded && (video ? !over : !!frame && !creative.ownCard && !overtime);
   let hold = 0, offered = false;
   // Seconds until the way out is free. A rewarded ad's reward: at the game's time, where it says one, or the creative's own earliest (`skipFrom`),
   // and with both the later; with neither at its end (or at `limit`, for one marked `overrun`). The reward in before a video's end, ✓ takes it to
@@ -390,7 +393,10 @@ export function play({ creative, app, html, link, ctaText, reward, format = 'rew
   }, TICK);
 
   // ---- the creative ----
-  let during, toEnd, skip = () => {};   // a video's: what each tick of its playing does; and, the reward in and more of it to play, the way to its end (false: there's none to go to)
+  let during, toEnd;   // a video's: what each tick of its playing does; and, the reward in and more of it to play, the way to its end (false: there's none to go to)
+  // Skip, an interstitial's: to its end, where ✕ is HOLD_SECS later. A playable's is this, its end card in its place; a video's is its own (below).
+  const held = () => { hold = HOLD_SECS; shownLeft = null; $('.skip').hidden = true; ring.hidden = false; };
+  let skip = () => { if (!skips()) return; emit('skip', { secs: secs() }); held(); endPlayable(); };
   if (kind === 'video') {
     const { tap = {}, loop, fade = 0 } = creative, ends = creative.ownEndCard ? 'own' : loop || rests ? 'bare' : 'card';   // what it ends on: the player's card; or the store button alone, over its loop or the card of its own it rests on
     if (creative.poster) { stage.insertAdjacentHTML('afterbegin', '<div class="blur"></div>'); $('.blur').style.backgroundImage = cssUrl(creative.poster); }
@@ -422,7 +428,7 @@ export function play({ creative, app, html, link, ctaText, reward, format = 'rew
     // `skipped`: an interstitial's, left by Skip: its end stands HOLD_SECS before ✕ is there
     const videoOver = (skipped = false) => {
       over = true;
-      if (skipped) { hold = HOLD_SECS; shownLeft = null; $('.skip').hidden = true; ring.hidden = false; } else grant();
+      if (skipped) held(); else grant();
       if (rewarded) clearInterval(clock);
       if (loop) again(); else video.pause();
       go(); endCard(ends);

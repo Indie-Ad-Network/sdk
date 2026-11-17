@@ -51,7 +51,7 @@ Add `capacitor/` as a dependency (`"indie-ads-capacitor": "file:…/sdk/capacito
 
 ## Interstitials
 
-A placement with `format: 'interstitial'` is the game's choice, not the player's: no reward and no "Leave now?". The game says the least time it holds the player, `minSecs` (5 unless said, 15 at most; `skipAfter` is its name before 0.6.3, still read). A video shows **Skip** at that time: Skip takes the video to its end card, and ✕ is there 3 seconds later. Skip is 12 seconds in at the latest, so the way out is never later than 15. A video that reaches its end by itself has ✕ at once. A playable, or the still card, has ✕ at the game's time. With nothing ready it shows nothing: `show()` resolves `{ shown: false }`, and the game carries on (or shows its paid network's).
+A placement with `format: 'interstitial'` is the game's choice, not the player's: no reward and no "Leave now?". The game says the least time it holds the player, `minSecs` (5 unless said, 15 at most; `skipAfter` is its name before 0.6.3, still read). A video shows **Skip** at that time: Skip takes the video to its end card, and ✕ is there 3 seconds later. Skip is 12 seconds in at the latest, so the way out is never later than 15. A video that reaches its end by itself has ✕ at once. A playable is the same, Skip taking it to its end card; one with an end card of its own (`ownCard`), like the still card, has ✕ at the game's time. With nothing ready it shows nothing: `show()` resolves `{ shown: false }`, and the game carries on (or shows its paid network's).
 
 ```js
 placements: { betweenLevels: { format: 'interstitial', maxSecs: 30, minSecs: 5 } }
@@ -69,7 +69,7 @@ Two things say, and the game's comes first:
 | **Rewarded video** | The reward can be claimed at that time, or at the creative's `skipFrom` if that is later | At the creative's `skipFrom`; with none, at its end |
 | **Rewarded playable** | At the playable's own time (`secs`), or when it says it's done if it's marked `finishEarly`. One that says when it may be left (`minSecs`) is as a video: the reward at the later of that and the placement's time, and it plays on to its own time | At its `minSecs`; with none, at its own time |
 | **Interstitial video** | Skip at that time (12 s at the latest), ✕ on the end card 3 s after Skip. A creative whose `skipFrom` is later isn't shown there | As 5 s |
-| **Interstitial playable** | ✕ at that time, which closes it. One whose `minSecs` is later isn't shown there | As 5 s |
+| **Interstitial playable** | As a video: Skip at that time, to its end card, and ✕ there 3 s after. One with an end card of its own (`ownCard`) has ✕ at that time, which closes it. One whose `minSecs` is later isn't shown there | As 5 s |
 
 A reward claimed before a video's end takes the video to its end card, and the player leaves from there; one who watches to the end leaves from the same card.
 

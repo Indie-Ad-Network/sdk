@@ -6,6 +6,11 @@ The repository has one version, [Semantic Versioning](https://semver.org), and a
 
 Two numbers are not this one, and change only when a format does: `VERSION` in `core/wire.js` (what games send the ingest) and the catalogue's `version`. Games already released go on sending and reading the old ones.
 
+## [Unreleased]
+
+### Fixed
+- **An interstitial's playable could be left without its end card being seen.** A playable had ✕ at the game's time, and ✕ closed the ad where it stood: the end card, and its store button, came only to a player who stayed for the playable's whole time. It is now left as a video is: Skip at the game's time takes it to its end card, and ✕ is there 3 s later; one that comes to its own time has ✕ at once. A playable with an end card of its own (`ownCard`) is as before. This is the presentation creatives have had since before 0.6.9; one that takes 0.6.9's opt-in display already went to its end card.
+
 ## [0.6.9] - 2026-11-17
 
 - Opt-in endcard display: one countdown/Skip/close control, a configurable minimum endcard time (default 3 seconds), and no Reward earned label. Existing creatives retain their released presentation.
