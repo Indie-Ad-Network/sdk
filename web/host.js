@@ -85,6 +85,7 @@ window.indieAdsHost = {
     });
     during(async () => {
       await ads.catalogue;
+      post('more', { link: { url: await ads.moreGames() } });   // the page of the games this one shows, for a button of the game's own: its address, or none
       post('device');
       setTimeout(deviceKnown, DEVICE_WAIT);   // a game that never answers: the network costs nothing
       await around(ads.ready);   // what's already on the device can be shown at once; then what has just been downloaded

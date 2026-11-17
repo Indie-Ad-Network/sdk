@@ -14,6 +14,15 @@ namespace IndieAdNetwork
 		Interstitial,
 	}
 
+	/// Where IndieAds.ShowMoreGames opens the page of more games.
+	public enum IndieAdsOpenIn
+	{
+		/// The device's browser: the player leaves the game for it.
+		Browser,
+		/// A web view over the game, closed by the page's own ✕ (or the back button).
+		Game,
+	}
+
 	[Serializable]
 	public class IndieAdPlacement
 	{
@@ -252,6 +261,32 @@ namespace IndieAdNetwork
 			}
 		}
 
+		/// The address of the network's page of the games this one shows the ads of (https://indieadnetwork.com/games/&lt;this
+		/// game's id&gt;, the page an ad's ⓘ leads to), for a game that would do something of its own with it. Null until the
+		/// catalogue is in (a moment after Init), where the catalogue names no such page, and for a player the game has said
+		/// is under 13 (IndieAdsConfig.age).
+		public static string GetMoreGamesURL()
+		{
+			return instance != null ? instance.moreGamesUrl : null;
+		}
+
+		/// For a "More games" button of the game's own: opens that page, in the device's browser or in a web view over the
+		/// game with a ✕ of its own. False: there's no page to open (GetMoreGamesURL is null), or an ad is up.
+		/// In the game's web view the page is shown only once it says it can be closed; one that doesn't in a few seconds,
+		/// or won't load, is handed to the browser. Where there's no web view (the Editor) it's the browser.
+		public static bool ShowMoreGames(IndieAdsOpenIn where = IndieAdsOpenIn.Browser)
+		{
+			if (instance == null || instance.showing || string.IsNullOrEmpty(instance.moreGamesUrl))
+			{
+				return false;
+			}
+			if (where != IndieAdsOpenIn.Game || !instance.OpenGames(instance.moreGamesUrl))
+			{
+				Application.OpenURL(instance.moreGamesUrl);
+			}
+			return true;
+		}
+
 		/// False: nothing will be shown and `done` won't be called. Otherwise `done` is called once, when the ad has
 		/// closed (or failed to appear: result.shown false).
 		public static bool Show(string placement, Action<IndieAdResult> done, string reward = null)
@@ -276,6 +311,12 @@ namespace IndieAdNetwork
 		int showNumber;
 		float showRequestedTime;
 		Action<IndieAdResult> showDone;
+
+		string moreGamesUrl;        // the network's page of the games this one shows, as the page says it (web/host.js 'more'); null: none
+		NativeWebView games;        // that page, in a web view over the game (ShowMoreGames, in the game)
+		string gamesUrl;
+		bool gamesReady;            // it has said it can be closed, and is on screen
+		float gamesAsked;
 
 		bool storeOpen;
 		bool storeLeftApp;
@@ -428,6 +469,9 @@ namespace IndieAdNetwork
 					break;
 				case "store":
 					OpenStore(m.link);
+					break;
+				case "more":
+					moreGamesUrl = m.link != null && !string.IsNullOrEmpty(m.link.url) ? m.link.url : null;
 					break;
 				case "banner":
 					if (showing && m.link != null)
@@ -593,6 +637,11 @@ namespace IndieAdNetwork
 
 		void Update()
 		{
+			// A page of games that hasn't said it can be closed isn't put in front of the player: the browser has it
+			if (games != null && !gamesReady && Time.realtimeSinceStartup - gamesAsked > GamesPatience)
+			{
+				HandleGamesFailed(0, "it never said it could be closed");
+			}
 			if (showing && !showStarted && Time.realtimeSinceStartup - showRequestedTime > config.showTimeout)
 			{
 				if (Logging)
@@ -607,6 +656,71 @@ namespace IndieAdNetwork
 			{
 				StoreClosed();
 			}
+		}
+
+		// ---- the page of more games, in a web view of the game's own ----
+
+		const string GamesReady = "indie-ads:games-ready", GamesClose = "indie-ads:close";   // what that page says (the server's games.js)
+		const float GamesPatience = 6f;   // seconds for it to load and say it can be closed, before the browser has it
+
+		// False: there's no web view to be had here.
+		bool OpenGames(string url)
+		{
+			CloseGames();
+			games = NativeWebView.Create();
+			if (games == null)
+			{
+				return false;
+			}
+			gamesUrl = url;
+			gamesReady = false;
+			gamesAsked = Time.realtimeSinceStartup;
+			games.MessageReceived += HandleGamesSaid;
+			games.BackPressed += CloseGames;
+			games.Lost += CloseGames;
+			games.PageFailed += HandleGamesFailed;
+			games.LoadUrl(url + (url.Contains("?") ? "&" : "?") + "in=app");   // as the server gives it to a game: a ✕, and links the stores' own apps take
+			return true;
+		}
+
+		void HandleGamesSaid(string said)
+		{
+			if (said == GamesReady && games != null && !gamesReady)
+			{
+				gamesReady = true;
+				games.SetVisible(true);
+			}
+			else if (said == GamesClose)
+			{
+				CloseGames();
+			}
+		}
+
+		// It wouldn't load: not shown at all. The browser may do better, and is no worse.
+		void HandleGamesFailed(int code, string message)
+		{
+			if (games == null || gamesReady)
+			{
+				return;
+			}
+			string url = gamesUrl;
+			CloseGames();
+			Application.OpenURL(url);
+		}
+
+		void CloseGames()
+		{
+			if (games == null)
+			{
+				return;
+			}
+			games.MessageReceived -= HandleGamesSaid;
+			games.BackPressed -= CloseGames;
+			games.Lost -= CloseGames;
+			games.PageFailed -= HandleGamesFailed;
+			games.Dispose();
+			games = null;
+			gamesUrl = null;
 		}
 
 		void HandleBack()

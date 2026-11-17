@@ -6,6 +6,14 @@ The repository has one version, [Semantic Versioning](https://semver.org), and a
 
 Two numbers are not this one, and change only when a format does: `VERSION` in `core/wire.js` (what games send the ingest) and the catalogue's `version`. Games already released go on sending and reading the old ones.
 
+## [0.6.7] - 2026-11-17
+
+A game's own "More games" button. Nothing to do to take it.
+
+### Added
+- **A game's own way to the page of more games** (Unity). `IndieAds.ShowMoreGames()` opens the network's page of the games this one shows the ads of, the page an ad's ⓘ leads to: in the device's browser, or with `IndieAdsOpenIn.Game` in a web view over the game, closed by the page's own ✕ or the back button. `IndieAds.GetMoreGamesURL()` is its address, for a game that would do something of its own with it. Both have nothing (false, null) until the catalogue is in, for a player the game has said is under 13, and where the catalogue names no such page.
+- The same in the web core: `ads.showMoreGames()` opens it and resolves whether there was one to open, and `ads.moreGames()` resolves its address or null.
+
 ## [0.6.6] - 2026-11-17
 
 Times that are as good as equal are equal. Nothing to do to take it.
