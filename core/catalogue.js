@@ -31,6 +31,8 @@ const when = v => v === 'end' || count(v);
 const place = p => obj(p) && (p.anchor == null || ANCHOR.test(p.anchor)) && (p.width == null || between(p.width, 64, 1000)) && ['x', 'y'].every(k => p[k] == null || between(p[k], -1280, 1280));
 const only = (o, keys) => Object.fromEntries(keys.filter(k => o[k] != null).map(k => [k, o[k]]));
 const ANY = {
+  // a playable's `skipFrom`, by the name a release from 0.6.3 to 0.6.7 doesn't take for a video's alone (validate gives it back as `skipFrom`)
+  minSecs: (v, c) => count(v) && v <= c.secs + 0.05 ? v : BAD,
   aspectOnly: v => typeof v === 'boolean' ? v : BAD,   // a video's or a playable's: kept to the shape of screen it says (`aspect`)
   endCard(v, c, file) {
     if (!obj(v)) return BAD;
@@ -120,7 +122,10 @@ export function validate(raw, base) {
     const src = url(c.src);
     if (!src) { why('creative', id, 'no src'); continue; }
     seen.add(id);
-    creatives.push({ ...shown(c, url, (field, reason) => { dropped.push(`creative ${id}: ${field} ${reason}, and is left out`); }), src, poster: url(c.poster) });
+    const read = shown(c, url, (field, reason) => { dropped.push(`creative ${id}: ${field} ${reason}, and is left out`); });
+    // the earliest second it may be left at is `skipFrom` to everything after this, whichever kind it is and whichever name said it
+    if (read.minSecs != null) { read.skipFrom ??= read.minSecs; delete read.minSecs; }
+    creatives.push({ ...read, src, poster: url(c.poster) });
   }
   const exchange = raw.exchange && typeof raw.exchange === 'object' ? raw.exchange : null;   // exchange.js reads it, and trusts none of it
   const more = typeof raw.more === 'string' && /^https:\/\/\S+\/$/.test(raw.more) ? raw.more : null;   // the network's page of its games, for the ⓘ's link to more games (index.js): https, and ending in a / so a game's id after it is a page of that site's and no other's

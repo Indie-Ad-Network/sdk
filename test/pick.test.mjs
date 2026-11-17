@@ -127,6 +127,11 @@ test('a placement\'s least time, and who fits it: skipFrom and minSecs', async (
   const { validate } = await import('../core/catalogue.js');   // a playable's too: read, and kept to its shape
   const read = validate({ version: 1, apps: { a: { name: 'A', ios: { id: 1 } } }, creatives: [{ id: 'p', app: 'a', kind: 'playable', secs: 30, src: 'p.html', aspect: '9:16', aspectOnly: true }] }, 'https://x.example/c.json');
   assert.deepEqual([read.dropped, read.creatives[0].aspectOnly, eligible({ catalogue: read, host: 'h', aspect: '16:9' }).length, eligible({ catalogue: read, host: 'h', aspect: '9:16' }).length], [[], true, 0, 1]);
+  // a playable's earliest leaving, said as `minSecs` and read as `skipFrom`: it fits an interstitial of that time or more, and a slot too short for its whole time
+  const plays = validate({ version: 1, apps: { a: { name: 'A', ios: { id: 1 } } }, creatives: [{ id: 'p5', app: 'a', kind: 'playable', secs: 30, src: 'p.html', minSecs: 5 }, { id: 'p10', app: 'a', kind: 'playable', secs: 30, src: 'q.html', minSecs: 10 }, { id: 'bad', app: 'a', kind: 'playable', secs: 30, src: 'r.html', minSecs: 40 }] }, 'https://x.example/c.json');
+  assert.deepEqual([plays.creatives.map(c => [c.id, c.skipFrom, 'minSecs' in c]), plays.dropped.length], [[['p5', 5, false], ['p10', 10, false], ['bad', undefined, false]], 1]);
+  const fits = placement => eligible({ catalogue: plays, host: 'h', placement }).map(c => c.id).sort();
+  assert.deepEqual([fits({ format: 'interstitial' }), fits({ format: 'interstitial', minSecs: 10 }), fits({ maxSecs: 15 }), fits({ maxSecs: 8 })], [['bad', 'p5'], ['bad', 'p10', 'p5'], ['p10', 'p5'], ['p5']]);
   const { skipAtOf } = await import('../core/pick.js');   // Skip at the game's time, 12 s in at the latest: whatever it's handed
   assert.deepEqual([0, 3, 5, 10, 12, 13, 15, 40].map(skipAtOf), [0, 3, 5, 10, 12, 12, 12, 12]);
   const catalogue = { apps: { a: { name: 'A', ios: { id: 1 }, android: { package: 'a' } } }, creatives: [

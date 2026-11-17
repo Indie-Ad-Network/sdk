@@ -67,9 +67,9 @@ Two things say, and the game's comes first:
 | | The placement says a time | It says none |
 |---|---|---|
 | **Rewarded video** | The reward can be claimed at that time, or at the creative's `skipFrom` if that is later | At the creative's `skipFrom`; with none, at its end |
-| **Rewarded playable** | At the playable's own time (`secs`), or when it says it's done if it's marked `finishEarly` | The same |
+| **Rewarded playable** | At the playable's own time (`secs`), or when it says it's done if it's marked `finishEarly`. One that says when it may be left (`minSecs`) is as a video: the reward at the later of that and the placement's time, and it plays on to its own time | At its `minSecs`; with none, at its own time |
 | **Interstitial video** | Skip at that time (12 s at the latest), ✕ on the end card 3 s after Skip. A creative whose `skipFrom` is later isn't shown there | As 5 s |
-| **Interstitial playable** | ✕ at that time, which closes it | As 5 s |
+| **Interstitial playable** | ✕ at that time, which closes it. One whose `minSecs` is later isn't shown there | As 5 s |
 
 A reward claimed before a video's end takes the video to its end card, and the player leaves from there; one who watches to the end leaves from the same card.
 

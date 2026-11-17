@@ -78,7 +78,7 @@ export function eligible({ catalogue, host, placement = {}, rating, age, history
     if (c.aspectOnly && wrongShape(c, aspect)) return false;
     // an interstitial's time is the game's to say: a creative that mustn't be left before a later second than that isn't shown there
     if (c.skipFrom != null && least != null && c.skipFrom > least + SLACK) return false;
-    // longer than the placement takes: unless it says it may be left by then (`skipFrom`), or may run on past it (`overrun`). Only a video has either (catalogue.js)
+    // longer than the placement takes: unless it says it may be left by then (`skipFrom`), or may run on past it (`overrun`, a video's alone)
     return !(placement.maxSecs && c.secs > placement.maxSecs + SLACK && !c.overrun && !(c.skipFrom != null && c.skipFrom <= placement.maxSecs + SLACK));
   });
 }

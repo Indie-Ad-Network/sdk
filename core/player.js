@@ -270,9 +270,11 @@ export function play({ creative, app, html, link, ctaText, reward, format = 'rew
   // and with both the later; with neither at its end (or at `limit`, for one marked `overrun`). The reward in before a video's end, ✓ takes it to
   // its end card. An interstitial's ✕; or for its video, Skip.
   const earns = creative.skipFrom != null ? Math.max(min ?? 0, creative.skipFrom) : min ?? limit ?? Infinity;
-  // That earlier reward is a video's alone: a playable, or the still card, is over when its own time is, and its reward comes there (a
-  // playable's sooner only by its own word, `finishEarly`). Held to the game's time it would be cut off as that time came, its time counted as run out.
-  const need = () => Math.min(total, rewarded ? (video ? earns : Infinity) : skips() ? skipAt : min);
+  // That earlier reward is for a creative that says it may be left early: any video, and a playable with a `skipFrom` of its own, which then
+  // plays on to its time with the reward in (`early`). Another playable, or the still card, is over when its own time is, and its reward
+  // comes there (a playable's sooner only by its own word, `finishEarly`): held to the game's time alone it would be cut short.
+  const early = () => !!video || (kind === 'playable' && creative.skipFrom != null);
+  const need = () => Math.min(total, rewarded ? (early() ? earns : Infinity) : skips() ? skipAt : min);
   const secs = () => Math.round(elapsed);
   const waits = new Set();   // why the clock stands still: 'hidden', 'ask', 'info', 'store', 'loading'
   let finish;
@@ -290,7 +292,7 @@ export function play({ creative, app, html, link, ctaText, reward, format = 'rew
     if (granted) return;
     granted = true;
     if (!rewarded) { hold = 0; ring.hidden = true; $('.skip').hidden = true; $('.x').hidden = false; return; }   // free to go: nothing earned, and the clock runs on for how long they stayed
-    if (!(kind === 'playable' && creative.keepPlaying) && !video) clearInterval(clock);   // nothing left to count; but one that may be played on counts on, for how long it was, and a video's stops at its end (toEnd)
+    if (!video && !(kind === 'playable' && (creative.keepPlaying || elapsed < total))) clearInterval(clock);   // nothing left to count; but a playable with time left, or one that may be played on, counts on, and a video's stops at its end (toEnd)
     ring.classList.add('done'); number.textContent = '✓';
     ring.disabled = false; ring.removeAttribute('role'); ring.setAttribute('aria-label', t.done);   // a button now: the way back to the game
     $('.earned').hidden = false;
@@ -378,10 +380,10 @@ export function play({ creative, app, html, link, ctaText, reward, format = 'rew
     const now = performance.now(), dt = Math.min(now - last, GAP) / 1000;
     last = now;
     if (video) { if (!over) { elapsed = video.currentTime; during(dt); } }
-    else if (!waits.size && !(granted && rewarded && overtime !== 'kept')) elapsed += dt;
+    else if (!waits.size && !(granted && rewarded && overtime !== 'kept' && (!frame || elapsed >= total))) elapsed += dt;   // the reward in and its time up: nothing more to count, unless it's played on
     if (hold > 0) { if (!waits.size && (hold -= dt) <= 0) grant(); }   // its end, stood for long enough: ✕
     else if (skips()) { if (skipAt < total && elapsed >= skipAt) offer(); }   // one shorter than that comes to its end first
-    else if (!granted && elapsed >= need()) { if (rewarded && !video) elapsed = total; grant(); }
+    else if (!granted && elapsed >= need()) { if (rewarded && !video && need() >= total) elapsed = total; grant(); }   // its time out; or, sooner than that, a playable's reward, which plays on
     if (frame && overtime !== 'resting' && elapsed >= total && !creative.ownCard) endPlayable({ rest: !overtime });   // its time is up (an interstitial's playable runs on past its ✕, to here): a rest the first time, the end if it was played on
     draw();
   }, TICK);
@@ -478,7 +480,7 @@ export function play({ creative, app, html, link, ctaText, reward, format = 'rew
     else if (type === 'error') { const message = String(e.data.message).slice(0, 200); if (!errors.has(message) && errors.size < ERRORS_MAX) { errors.add(message); emit('fail', { why: 'playable', message }); } }   // each once, and few
     else if (type === 'complete') {
       if (overtime === 'kept') endPlayable();   // played on, and now done: the card, for good
-      else if (granted) close();
+      else if (granted) { if (rewarded && frame && !creative.ownCard) endPlayable(); else close(); }   // done, its reward already in: its end card if it was still playing, else out
       else {   // done before its time: the reward now if that's its to say, else when the countdown is out. On the card; but one with a card of its own is left on that, to be closed by ✓ or by its own close
         if (!said) { said = true; emit('complete', { secs: secs() }); }   // once a showing: one left on its own card may say it again
         if (creative.finishEarly) grant();
@@ -500,7 +502,8 @@ export function play({ creative, app, html, link, ctaText, reward, format = 'rew
     if (under && !closed) storeBanner(true);
   }
   function ask() {
-    if (granted) { if (!(video && toEnd())) close(); return; }   // a video with more to play: to its end first, where the store button is; then out
+    // a video with more to play: to its end first, where the store button is; then out. A playable with time left and its reward in, likewise: its end card
+    if (granted) { if (rewarded && frame && !overtime && !creative.ownCard) { emit('skip', { secs: secs() }); endPlayable(); } else if (!(video && toEnd())) close(); return; }
     if (!rewarded) return;   // not yet: there's nothing to ask about
     $('.ask').hidden = false; wait('ask', true);
   }
