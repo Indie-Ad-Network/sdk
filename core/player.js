@@ -137,7 +137,7 @@ video.go { cursor: pointer; }
 .end p { margin: 0; max-width: 30em; font-size: 16px; opacity: .92; }
 .end small { opacity: .7; font-size: 12px; }
 .end button { margin-top: 8px; padding: 16px 34px; border: 0; border-radius: 999px; background: #1f6fd6; color: #fff; font-weight: 900; font-size: 19px; line-height: 1; box-shadow: 0 4px 0 #154f9c; }
-.end .more { margin-top: 0; padding: 12px 28px; border: 2px solid #fff; background: #0004; font-size: 17px; box-shadow: none; }
+.end .more, .cta-panel .more { margin-top: 0; padding: 12px 28px; border: 2px solid #fff; background: #0004; font-size: 17px; box-shadow: none; }
 .acts { display: contents; }
 /* a card dressed by its creative: its art whole, over a blur of itself; and the store button where it's asked for */
 .end img.whole { display: block; position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; object-position: center; border-radius: 0; box-shadow: none; background: none; }
@@ -174,7 +174,7 @@ video.go { cursor: pointer; }
   .end.under { padding-bottom: calc(118px + env(safe-area-inset-bottom)); }
   .end img { grid-area: icon; width: 80px; height: 80px; } .end h1 { grid-area: name; font-size: 22px; } .end p { grid-area: line; font-size: 14px; } .end small { grid-area: studio; }
   .acts { grid-area: acts; display: flex; flex-direction: column; gap: 10px; }
-  .end button { margin-top: 0; padding: 14px 28px; font-size: 17px; } .end .more { padding: 10px 22px; font-size: 15px; }
+  .end button { margin-top: 0; padding: 14px 28px; font-size: 17px; } .end .more, .cta-panel .more { padding: 10px 22px; font-size: 15px; }
 }
 .ask, .info { position: absolute; top: 0; right: 0; bottom: 0; left: 0; z-index: 4; display: flex; align-items: center; justify-content: center; padding: 24px; background: #000c; }
 .ask div, .info div { width: min(320px, 100%); max-height: 100%; overflow-y: auto; padding: 22px; border-radius: 20px; background: #fff; color: #10202f; text-align: center; display: flex; flex-direction: column; gap: 12px; }
@@ -246,24 +246,29 @@ export function play({ creative, app, html, link, ctaText, reward, format = 'rew
   // the end card as its creative dresses it: its art, and the store button where it's put, as a picture for this store or in the player's words
   // (`picture`: the button's, for the player's store, if the creative has one)
   const matching = creative.endCardMode === 'orientation', failedArt = new Set();
-  const cta = creative.endCardCta, custom = cta?.type === 'custom' && !!cta.image;
+  // A playable that may be played on ends on the large card, whatever style it asks for: Keep playing goes under its store button, where a
+  // small or placed store button has no place for it
+  const keeps = kind === 'playable' && !!creative.keepPlaying;
+  const cta = creative.endCardCta && keeps ? { ...creative.endCardCta, type: 'large' } : creative.endCardCta;
+  const custom = cta?.type === 'custom' && !!cta.image;
   let customFailed = false;
   const button = cta ? (custom ? { portrait: cta, landscape: cta, ...(cta.pulse && { pulse: { scale: (cta.pulse.maxSize ?? 105) / 100, secs: cta.pulse.secs ?? 1 } }) } : null) : creative.storeButton;
   const buttonPicture = cta ? (custom ? cta.image : null) : picture, inWords = `<b>${esc(ctaText)}</b>`;
   let arts = creative.endCard;   // null once its art has failed to come: the player's own card then
   const rests = kind === 'video' && !!creative.ownCard;   // a video that ends on a card of its own, and rests on it: the store button alone over its last frame
   const placed = link && (cta ? custom : ((!matching && arts) || button || rests)) ? `<button class="placed go${button?.pulse ? ' pulse' : ''}"><span>${buttonPicture ? `<img src="${esc(buttonPicture)}" alt="${esc(ctaText)}">` : inWords}</span></button>` : '';
+  const keepOn = `<button class="more" hidden>${esc(t.keepPlaying)}</button>`;   // Keep playing, always there to be found: in the large card's buttons if it has one, else in the card's
   root.innerHTML = `<style>${CSS}</style>
 <div class="layer ${kind}" lang="${esc(words.lang)}" dir="${words.rtl ? 'rtl' : 'ltr'}">
   <div class="bar">
     <button class="about" aria-label="${esc(t.about)}"><i><span>${esc(t.ad)}</span></i><b aria-hidden="true"><span>i</span></b></button>
     <span class="bar-space" aria-hidden="true"></span>
-    ${link && kind === 'playable' && creative.keepPlaying ? `<button class="get go" hidden>${icon}<span>${esc(ctaText)}</span></button>` : ''}
+    ${link && keeps ? `<button class="get go" hidden>${icon}<span>${esc(ctaText)}</span></button>` : ''}
     <button class="ring" role="timer" disabled><svg viewBox="0 0 44 44"><circle class="left" cx="22" cy="22" r="${R}"/></svg><b></b></button>
   </div>
   <div class="stage" data-loading="${esc(t.loading)}">
-    <div class="end${cta ? ' cta-configured' : ''}${app.art ? ' art' : ''}${kind === 'video' && matching ? ' video-frame' : ''}" hidden>${arts ? '<div class="blur"></div><img class="whole" alt="">' : ''}${icon}<h1>${esc(app.name)}</h1><p>${esc(creative.line ?? app.line)}</p>${app.studioName ? `<small>${esc(app.studioName)}</small>` : ''}<div class="acts">${link && !placed ? `<button class="go">${esc(ctaText)}</button>` : ''}<button class="more" hidden>${esc(t.keepPlaying)}</button></div>${placed}</div>
-    ${cta?.type === 'large' ? `<div class="cta-panel${cta.darken !== false ? ' darken' : ''}" hidden>${icon}<h1>${esc(app.name)}</h1><p>${esc(creative.line ?? app.line)}</p>${app.studioName ? `<small>${esc(app.studioName)}</small>` : ''}${link ? `<button class="go">${esc(ctaText)}</button>` : ''}</div>` : ''}
+    <div class="end${cta ? ' cta-configured' : ''}${app.art ? ' art' : ''}${kind === 'video' && matching ? ' video-frame' : ''}" hidden>${arts ? '<div class="blur"></div><img class="whole" alt="">' : ''}${icon}<h1>${esc(app.name)}</h1><p>${esc(creative.line ?? app.line)}</p>${app.studioName ? `<small>${esc(app.studioName)}</small>` : ''}<div class="acts">${link && !placed ? `<button class="go">${esc(ctaText)}</button>` : ''}${cta?.type === 'large' ? '' : keepOn}</div>${placed}</div>
+    ${cta?.type === 'large' ? `<div class="cta-panel${cta.darken !== false ? ' darken' : ''}" hidden>${icon}<h1>${esc(app.name)}</h1><p>${esc(creative.line ?? app.line)}</p>${app.studioName ? `<small>${esc(app.studioName)}</small>` : ''}${link ? `<button class="go">${esc(ctaText)}</button>` : ''}${keepOn}</div>` : ''}
   </div>
   ${link ? `<button class="store go" hidden>${icon}<span>${esc(app.name)}</span><em>${esc(ctaText)}</em></button>` : ''}
   <div class="ask" hidden><div><b>${esc(t.leaveTitle)}</b><span>${esc(reward ? say(t.miss, { reward }) : t.missPlain)}</span><button class="keep">${esc(t.keep)}</button><button class="leave">${esc(t.leave)}</button></div></div>
@@ -445,7 +450,7 @@ export function play({ creative, app, html, link, ctaText, reward, format = 'rew
   function keepPlaying() {
     if (overtime !== 'resting' || endRemaining > 0) return;   // only then is there a card to put away, and a page under it
     overtime = 'kept';
-    end.hidden = true; storeBanner(false);
+    end.hidden = true; revealCta($('.cta-panel'), false); storeBanner(false);
     if ($('.get')) $('.get').hidden = false;
     total = elapsed + KEEP_SECS;
     toFrame('volume', muted ? 0 : 100); toFrame('viewable', !waits.size);

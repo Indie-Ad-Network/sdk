@@ -30,6 +30,7 @@ The dashboard offers **Static Final Frame** (`ownCard: true`), **Looping Video**
 - `type: "large"`: app details and action at the centre, with `darken` (default true). Only this style displays the creative's `line`.
 - `type: "compact"`: the app icon, name and action in a bottom-centre pill, shared by loops, static frames and custom images.
 - `during`: whether to show that compact pill while playing (default true).
+- A playable marked `keepPlaying` always ends on the large card, whatever `type` it asks for: Keep playing goes under its action there (SDK 0.6.16 on).
 - `fade: true`: a fixed 0.5-second action fade-in; false disables it. Existing positive numeric durations also become 0.5 seconds. The dashboard defaults this checkbox on for new creatives; absence in a catalogue retains a direct cut. Reduced-motion preferences disable animation.
 
 Earlier `type: "custom"` records remain readable: `image`, `anchor`, `width`, `x`, `y`, and optional `pulse: {maxSize: 105, secs: 1}`. The image is cached with the creative. The dashboard no longer offers this style.

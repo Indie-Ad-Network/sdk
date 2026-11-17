@@ -35,7 +35,7 @@ function showing(t, creative, options = {}) {
     click() { if (!this.disabled) for (const fn of root.listeners.get('click') ?? []) fn({ target: this }); }
   }
   const root = new Element();
-  for (const selector of ['.stage', '.end', '.ring', '.ring b', '.left', '.more', '.go', '.ask', '.info']) nodes.set(selector, new Element(['.ring', '.more', '.go'].includes(selector) ? 'button' : 'div', selector));
+  for (const selector of ['.stage', '.end', '.cta-panel', '.ring', '.ring b', '.left', '.more', '.go', '.ask', '.info']) nodes.set(selector, new Element(['.ring', '.more', '.go'].includes(selector) ? 'button' : 'div', selector));
   nodes.get('.ring').disabled = true;
   const document = {
     hidden: false, body: { append(el) { host = el; } }, addEventListener(type, fn) { listeners.set(type, fn); }, removeEventListener(type) { listeners.delete(type); },
@@ -141,6 +141,28 @@ test('Keep playing leaves the unified close control available', async t => {
   assert.equal(s.nodes.get('.end').hidden, true);
   assert.equal(s.ring.hidden, false); assert.equal(s.ring.getAttribute('aria-label'), 'Close');
   s.click(); await s.result;
+});
+
+for (const type of ['large', 'compact', 'custom']) test(`a playable that may be played on, styled ${type}, ends on the large card with Keep playing under its store button`, async t => {
+  const s = showing(t, { kind: 'playable', secs: 5, keepPlaying: true, endCardCta: { type, image: 'https://example.test/button.png' } }, { html: '<html></html>', link: { url: 'https://example.test/app', via: 'sheet' }, ctaText: 'Get' });
+  const markup = s.root.innerHTML, panel = markup.indexOf('class="cta-panel');
+  assert.ok(panel > 0);
+  assert.equal(markup.split('class="more"').length, 2); assert.ok(markup.indexOf('class="more"') > panel);
+  assert.doesNotMatch(markup, /class="placed/);
+  s.advance(5.1);
+  assert.equal(s.nodes.get('.cta-panel').hidden, false); assert.equal(s.nodes.get('.more').hidden, false);
+  s.nodes.get('.more').click();
+  assert.equal(s.nodes.get('.cta-panel').hidden, true); assert.equal(s.nodes.get('.end').hidden, true);
+  assert.equal(s.events.filter(e => e.name === 'keep_playing').length, 1);
+  s.advance(120.1);
+  assert.equal(s.nodes.get('.cta-panel').hidden, false); assert.equal(s.nodes.get('.more').hidden, true);
+  s.click(); await s.result;
+});
+
+test('a playable that may not be played on keeps the end card style it asks for', async t => {
+  const s = showing(t, { kind: 'playable', secs: 5, endCardCta: { type: 'compact' } }, { html: '<html></html>', link: { url: 'https://example.test/app', via: 'sheet' } });
+  assert.doesNotMatch(s.root.innerHTML, /class="cta-panel/);
+  assert.equal(s.root.innerHTML.split('class="more"').length, 2);   // still there, hidden, for what reads it
 });
 
 for (const format of ['rewarded', 'interstitial']) test(`${format} natural endings default to a three-second endcard timer`, async t => {

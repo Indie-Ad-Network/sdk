@@ -139,7 +139,8 @@ What `'complete'` from the playable does, first match wins:
 When the clock reaches `secs` on a creative with `keepPlaying`:
 
 1. **Resting.** The host sends `viewable: false` and `volume: 0`, but **keeps the frame**. The
-   end card shows over it with an extra "Keep playing" button. The reward (if rewarded) has
+   end card shows over it with an extra "Keep playing" button (on the large card, whatever style
+   the creative's `endCardCta` asks for: SDK 0.6.16 on). The reward (if rewarded) has
    been earned at this point. Messages from the playable are ignored while resting.
 2. **Kept.** If the player presses Keep playing: the card hides, the host sends the volume back
    and `viewable: true`, emits `keep_playing`, and allows up to **120 more seconds**. The
