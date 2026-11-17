@@ -14,14 +14,14 @@ What an ad on the network is made of, and how to make one for your game. A creat
 
 The network's player draws these over and after every creative, always in the same places:
 
-- **A close button** (top left) and **a countdown** (top right).
+- **One control at the top right**: countdown, then Skip while playing, then ✕ after the endcard minimum.
 - **The end card**: your icon, your line and the store button.
 
 So a creative is all game. Leave out "Download now" buttons, store badges and an end card of your own, and keep anything that matters out of the top 12% of the frame. (To change the card the player shows, see the next section: that is the player's card dressed, not one baked into your video.)
 
-## Current endcard presentation (0.6.9)
+## Current endcard presentation
 
-New creatives opt in with `endCardCta`, `endCardSecs`, or a video's `endCardMode: "orientation"`. They use one top-right countdown, then Skip, then ✕ on the endcard. There is no separate close button or Reward earned label. Rewards and their callbacks are unchanged. The endcard holds for `endCardSecs` seconds (0–30, default 3), counting only while visible; reward eligibility must also be satisfied before closing.
+The current SDK uses one top-right countdown, then Skip, then ✕ on the endcard for every creative, including records saved before display settings existed. There is no separate close button or Reward earned label. Rewards and their callbacks are unchanged. The endcard holds for `endCardSecs` seconds (0–30, default 3), counting only while visible; reward eligibility must also be satisfied before closing.
 
 The dashboard offers **Static Final Frame** (`ownCard: true`), **Looping Video** (`loop: {from: seconds}`), or **Custom Endcard** (`endCard` plus `endCardMode: "orientation"`). A custom image uses the video's contain framing and backdrop, using only the matching portrait or landscape image. Missing or failed images restore the default card. `fade` optionally fades the video into its card over 0–5 seconds.
 
@@ -34,7 +34,7 @@ The dashboard offers **Static Final Frame** (`ownCard: true`), **Looping Video**
 
 Earlier `type: "custom"` records remain readable: `image`, `anchor`, `width`, `x`, `y`, and optional `pulse: {maxSize: 105, secs: 1}`. The image is cached with the creative. The dashboard no longer offers this style.
 
-Creatives without these opt-in fields keep the released presentation described below. Device builds use the shared JavaScript player bundled into the Unity resource; the Editor's simulated ad is a stand-in, not a web view.
+SDK 0.6.9–0.6.10 enabled these controls only when new display fields were present; that restriction is removed in the next release. Games on older SDK releases keep the player they shipped with. Device builds use the shared JavaScript player bundled into the Unity resource; the Editor's simulated ad is a stand-in, not a web view.
 
 ## Dressing the end card, and how a video is shown
 

@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Indie Ads player test</title>
+<style>
+  * { box-sizing: border-box; } body { margin: 0; background: #e3eaf0; color: #172a3d; font: 15px system-ui; }
+  main { display: flex; gap: 24px; padding: 24px; align-items: flex-start; flex-wrap: wrap; }
+  form { width: 300px; display: grid; gap: 14px; } h1 { font-size: 23px; margin: 0; } p { line-height: 1.5; margin: 0; color: #43576b; }
+  label { display: grid; gap: 5px; } input, select, button { font: inherit; padding: 9px; border: 1px solid #657487; border-radius: 7px; }
+  input, select { width: 100%; background: #243246; color: inherit; } button { cursor: pointer; background: #3678d8; color: white; }
+  .actions { display: flex; gap: 8px; } .actions button { flex: 1; } #stop { background: #243246; }
+  .screen { max-width: 100%; overflow: auto; } iframe { display: block; width: 390px; height: 740px; border: 1px solid #657487; border-radius: 12px; background: #c4d2df; }
+  pre { max-height: 160px; overflow: auto; white-space: pre-wrap; font-size: 12px; color: #43576b; }
+</style>
+<main>
+<form id="controls">
+  <h1>Ad overlay test</h1>
+  <p>Runs the production web player locally. No impressions, reports or rewards are sent.</p>
+  <label>Creative<select id="kind"><option value="card">Still card</option><option value="video">Video</option><option value="playable">Sample playable</option></select></label>
+  <label>Video file<input id="file" type="file" accept="video/*"></label>
+  <label>Or video URL<input id="url" type="url" placeholder="https://…/video.mp4"></label>
+  <label>Format<select id="format"><option value="rewarded">Rewarded</option><option value="interstitial">Interstitial</option></select></label>
+  <label>Duration (seconds)<input id="duration" type="number" min="1" max="300" value="15" required></label>
+  <label>Skip after (seconds)<input id="skip" type="number" min="0" max="300" value="5" required></label>
+  <label>Endcard hold (seconds)<input id="hold" type="number" min="0" max="30" value="3" required></label>
+  <label>Endcard action<select id="cta"><option value="compact">Compact</option><option value="large">Large</option></select></label>
+  <label>Viewport<select id="viewport"><option value="390,740">Portrait · 390 × 740</option><option value="740,390">Landscape · 740 × 390</option></select></label>
+  <div class="actions"><button>Play</button><button id="stop" type="button">Stop</button></div>
+  <p id="status" role="status">Ready. Choose a video file to test video playback.</p>
+  <pre id="events"></pre>
+</form>
+<div class="screen"><iframe id="player" title="Production ad overlay preview" src="preview-frame.html"></iframe></div>
+</main>
+<script type="module" src="preview.js"></script>
+</html>

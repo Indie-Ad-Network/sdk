@@ -98,3 +98,14 @@ For the ads themselves, see [Creatives](../CREATIVES.md) and the [playable kit](
 - **In the Editor there is no web view, so a stand-in plays** (0.6.3 on; `Runtime/EditorAds.cs`). In Play mode `Show` answers true and an ad goes up over the Game view: one of the catalogue's videos, the real file, played by Unity's own VideoPlayer, shown as its creative asks (its end card's art, where its store button sits and the picture of it, a pulse, a card of its own, a fade, a loop, when a tap opens the store), with the countdown, the close and the store button drawn by the stand-in. `Demand`, `Wants`, the callbacks, `OnShown`/`OnHidden` and `OnEvent` come as on a phone, so a game's own code can be tried. Two buttons under its label are for testing: the ad's end now, and "nothing was shown". Opt-in endcard settings also select large or compact actions, their fixed 0.5-second fade, matching-orientation art and the unified countdown/Skip/close control with its minimum ending time. It is not the player: no playables, no blur behind a video that doesn't fill the screen, no WebP pictures (Unity reads JPEG and PNG), no caps, resting or languages, the share is the catalogue's with nothing owed, and nothing is sent to the ingest. With no video that fits, a rewarded placement gets a card that counts down and an interstitial shows nothing. The game's own controls under it still take clicks, as they don't on a device. It needs the Video, IMGUI and UnityWebRequest modules (Image Conversion for pictures), which a new project has; without them the Editor is as before, `Show` false. Nothing of it is in a build.
 - **Trying the ads out**: `IndieAdsConfig.test`, or `IndieAds.SetTest(true)` from a debug menu, plays the game's own ads too, games that are resting, and past a creative's daily cap. Nothing it shows is sent to the ingest, so it never counts in what studios owe each other. Never turn it on in a player's game.
 - After a change to `core/` or `web/`: `node tools/build-player.mjs`, and commit the page it writes.
+
+Editor video controls share artwork and visual dimensions with the web player: edit
+`core/controlIcons.js` / `core/controlTheme.js`, then run `npm run build:player`.
+That command produces both the embedded HTML and `Runtime/EditorAdAssets.cs`;
+`node tools/build-player.mjs --check` checks both outputs. `EditorAdChrome` is the
+Unity IMGUI/Handles renderer for that generated data. Media playback and rendering
+remain platform-specific; this is not a web view or an exact font rendering test.
+
+AD, info and timer text use the bundled Cairo Black font. The build step embeds
+the same TTF in core/controlFont.js for offline web playback; Unity loads the
+source from Resources/IndieAds/Cairo-Black.ttf. Its OFL license is included there.

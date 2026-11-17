@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<style>body { margin: 0; background: #c4d2df; color: white; font: 16px system-ui; display: grid; place-items: center; height: 100vh; }</style>
+<body><p>Press Play to test the overlay.</p>
+<script type="module">
+import { play } from '../core/player.js?v=20261117-lighter-labels';
+let running = false;
+const log = previewEvent => parent.postMessage({ previewEvent }, location.origin);
+addEventListener('message', async event => {
+  if (event.source !== parent || event.origin !== location.origin || !event.data?.preview || running) return;
+  running = true;
+  const c = event.data.preview;
+  try {
+    const playback = play({
+      creative: { id: 'local-preview', kind: c.kind, secs: c.secs, src: c.src,
+        skipFrom: c.skip, endCardSecs: c.hold, endCardCta: { type: c.cta },
+        line: 'Local overlay preview' },
+      app: { name: 'Preview game', line: 'Local overlay preview', studioName: 'Test studio' },
+      html: '<style>body{margin:0;display:grid;place-items:center;height:100vh;background:linear-gradient(130deg,#9fddd6,#f4d4b1);color:white;font:24px system-ui}</style><body>Sample playable</body>',
+      format: c.format, least: c.skip, muted: true,
+      reward: 'test coins', ctaText: 'Get', link: { via: 'web', url: 'https://example.com' },
+      emit: (event, data) => log({ event, ...data }),
+      openStore: async () => log({ event: 'store-preview' }),
+      report: data => log({ event: 'report-preview', ...data }),
+    });
+    // Preview-only light surface so translucent chrome is easy to inspect.
+    const surface = document.createElement('style');
+    surface.textContent = '.layer, .playable .bar { background: #c4d2df; } .end:not(.art):not(.bare):not(.cta-configured) { background: #c4d2df; }';
+    document.getElementById('indie-ads')?.shadowRoot.append(surface);
+    const result = await playback;
+    log({ done: true, ...result });
+  } catch (error) { log({ event: 'error', message: error.message }); }
+});
+</script></body></html>

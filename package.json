@@ -10,6 +10,7 @@
   "scripts": {
     "test": "node --test",
     "validate": "node tools/validate-catalogue.mjs",
-    "build:player": "node tools/build-player.mjs"
+    "build:player": "node tools/build-player.mjs",
+    "preview": "python3 -m http.server 8765 --bind 127.0.0.1"
   }
 }

@@ -1,5 +1,3 @@
-import { play as playLegacy } from './legacyPlayer.js';
-
 // ---------- the ad player ----------
 // A full-screen layer over the host game that plays one creative and resolves when it's
 // closed: { granted, watchedSecs }. It promises the player two things, always in the same
@@ -57,16 +55,19 @@ import { play as playLegacy } from './legacyPlayer.js';
 // The single control is disabled until eligible, then offers Skip while the ad is still
 // playing and ✕ once it stands ended. Escape or platform back can still ask to leave early.
 // The clock counts only time on screen: hidden, or asking, or with the store open, it waits.
-// A number shows time remaining; Skip and ✕ show the available action.
+// The number counts down to skip eligibility; the ring tracks the full video even after Skip appears.
 //
 // In a shadow root, so the host's CSS can't reach in, and this CSS can't leak out.
 import { withShim } from './mraidShim.js';
 import { STEP, STEP_NAME, STEPS_MAX, SDK, REASONS } from './wire.js';
 import { leastOf, skipAtOf, HOLD_SECS } from './pick.js';   // default minimum time on the endcard
 import { stringsFor, say } from './locale.js';
+import { CONTROL_FONT } from './controlFont.js';
+import { CONTROL_THEME as UI } from './controlTheme.js';
 import { MARK } from './mark.js';
+import { SKIP_ICON, CLOSE_ICON, AD_LABEL_BG, INFO_BG } from './controlIcons.js';
 
-const R = 19, C = 2 * Math.PI * R;   // the ring
+const R = UI.radius, C = 2 * Math.PI * R;   // the ring
 const TICK = 100, GAP = 250;         // ms: the clock's step; a longer gap was time off screen, not time watched
 const CARD_SECS = 5;                 // how long the still card stands in for a creative
 const STALL_SECS = 12;               // a video on screen and not moving for this long isn't going to
@@ -86,28 +87,29 @@ button { font-family: inherit; cursor: pointer; }
 .layer { position: fixed; top: 0; right: 0; bottom: 0; left: 0; background: #000; color: #fff; font: 600 15px/1.3 "Avenir Next", "Segoe UI", system-ui, sans-serif;
   display: flex; flex-direction: column; user-select: none; -webkit-user-select: none; touch-action: manipulation; }
 .bar { direction: ltr; display: flex; align-items: center; gap: 10px; padding: calc(8px + env(safe-area-inset-top)) calc(10px + env(safe-area-inset-right)) 8px calc(10px + env(safe-area-inset-left)); z-index: 3; }
-.video .bar, .card .bar { position: absolute; top: 0; left: 0; right: 0; background: linear-gradient(#000a, #0000); }
+.video .bar, .card .bar { position: absolute; top: 0; left: 0; right: 0; background: none; }
 .playable .bar { background: #10202f; }
 @media (orientation: landscape) {   /* a screen wider than tall has the least to give in height, and a solid bar across it takes of that: it lies over the playable's top, which a playable keeps clear, and what's between its buttons is the playable's to touch */
-  .playable .bar { position: absolute; top: 0; left: 0; right: 0; padding-top: calc(4px + env(safe-area-inset-top)); padding-bottom: 14px; background: linear-gradient(#0009, #0000); pointer-events: none; }
+  .playable .bar { position: absolute; top: 0; left: 0; right: 0; padding-top: calc(4px + env(safe-area-inset-top)); padding-bottom: 14px; background: none; pointer-events: none; }
   .playable .bar button { pointer-events: auto; }
-  .tag { visibility: hidden; }   /* and the game's name not written across the game: it's on the card, and behind the ⓘ */
 }
-.tag { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 13px; text-shadow: 0 1px 3px #000; }
-.about { flex: none; display: flex; align-items: center; gap: 5px; height: 44px; margin: 0 -4px; padding: 0 4px; border: 0; background: none; color: inherit; text-shadow: 0 1px 3px #000; }
-.about i { font-style: normal; opacity: .75; letter-spacing: .1em; text-transform: uppercase; font-size: 11px; padding: 2px 5px; border: 1px solid #fff9; border-radius: 4px; }
-.about b { width: 18px; height: 18px; border: 1.5px solid #fffc; border-radius: 50%; font: italic 700 12px/15px Georgia, "Times New Roman", serif; text-align: center; opacity: .9; }
-.ring { position: relative; width: 44px; height: 44px; flex: none; padding: 0; border: 0; background: none; color: inherit; }
+.bar-space { flex: 1; }
+.about { flex: none; display: flex; align-items: center; gap: ${UI.aboutGap}px; height: ${UI.size}px; margin: 0 -4px; padding: 0 4px; border: 0; background: none; color: rgb(${Math.round(UI.aboutTextGrey * 255)},${Math.round(UI.aboutTextGrey * 255)},${Math.round(UI.aboutTextGrey * 255)}); text-shadow: none; }
+.about i { position: relative; isolation: isolate; display: flex; align-items: center; height: ${UI.aboutSize}px; padding: 0 ${UI.tagPadding}px; font: 900 ${UI.adSize}px/1 "IndieAdsCairoBlack", system-ui, sans-serif; letter-spacing: .1em; text-transform: uppercase; }
+/* Match the internal SDK's sliced label corners without stretching its outline. */
+.about i::before { content: ""; position: absolute; z-index: -1; top: 0; right: 0; bottom: 0; left: 0; border: ${UI.tagBorder}px solid transparent; border-image: url("${AD_LABEL_BG}") ${UI.tagSlice} fill / ${UI.tagBorder}px; pointer-events: none; }
+.about b { display: flex; align-items: center; justify-content: center; width: ${UI.aboutSize}px; height: ${UI.aboutSize}px; background: url("${INFO_BG}") center / 100% 100% no-repeat; }
+.about b span { font: 900 ${UI.infoSize}px/1 "IndieAdsCairoBlack", system-ui, sans-serif; text-align: center; }
+.ring { position: relative; width: ${UI.size}px; height: ${UI.size}px; flex: none; padding: 0; border: 0; background: url("${INFO_BG}") center / ${UI.timerBackgroundSize}px ${UI.timerBackgroundSize}px no-repeat; color: inherit; }
 .ring svg { position: absolute; top: 0; right: 0; bottom: 0; left: 0; transform: rotate(-90deg); }
-.ring circle { fill: #000a; stroke: #fff4; stroke-width: 4; transition: fill .15s; }
+.ring circle { fill: none; stroke: #fff; stroke-width: ${UI.stroke}; }
 .ring .left { fill: none; stroke: #fff; stroke-linecap: round; stroke-dasharray: ${C}; transition: stroke-dashoffset ${TICK}ms linear; }
-.ring.skippable { width: auto; min-width: 44px; padding: 0 16px; border: 2px solid #fff; border-radius: 999px; background: #000a; }
-.ring.skippable svg { display: none; }
-.ring.skippable > b { position: static; white-space: nowrap; }
-.ring.closable circle { stroke: #fff; stroke-width: 2; }
-.ring.closable .left { display: none; }
+.ring.skippable b, .ring.closable b { background: center / ${UI.iconSize}px ${UI.iconSize}px no-repeat; }
+.ring.skippable b { background-image: url("${SKIP_ICON}"); }
+.ring.closable b { background-image: url("${CLOSE_ICON}"); }
+.ring.closable .left { stroke-dashoffset: 0 !important; }
 .ring.closable b { font-size: 22px; }
-.ring b { position: absolute; top: 0; right: 0; bottom: 0; left: 0; display: flex; align-items: center; justify-content: center; font: 800 17px/1 system-ui, sans-serif; font-variant-numeric: tabular-nums; }
+.ring b { position: absolute; top: 0; right: 0; bottom: 0; left: 0; display: flex; align-items: center; justify-content: center; font: 900 ${UI.numberSize}px/1 "IndieAdsCairoBlack", system-ui, sans-serif; font-variant-numeric: tabular-nums; }
 .get { height: 44px; flex: none; display: flex; align-items: center; gap: 8px; padding: 4px 16px 4px 4px; border: 0; border-radius: 999px; background: #1f6fd6; color: #fff; font-weight: 900; font-size: 15px; line-height: 1; white-space: nowrap; box-shadow: 0 2px 8px #0006; }
 .get:not(:has(img)) { padding-left: 16px; }
 .stage { position: relative; flex: 1; min-height: 0; overflow: hidden; }
@@ -223,9 +225,16 @@ video.go { cursor: pointer; }
 // stands ended, over the end card or a video's own, and taken away with null.
 // Resolves { granted, watchedSecs, kind }: `kind` is what was shown in the end, 'card' if it came to that;
 // `granted` of an interstitial says only that it stayed up until it could be closed.
-function playCurrent({ creative, app, html, link, ctaText, reward, format = 'rewarded', least = null, limit = null, picture = null, muted = false, emit = () => {}, openStore, banner = null, report = null, more = null, words = stringsFor('en') }) {
+export function play({ creative, app, html, link, ctaText, reward, format = 'rewarded', least = null, limit = null, picture = null, muted = false, emit = () => {}, openStore, banner = null, report = null, more = null, words = stringsFor('en') }) {
   const { t } = words;   // the player's own words, in the player's language (locale.js)
   const doc = document;
+  // Register on the document: @font-face inside a shadow root is not portable across web views.
+  if (doc.head && !doc.getElementById('indie-ads-control-font')) {
+    const font = doc.createElement('style');
+    font.id = 'indie-ads-control-font';
+    font.textContent = `@font-face { font-family: "IndieAdsCairoBlack"; src: url("${CONTROL_FONT}") format("truetype"); font-style: normal; font-weight: 900; font-display: swap; }`;
+    doc.head.appendChild(font);
+  }
   let { kind } = creative;
   const host = doc.createElement('div'), root = host.attachShadow({ mode: 'open' });
   host.id = 'indie-ads';
@@ -244,10 +253,10 @@ function playCurrent({ creative, app, html, link, ctaText, reward, format = 'rew
   root.innerHTML = `<style>${CSS}</style>
 <div class="layer ${kind}" lang="${esc(words.lang)}" dir="${words.rtl ? 'rtl' : 'ltr'}">
   <div class="bar">
-    <button class="about" aria-label="${esc(t.about)}"><i>${esc(t.ad)}</i><b aria-hidden="true">i</b></button>
-    <span class="tag">${esc(app.name)}</span>
+    <button class="about" aria-label="${esc(t.about)}"><i>${esc(t.ad)}</i><b aria-hidden="true"><span>i</span></b></button>
+    <span class="bar-space" aria-hidden="true"></span>
     ${link && kind === 'playable' && creative.keepPlaying ? `<button class="get go" hidden>${icon}<span>${esc(ctaText)}</span></button>` : ''}
-    <button class="ring" role="timer" disabled><svg viewBox="0 0 44 44"><circle cx="22" cy="22" r="${R}"/><circle class="left" cx="22" cy="22" r="${R}"/></svg><b></b></button>
+    <button class="ring" role="timer" disabled><svg viewBox="0 0 44 44"><circle class="left" cx="22" cy="22" r="${R}"/></svg><b></b></button>
   </div>
   <div class="stage" data-loading="${esc(t.loading)}">
     <div class="end${cta ? ' cta-configured' : ''}${app.art ? ' art' : ''}${kind === 'video' && matching ? ' video-frame' : ''}" hidden>${arts ? '<div class="blur"></div><img class="whole" alt="">' : ''}${icon}<h1>${esc(app.name)}</h1><p>${esc(creative.line ?? app.line)}</p>${app.studioName ? `<small>${esc(app.studioName)}</small>` : ''}<div class="acts">${link && !placed ? `<button class="go">${esc(ctaText)}</button>` : ''}<button class="more" hidden>${esc(t.keepPlaying)}</button></div>${placed}</div>
@@ -331,19 +340,23 @@ function playCurrent({ creative, app, html, link, ctaText, reward, format = 'rew
     $('.more').disabled = endRemaining > 0;
     ring.classList.toggle('skippable', ready && !closing);
     ring.classList.toggle('closable', closing);
+    const eligibleIn = granted ? 0 : Math.max(0, need() - elapsed);
+    const endIsLonger = endRemaining > 0 && endRemaining >= eligibleIn;
+    // Playback progress spans the entire video, independently of skip eligibility.
+    const playingVideo = !!video && !over;
+    const of = playingVideo ? total : endIsLonger ? endSecs : need();
+    const gone = playingVideo ? elapsed : endIsLonger ? endSecs - endRemaining : elapsed;
+    // A negative offset removes the arc clockwise from twelve o'clock, matching Unity.
+    arc.style.strokeDashoffset = -C * (of > 0 ? Math.max(0, Math.min(1, gone / of)) : 1);
     if (ready) {
       ring.removeAttribute('role');
       ring.setAttribute('aria-label', closing ? t.close : t.skip);
-      number.textContent = closing ? '✕' : t.skip + ' ▸';
+      number.textContent = '';   // SDK icons are centered inside the ring; aria-label names the action.
       return;
     }
     ring.setAttribute('role', 'timer'); ring.removeAttribute('aria-label');
-    const eligibleIn = granted ? 0 : Math.max(0, need() - elapsed);
-    const endIsLonger = endRemaining > 0 && endRemaining >= eligibleIn;
-    const of = endIsLonger ? endSecs : need(), gone = endIsLonger ? endSecs - endRemaining : elapsed;
     const left = Math.ceil(Math.max(eligibleIn, endRemaining));
     number.textContent = left;
-    arc.style.strokeDashoffset = C * (of > 0 ? Math.min(1, gone / of) : 1);
   };
   function offer() { if (offered) return; offered = true; draw(); }
   function grant() {
@@ -634,11 +647,4 @@ function playCurrent({ creative, app, html, link, ctaText, reward, format = 'rew
   doc.body.append(host);
   draw(); seen(); dress();
   return result;
-}
-
-// New display fields opt a creative into the reviewed presentation. Older creatives
-// retain their shipped controls and timing until their catalogue settings change.
-const modernDisplay = creative => creative.endCardMode === 'orientation' || creative.endCardCta != null || creative.endCardSecs != null;
-export function play(options) {
-  return modernDisplay(options.creative) ? playCurrent(options) : playLegacy(options);
 }

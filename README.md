@@ -3,7 +3,7 @@
 Rewarded ads and interstitials for our own and our friends' games, for any game to drop in. No dependencies, no ad SDK, nothing of a third party's running in the game.
 
 - **15 s and 30 s videos, and playables.** A playable is one HTML file written to MRAID 2/3, the ad networks' standard, so the playables a studio already makes for user acquisition drop in unchanged.
-- **A countdown and a way out, always in the same places.** The ring (top right) says how long is left; ✕ (top left) leaves. Leaving before the end asks first, and forfeits the reward.
+- **A countdown and a way out, always in the same places.** The control at the top right counts down, offers Skip while playing, then becomes ✕ once the endcard minimum is complete. The same UI applies to creatives without display settings.
 - **One store-link format.** Each game is one record with both stores in it; the link is built for the platform at the tap: the partner's tracking link, the App Store sheet, `market://`, or plain https. A game not on the player's store, or on none yet (a prototype, a playtest), gives its own page instead: `web: { url, label }`, the button saying Sign up, Join the playtest, Wishlist or Learn more in the player's language.
 - **The reward never depends on there being an ad.** With nothing ready, a still card plays for a few seconds.
 
@@ -173,7 +173,7 @@ Which creative shows is decided in `core/pick.js`: in date, not the host, not ra
 | Video | MP4, H.264 + AAC, 15 s or 30 s, about 2 Mbps. 9:16 (1080×1920) for portrait games, 16:9 for landscape. A poster JPG. |
 | Playable | One self-contained HTML file, under 5 MB (8 MB at most; the admin warns over 5), MRAID 2/3. Its install button calls `mraid.open()`; if it has an end, it calls `mraid.close()`. |
 
-The player draws the close button, the countdown and the end card (icon, line, store button), so a creative is all game: no "Download now", no end card of its own, and nothing that matters in the top 12% of the frame. A creative may dress that end card with art of its own and put the store button where it wants it, and a video may fade into it, loop at its end, or be shown in a shorter slot than its length: [Creatives](CREATIVES.md#dressing-the-end-card-and-how-a-video-is-shown) has each.
+The player draws the countdown/Skip/close control and the end card (icon, line, store button), so a creative is all game: no "Download now", no end card of its own, and nothing that matters in the top 12% of the frame. A creative may dress that end card with art of its own and put the store button where it wants it, and a video may fade into it, loop at its end, or be shown in a shorter slot than its length: [Creatives](CREATIVES.md#dressing-the-end-card-and-how-a-video-is-shown) has each.
 
 - **[Creatives](CREATIVES.md)** is the guide for a studio making them: the formats, a prompt that cuts a video from a store trailer, the flags, languages and uploading.
 - **[The playable kit](playable-kit/README.md)** makes a playable of your own game, with a narrator's voice baked on your own computer.
@@ -228,3 +228,10 @@ One version for the whole repository, [Semantic Versioning](https://semver.org);
 ## Status
 
 [STATUS.md](STATUS.md): what's built, what's next, and what was put off and why.
+
+Local overlay test: run `npm run preview`, then open
+http://127.0.0.1:8765/web/preview.html. It imports the production web player
+directly. Choose a local video or a URL, or test a still card/sample playable;
+switch portrait/landscape, format, skip timing and endcard hold. Events, store
+actions and reports stay in the test page. Device tests require rebuilding the
+game because the device player HTML is bundled in the Unity package.

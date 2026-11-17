@@ -6,6 +6,15 @@ The repository has one version, [Semantic Versioning](https://semver.org), and a
 
 Two numbers are not this one, and change only when a format does: `VERSION` in `core/wire.js` (what games send the ingest) and the catalogue's `version`. Games already released go on sending and reading the old ones.
 
+## [Unreleased]
+
+- Refresh the overlay with RocketJump skip/close artwork and AD/info/timer backgrounds, matching Cairo Black control text, no header game name or gradient, and a clockwise full-video ring that remains visible while skippable. The numeric countdown still tracks skip eligibility.
+- Generate shared Unity control artwork/theme data alongside the embedded web player. Bundle Cairo Black and its OFL license for offline playback.
+- Add a localhost production-player test view (`npm run preview`) and update the Unity VideoPlayer preview with shared control artwork, a full-video ring and a pausing info panel.
+
+- The current countdown/Skip/close UI is now the default for every creative. Creatives saved before the new display fields existed no longer fall back to the old top-left close button and Reward earned tag. Their endcard minimum defaults to three seconds without changing reward eligibility.
+- The Unity Editor stand-in uses the same default controls. Custom images, loops and CTA choices remain per-creative settings; games on earlier SDK releases keep their shipped player.
+
 ## [0.6.10] - 2026-11-17
 
 An interstitial's playable always comes to its end card. Nothing to do to take it.

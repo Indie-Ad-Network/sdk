@@ -66,7 +66,7 @@ test('the player has one timer/skip/close control and closes after natural compl
   assert.doesNotMatch(s.root.innerHTML, /class="earned"/);
   assert.equal(s.ring.disabled, true);
   s.video.dispatch('ended');
-  assert.equal(s.label, '✕'); assert.equal(s.ring.disabled, false);
+  assert.equal(s.ring.getAttribute('aria-label'), 'Close'); assert.equal(s.ring.disabled, false);
   assert.equal(s.events.filter(e => e.name === 'reward').length, 1);
   s.click(); assert.equal(s.closed, true); assert.equal((await s.result).granted, true);
 });
@@ -76,7 +76,7 @@ test('an early reward offers Skip before X, including static final-frame creativ
   s.video.currentTime = 5; s.advance(0.1);
   assert.equal(s.ring.classList.contains('skippable'), true);
   s.click();
-  assert.equal(s.closed, false); assert.equal(s.label, '✕');
+  assert.equal(s.closed, false); assert.equal(s.ring.getAttribute('aria-label'), 'Close');
   assert.equal(s.video.currentTime, 29.95); assert.equal(s.video.paused, true);
   assert.equal(s.events.filter(e => e.name === 'reward').length, 1);
   s.click(); await s.result; assert.equal(s.closed, true);
@@ -89,14 +89,14 @@ test('interstitial Skip becomes the endcard hold timer, then X without a reward'
   s.click();
   assert.equal(s.ring.disabled, true); assert.equal(s.label, 3);
   s.advance(2.8); assert.equal(s.ring.disabled, true); assert.equal(s.closed, false);
-  s.advance(0.3); assert.equal(s.label, '✕');
+  s.advance(0.3); assert.equal(s.ring.getAttribute('aria-label'), 'Close');
   assert.equal(s.events.some(e => e.name === 'reward'), false);
   s.click(); await s.result; assert.equal(s.closed, true);
 });
 
 test('a naturally completed interstitial offers X immediately', async t => {
   const s = showing(t, {}, { format: 'interstitial' });
-  s.video.dispatch('ended'); assert.equal(s.label, '✕');
+  s.video.dispatch('ended'); assert.equal(s.ring.getAttribute('aria-label'), 'Close');
   assert.equal(s.events.some(e => e.name === 'reward'), false);
   s.click(); await s.result;
 });
@@ -105,7 +105,7 @@ test('a playable completed early keeps its countdown on the endcard until earned
   const s = showing(t, { kind: 'playable', secs: 5 }, { html: '<html></html>' });
   s.complete(); assert.equal(s.nodes.get('.end').hidden, false); assert.equal(s.ring.disabled, true);
   s.advance(4.8); assert.equal(s.ring.disabled, true);
-  s.advance(0.4); assert.equal(s.label, '✕');
+  s.advance(0.4); assert.equal(s.ring.getAttribute('aria-label'), 'Close');
   assert.equal(s.events.filter(e => e.name === 'reward').length, 1);
   s.click(); await s.result;
 });
@@ -113,7 +113,7 @@ test('a playable completed early keeps its countdown on the endcard until earned
 test('an interstitial playable reaches its endcard through the same Skip control', async t => {
   const s = showing(t, { kind: 'playable', secs: 10 }, { format: 'interstitial', least: 2, html: '<html></html>' });
   s.advance(2.1); assert.equal(s.ring.classList.contains('skippable'), true);
-  s.click(); assert.equal(s.closed, false); assert.equal(s.label, '✕');
+  s.click(); assert.equal(s.closed, false); assert.equal(s.ring.getAttribute('aria-label'), 'Close');
   assert.equal(s.nodes.get('.end').hidden, false);
   assert.equal(s.events.some(e => e.name === 'reward'), false);
   s.click(); await s.result;
@@ -122,24 +122,24 @@ test('an interstitial playable reaches its endcard through the same Skip control
 test('a failed video counts down its fallback card before enabling X', async t => {
   const s = showing(t);
   s.video.dispatch('error'); assert.equal(s.ring.disabled, true);
-  s.advance(5.1); assert.equal(s.label, '✕');
+  s.advance(5.1); assert.equal(s.ring.getAttribute('aria-label'), 'Close');
   s.click(); assert.equal((await s.result).kind, 'card');
 });
 
 test('a video failing after its reward offers X on the fallback card', async t => {
   const s = showing(t, { skipFrom: 5 });
   s.video.currentTime = 5; s.advance(0.1);
-  s.video.dispatch('error'); assert.equal(s.label, '✕');
+  s.video.dispatch('error'); assert.equal(s.ring.getAttribute('aria-label'), 'Close');
   s.click(); await s.result;
   assert.equal(s.events.filter(e => e.name === 'reward').length, 1);
 });
 
 test('Keep playing leaves the unified close control available', async t => {
   const s = showing(t, { kind: 'playable', secs: 5, keepPlaying: true }, { html: '<html></html>' });
-  s.advance(5.1); assert.equal(s.label, '✕');
+  s.advance(5.1); assert.equal(s.ring.getAttribute('aria-label'), 'Close');
   s.nodes.get('.more').click();
   assert.equal(s.nodes.get('.end').hidden, true);
-  assert.equal(s.ring.hidden, false); assert.equal(s.label, '✕');
+  assert.equal(s.ring.hidden, false); assert.equal(s.ring.getAttribute('aria-label'), 'Close');
   s.click(); await s.result;
 });
 
@@ -150,7 +150,7 @@ for (const format of ['rewarded', 'interstitial']) test(`${format} natural endin
   assert.equal(s.events.filter(e => e.name === 'reward').length, format === 'rewarded' ? 1 : 0);
   s.escape(); assert.equal(s.closed, false);
   s.advance(2.8); assert.equal(s.ring.disabled, true);
-  s.advance(0.3); assert.equal(s.label, '✕');
+  s.advance(0.3); assert.equal(s.ring.getAttribute('aria-label'), 'Close');
   s.click(); await s.result;
 });
 
@@ -159,7 +159,7 @@ test('endcard time is configurable and pauses while the ad is hidden', async t =
   s.video.dispatch('ended'); assert.equal(s.ring.disabled, true);
   s.advance(0.5); s.visibility(true); s.advance(10);
   assert.equal(s.ring.disabled, true);
-  s.visibility(false); s.advance(1.1); assert.equal(s.label, '✕');
+  s.visibility(false); s.advance(1.1); assert.equal(s.ring.getAttribute('aria-label'), 'Close');
   s.click(); await s.result;
   assert.equal(s.events.filter(e => e.name === 'reward').length, 1);
 });
@@ -169,13 +169,39 @@ test('an endcard shown before the reward waits for the longer remaining timer', 
   s.complete(); s.advance(2.1);
   assert.equal(s.events.filter(e => e.name === 'reward').length, 1);
   assert.equal(s.ring.disabled, true);
-  s.advance(3); assert.equal(s.label, '✕');
+  s.advance(3); assert.equal(s.ring.getAttribute('aria-label'), 'Close');
   s.click(); await s.result;
 });
 
 
-test('creatives without modern settings retain their released overlay', async t => {
-  const s = showing(t, { endCardMode: undefined, endCardSecs: undefined });
-  assert.match(s.root.innerHTML, /class="x"/);
-  assert.match(s.root.innerHTML, /class="earned"/);
+for (const format of ['rewarded', 'interstitial']) test(`${format} creatives without display settings use the current UI and default endcard timer`, async t => {
+  const s = showing(t, { endCardMode: undefined, endCardSecs: undefined }, { format });
+  assert.doesNotMatch(s.root.innerHTML, /class="(?:x|skip|earned)"/);
+  s.video.dispatch('ended');
+  assert.equal(s.label, 3);
+  assert.equal(s.ring.disabled, true);
+  s.advance(3.1);
+  assert.equal(s.ring.getAttribute('aria-label'), 'Close');
+  assert.equal(s.ring.disabled, false);
+  s.click();
+  await s.result;
+  assert.equal(s.events.filter(e => e.name === 'reward').length, format === 'rewarded' ? 1 : 0);
 });
+
+for (const format of ['rewarded', 'interstitial']) {
+  test(`${format} video ring tracks full duration before and after skip unlocks`, async t => {
+    const s = showing(t, {}, { format, least: 5 });
+    const arc = s.nodes.get('.left'), circumference = 2 * Math.PI * 19;
+    assert.equal(s.label, 5);
+    s.video.currentTime = 2; s.advance(0.1);
+    assert.equal(s.label, 3);
+    assert.ok(Math.abs(arc.style.strokeDashoffset / circumference + 2 / 30) < 1e-9);
+    s.video.currentTime = 5; s.advance(0.1);
+    assert.equal(s.ring.getAttribute('aria-label'), 'Skip');
+    assert.equal(s.label, '');
+    assert.ok(Math.abs(arc.style.strokeDashoffset / circumference + 5 / 30) < 1e-9);
+    s.video.currentTime = 20; s.advance(0.1);
+    assert.ok(Math.abs(arc.style.strokeDashoffset / circumference + 20 / 30) < 1e-9);
+    s.video.dispatch('ended'); s.click(); await s.result;
+  });
+}

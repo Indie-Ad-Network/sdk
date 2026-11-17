@@ -117,20 +117,20 @@
           "bytes": { "type": "integer" },
           "sha256": { "type": "string" },
           "endCardMode": {
-            "description": "Opt into matching-orientation endcard art and the current display controls. No image for this orientation: the default card. Video images fit the video stage and keep its backdrop. Without new display fields the legacy presentation is preserved.",
+            "description": "Use matching-orientation endcard art. No image for this orientation: the default card. Video images fit the video stage and keep its backdrop. Display controls use the current UI with or without this field.",
             "enum": [
               "orientation"
             ]
           },
           "endCardSecs": {
-            "description": "Opt into current display controls. Minimum visible seconds on the ending before X can close, independent of reward timing. Pauses when hidden or in a store/info panel. Defaults to 3 in the current display; zero allows immediate close once eligible.",
+            "description": "Minimum visible seconds on the ending before X can close, independent of reward timing. Pauses when hidden or in a store/info panel. Defaults to 3; zero allows immediate close once eligible.",
             "type": "number",
             "minimum": 0,
             "maximum": 30,
             "default": 3
           },
           "endCardCta": {
-            "description": "Opt into current display controls. Endcard CTA independent of static frame, loop or custom art. Large centres app details; compact uses the bottom app link. Custom is retained for earlier catalogue records.",
+            "description": "Endcard CTA independent of static frame, loop or custom art. Large centres app details; compact uses the bottom app link. Custom is retained for earlier catalogue records.",
             "type": "object",
             "required": [
               "type"
