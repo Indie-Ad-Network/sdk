@@ -115,9 +115,13 @@ const WEB = {
   metered: () => { const c = navigator.connection; return !!c && (c.saveData || c.type === 'cellular'); },   // where the browser says
 };
 
-// An address of the network's with the game that asks said in it (?host=<id>): the mix's, and the catalogue's, so a
-// server may give each game its own list. It says nothing of the player; a plain file's server takes no notice.
-const asks = (url, host) => host == null ? url : `${url}${url.includes('?') ? '&' : '?'}host=${encodeURIComponent(host)}`;
+// An address of the network's with who asks said in it: the game (?host=<id>), the mix's and the catalogue's, so a server may give
+// each game its own list; and, the catalogue's alone, this release (&sdk=, since 0.6.17), so a server may give each release what it
+// can draw. It says nothing of the player; a plain file's server takes no notice.
+const asks = (url, said) => {
+  const q = Object.entries(said).filter(([, v]) => v != null).map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join('&');
+  return q ? `${url}${url.includes('?') ? '&' : '?'}${q}` : url;
+};
 
 export function createIndieAds({ host, rating = null, catalogue, placements = {}, onEvent, ingest: ingestAt = null, reports: reportsAt = null, mix: mixFrom = null, signedBy = null, lang = null, os = guessOs(), native = {}, age = () => null, muted = () => false, aspect = () => null,
   test = () => false, consent, cache: wantsCache = true, storage: given, fetch = globalThis.fetch?.bind(globalThis), now = Date.now, rand = Math.random }) {
@@ -149,7 +153,7 @@ export function createIndieAds({ host, rating = null, catalogue, placements = {}
   // The network's key: the game's word, or the one in the catalogue it shipped with (a signed server puts its public key in
   // every catalogue it serves, so a copy taken for shipping brings it). Never the one in a catalogue just fetched: that's the thing in doubt.
   const key = signedBy ?? (typeof fallback?.signedBy === 'string' && fallback.apps ? fallback.signedBy : null);
-  const loaded = catalogue?.apps ? Promise.resolve(validate(catalogue)) : loadCatalogue({ url: asks(String(url), host), fallback: fallback?.apps ? fallback : fallback && String(fallback), fetch, storage, signedBy: key });
+  const loaded = catalogue?.apps ? Promise.resolve(validate(catalogue)) : loadCatalogue({ url: asks(String(url), { host, sdk: SDK }), fallback: fallback?.apps ? fallback : fallback && String(fallback), fetch, storage, signedBy: key });
   loaded.then(cat => cat.dropped.forEach(d => console.warn(`[indie-ads] dropped ${d}`)));
   // beside what a creative plays: what dresses its end card, with the button's picture for this store and not the other's
   const dressing = c => filesOf(c).filter(([field, url]) => url && (field.startsWith('endCard.') || field === 'endCardCta.image' || field === `storeButton.${os}`));
@@ -167,7 +171,7 @@ export function createIndieAds({ host, rating = null, catalogue, placements = {}
   async function askMix() {
     const stop = new AbortController(), timer = setTimeout(() => stop.abort(), 4000);
     try {
-      const res = await fetch(asks(String(mixUrl), host), { signal: stop.signal });
+      const res = await fetch(asks(String(mixUrl), { host }), { signal: stop.signal });
       const answer = res.ok && believed(await res.json());
       if (answer) { try { storage.setItem(MIX_KEY, JSON.stringify({ ...answer, at: now() })); } catch { /* full or private */ } return answer; }
     } catch { /* offline, or no such server: the last answer */ } finally { clearTimeout(timer); }

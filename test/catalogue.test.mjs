@@ -253,12 +253,12 @@ test("what the schema says of them is what's read: each bound taken, a step past
   for (const backdrop of fields.backdrop.enum) assert.equal(kept('backdrop', backdrop), true, backdrop);
 });
 
-test('the catalogue is asked for with the game that asks said in its address, and what it names beside itself is still found', async () => {
-  const { createIndieAds } = await import('../core/index.js');
+test('the catalogue is asked for with the game that asks, and this release, said in its address, and what it names beside itself is still found', async () => {
+  const { createIndieAds } = await import('../core/index.js'), { SDK } = await import('../core/wire.js');
   const body = JSON.stringify({ version: 1, apps: { b: { name: 'B', studio: 't', ios: { id: 2 } } }, creatives: [{ id: 'b-15', app: 'b', kind: 'video', secs: 15, src: 'creatives/b.mp4' }] });
   const asked = async url => { const went = []; const cat = await createIndieAds({ host: 'my game', catalogue: url, storage: memory(), cache: false, fetch: async u => { went.push(String(u)); return { ok: true, text: async () => body, headers: { get: () => null } }; } }).catalogue; return [went[0], cat.creatives[0].src]; };
-  assert.deepEqual(await asked('https://x.test/ads/catalogue.json'), ['https://x.test/ads/catalogue.json?host=my%20game', 'https://x.test/ads/creatives/b.mp4']);
-  assert.equal((await asked('https://x.test/ads/catalogue.json?v=2'))[0], 'https://x.test/ads/catalogue.json?v=2&host=my%20game');
+  assert.deepEqual(await asked('https://x.test/ads/catalogue.json'), [`https://x.test/ads/catalogue.json?host=my%20game&sdk=${SDK}`, 'https://x.test/ads/creatives/b.mp4']);
+  assert.equal((await asked('https://x.test/ads/catalogue.json?v=2'))[0], `https://x.test/ads/catalogue.json?v=2&host=my%20game&sdk=${SDK}`);
 });
 
 test("the network's page of its games: kept if it's https and ends in a /, and no other", () => {

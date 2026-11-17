@@ -6,7 +6,7 @@ A game needs none of it but the catalogue. With no `ingest` nothing is counted, 
 
 | The game is given | It asks | For |
 |---|---|---|
-| `catalogue` | `GET` the catalogue's URL | What can be shown |
+| `catalogue` | `GET <catalogue>?host=<game>&sdk=<release>` | What can be shown (`sdk` since 0.6.17) |
 | `ingest` | `POST` to it | Counting what was shown |
 | `mix` | `GET <mix>?host=<game>` | The share of a game's slots the network asks for |
 | `reports` (or `/flag` beside the ingest) | `POST` to it | A player's report of an ad |
