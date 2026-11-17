@@ -1,6 +1,6 @@
 {
   "name": "indie-ads",
-  "version": "0.6.8",
+  "version": "0.6.9",
   "license": "MIT",
   "description": "Rewarded and interstitial ads for indie games, in indie games: 15/30 s videos and MRAID playables, a countdown and an exit, one store-link format for iOS and Android. No dependencies.",
   "type": "module",

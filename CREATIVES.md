@@ -19,7 +19,7 @@ The network's player draws these over and after every creative, always in the sa
 
 So a creative is all game. Leave out "Download now" buttons, store badges and an end card of your own, and keep anything that matters out of the top 12% of the frame. (To change the card the player shows, see the next section: that is the player's card dressed, not one baked into your video.)
 
-## Current endcard presentation (unreleased)
+## Current endcard presentation (0.6.9)
 
 New creatives opt in with `endCardCta`, `endCardSecs`, or a video's `endCardMode: "orientation"`. They use one top-right countdown, then Skip, then ✕ on the endcard. There is no separate close button or Reward earned label. Rewards and their callbacks are unchanged. The endcard holds for `endCardSecs` seconds (0–30, default 3), counting only while visible; reward eligibility must also be satisfied before closing.
 

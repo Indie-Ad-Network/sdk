@@ -6,7 +6,7 @@ The repository has one version, [Semantic Versioning](https://semver.org), and a
 
 Two numbers are not this one, and change only when a format does: `VERSION` in `core/wire.js` (what games send the ingest) and the catalogue's `version`. Games already released go on sending and reading the old ones.
 
-## [Unreleased]
+## [0.6.9] - 2026-11-17
 
 - Opt-in endcard display: one countdown/Skip/close control, a configurable minimum endcard time (default 3 seconds), and no Reward earned label. Existing creatives retain their released presentation.
 - Independent large or compact call to action, optional compact action during playback, background darkening and a fixed 0.5-second action fade. Earlier custom-button images and pulses remain supported and cached.
