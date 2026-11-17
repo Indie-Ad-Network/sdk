@@ -6,7 +6,7 @@ The repository has one version, [Semantic Versioning](https://semver.org), and a
 
 Two numbers are not this one, and change only when a format does: `VERSION` in `core/wire.js` (what games send the ingest) and the catalogue's `version`. Games already released go on sending and reading the old ones.
 
-## [Unreleased]
+## [0.6.17] - 2026-11-18
 
 ### Added
 - **The catalogue is asked for with this release in its address** (`&sdk=0.6.17`, after the game's `host`), so a server can give each release what it can draw. The network's server uses it to give a playable that may be played on its end card style only where Keep playing is drawn on it (0.6.17 on); earlier releases, which don't say, are given the player's own card. A plain file's server takes no notice.
