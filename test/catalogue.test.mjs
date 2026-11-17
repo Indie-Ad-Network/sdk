@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { validate, loadCatalogue } from '../core/catalogue.js';
+import { validate, loadCatalogue, filesOf } from '../core/catalogue.js';
 import { withShim, shim, LOCKED } from '../core/mraidShim.js';
 import { openHistory, memoryStorage as memory } from '../core/history.js';
 import { DAY } from '../core/pick.js';
@@ -265,4 +265,24 @@ test("the network's page of its games: kept if it's https and ends in a /, and n
   const cat = more => validate({ version: 1, more, apps: {}, creatives: [] }).more;
   assert.equal(cat('https://ads.example/games/'), 'https://ads.example/games/');
   for (const bad of ['http://ads.example/games/', 'javascript:alert(1)', 'https://ads.example/ games/', 'https://ads.example', 7, undefined]) assert.equal(cat(bad), null);
+});
+
+
+test('modern endcards validate, resolve cached art and normalize the fixed CTA fade', () => {
+  const read = more => validate({ ...good, creatives: [{ ...good.creatives[0], ...more }] }, BASE);
+  const cat = read({ endCardMode: 'orientation', endCardSecs: 3, endCardCta: { type: 'custom', image: 'button.png', fade: true, pulse: {} } });
+  assert.deepEqual(cat.dropped, []);
+  const c = cat.creatives[0];
+  assert.equal(c.endCardMode, 'orientation'); assert.equal(c.endCardSecs, 3);
+  assert.equal(c.endCardCta.fade, 0.5);
+  assert.deepEqual(c.endCardCta.pulse, { maxSize: 105, secs: 1 });
+  assert.ok(filesOf(c).some(([field, url]) => field === 'endCardCta.image' && url === 'https://example.com/indie-ads/button.png'));
+  assert.equal(read({ endCardCta: { type: 'large', fade: 4, during: false } }).creatives[0].endCardCta.fade, 0.5);
+  assert.equal(read({ endCardCta: { type: 'compact', fade: false } }).creatives[0].endCardCta.fade, 0);
+  for (const more of [{ endCardSecs: -1 }, { endCardSecs: 31 }, { endCardMode: 'other' }, { endCardCta: { type: 'custom', image: 'http://plain.example/b.png' } }, { endCardCta: { type: 'compact', during: 'yes' } }, { endCardCta: { type: 'large', fade: 6 } }]) {
+    const field = Object.keys(more)[0], result = read(more);
+    assert.equal(result.creatives.length, 1);
+    assert.equal(field in result.creatives[0], false);
+    assert.equal(result.dropped.length, 1);
+  }
 });

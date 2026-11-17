@@ -1,7 +1,9 @@
+import { play as playLegacy } from './legacyPlayer.js';
+
 // ---------- the ad player ----------
 // A full-screen layer over the host game that plays one creative and resolves when it's
 // closed: { granted, watchedSecs }. It promises the player two things, always in the same
-// places: how long is left (the ring, top right) and a way out (✕, top left).
+// place: a top-right countdown becomes Skip, then ✕ once its end can be closed.
 //
 //   video     the ring follows the video; at its end, the reward, and an end card with the store button.
 //             What a creative may ask besides (catalogue.js; none of it unless it does):
@@ -40,11 +42,11 @@
 // the player was doing: there's no reward and nothing to forfeit. The game says the least time it
 // holds the player (`least`: 5 s unless it says). A video shows Skip at that time, 12 s in at the
 // latest (pick.js skipAtOf): Skip takes it to its end, the end card or whatever it ends on, and ✕ is
-// there 3 s later. A video that reaches its end by itself has ✕ at once. A playable or a still card has
-// ✕ at the game's time, and it closes at once. Until then there is no ✕ to press.
+// there after the configured minimum endcard time (3 s by default). Natural endings
+// use the same minimum. The timer and reward eligibility must both finish before ✕.
 // A rewarded video's reward comes at the game's time, if it says one (`least`), or at the creative's
 // own earliest (`skipFrom`), and with both at the later; with neither, at its end. A reward in
-// before a video's end, ✓ takes the video to its end card, and from there the player leaves.
+// before a video's end, Skip takes it to its end card, then ✕ closes it.
 // A rewarded playable's reward is at its own time, whatever the game's.
 //
 // The "Ad" label is a button, with an ⓘ beside the word: it stops the clock and says whose ad this is (the
@@ -52,16 +54,15 @@
 // few words if the player has any (`report`, from index.js: to the ingest's /flag, for the dashboard). Apple asks
 // both of an app with ads (App Store Review Guidelines 2.5.18).
 //
-// ✕ before the reward stops everything and asks (leaving forfeits it); after, it closes at once.
-// So does the ✓ the ring turns into, and the words beside it: they look like a way on, so they are one.
+// The single control is disabled until eligible, then offers Skip while the ad is still
+// playing and ✕ once it stands ended. Escape or platform back can still ask to leave early.
 // The clock counts only time on screen: hidden, or asking, or with the store open, it waits.
-// The reward's state is shape and symbol, not hue alone: an emptying ring with a number,
-// then a filled disc with a ✓ and the words.
+// A number shows time remaining; Skip and ✕ show the available action.
 //
 // In a shadow root, so the host's CSS can't reach in, and this CSS can't leak out.
 import { withShim } from './mraidShim.js';
 import { STEP, STEP_NAME, STEPS_MAX, SDK, REASONS } from './wire.js';
-import { leastOf, skipAtOf, HOLD_SECS } from './pick.js';   // HOLD_SECS: an interstitial's video left by Skip, how long its end stands before ✕ is there
+import { leastOf, skipAtOf, HOLD_SECS } from './pick.js';   // default minimum time on the endcard
 import { stringsFor, say } from './locale.js';
 import { MARK } from './mark.js';
 
@@ -92,22 +93,21 @@ button { font-family: inherit; cursor: pointer; }
   .playable .bar button { pointer-events: auto; }
   .tag { visibility: hidden; }   /* and the game's name not written across the game: it's on the card, and behind the ⓘ */
 }
-.x { width: 44px; height: 44px; flex: none; border: 2px solid #fff; border-radius: 50%; background: #000a; color: #fff; font: 700 20px/1 system-ui, sans-serif; padding: 0; }
 .tag { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 13px; text-shadow: 0 1px 3px #000; }
 .about { flex: none; display: flex; align-items: center; gap: 5px; height: 44px; margin: 0 -4px; padding: 0 4px; border: 0; background: none; color: inherit; text-shadow: 0 1px 3px #000; }
 .about i { font-style: normal; opacity: .75; letter-spacing: .1em; text-transform: uppercase; font-size: 11px; padding: 2px 5px; border: 1px solid #fff9; border-radius: 4px; }
 .about b { width: 18px; height: 18px; border: 1.5px solid #fffc; border-radius: 50%; font: italic 700 12px/15px Georgia, "Times New Roman", serif; text-align: center; opacity: .9; }
-.earned { padding: 7px 12px; border: 0; border-radius: 999px; background: #fff; color: #10202f; font-weight: 800; font-size: 14px; white-space: nowrap; }
-.skip { height: 44px; flex: none; padding: 0 16px; border: 2px solid #fff; border-radius: 999px; background: #000a; color: #fff; font-weight: 800; font-size: 15px; white-space: nowrap; }
-.skip i { margin-inline-start: 6px; font-style: normal; }
 .ring { position: relative; width: 44px; height: 44px; flex: none; padding: 0; border: 0; background: none; color: inherit; }
 .ring svg { position: absolute; top: 0; right: 0; bottom: 0; left: 0; transform: rotate(-90deg); }
 .ring circle { fill: #000a; stroke: #fff4; stroke-width: 4; transition: fill .15s; }
 .ring .left { fill: none; stroke: #fff; stroke-linecap: round; stroke-dasharray: ${C}; transition: stroke-dashoffset ${TICK}ms linear; }
+.ring.skippable { width: auto; min-width: 44px; padding: 0 16px; border: 2px solid #fff; border-radius: 999px; background: #000a; }
+.ring.skippable svg { display: none; }
+.ring.skippable > b { position: static; white-space: nowrap; }
+.ring.closable circle { stroke: #fff; stroke-width: 2; }
+.ring.closable .left { display: none; }
+.ring.closable b { font-size: 22px; }
 .ring b { position: absolute; top: 0; right: 0; bottom: 0; left: 0; display: flex; align-items: center; justify-content: center; font: 800 17px/1 system-ui, sans-serif; font-variant-numeric: tabular-nums; }
-.ring.done circle { fill: #1f9d3a; stroke: #fff; }
-.ring.done .left { stroke: none; }
-.ring.done b { font-size: 24px; }
 .get { height: 44px; flex: none; display: flex; align-items: center; gap: 8px; padding: 4px 16px 4px 4px; border: 0; border-radius: 999px; background: #1f6fd6; color: #fff; font-weight: 900; font-size: 15px; line-height: 1; white-space: nowrap; box-shadow: 0 2px 8px #0006; }
 .get:not(:has(img)) { padding-left: 16px; }
 .stage { position: relative; flex: 1; min-height: 0; overflow: hidden; }
@@ -135,8 +135,20 @@ video.go { cursor: pointer; }
 .end .more { margin-top: 0; padding: 12px 28px; border: 2px solid #fff; background: #0004; font-size: 17px; box-shadow: none; }
 .acts { display: contents; }
 /* a card dressed by its creative: its art whole, over a blur of itself; and the store button where it's asked for */
-.end img.whole { display: block; position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; border-radius: 0; box-shadow: none; background: none; }
-.end:not(.dressed) img.whole, .end:not(.dressed) > .blur { display: none; }
+.end img.whole { display: block; position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; object-position: center; border-radius: 0; box-shadow: none; background: none; }
+.end:not(.dressed):not(.matched) img.whole, .end:not(.dressed):not(.matched) > .blur { display: none; }
+/* Matching-orientation art changes only the picture. Keep the default layout for controls,
+   including the space occupied by the details, and leave the store banner policy alone. */
+.end.matched { background: #000; overflow: hidden; }
+/* A video's still uses the video's full stage and leaves its backdrop showing through
+   the same letterboxing. Its controls keep their normal layout above the picture. */
+.end.matched.video-frame { background: none; }
+.end.matched.video-frame > .blur { display: none; }
+.end.matched.video-frame > .whole { grid-area: auto; }
+.end.matched.video-frame:not(.cta-configured) > .acts, .end.matched.video-frame:not(.cta-configured) > .placed { display: none; }
+.end.matched > img:not(.whole), .end.matched > h1, .end.matched > p, .end.matched > small { visibility: hidden; }
+.end.matched .acts > button { position: relative; z-index: 1; }
+.end.matched > .whole, .end.matched > .blur { pointer-events: none; }
 .end.dressed { display: block; padding: 0; background: #000; overflow: hidden; }
 .end.dressed > img:not(.whole), .end.dressed h1, .end.dressed p, .end.dressed small { display: none; }
 .dressed .acts { position: absolute; left: 0; right: 0; bottom: calc(16px + env(safe-area-inset-bottom)); display: flex; justify-content: center; }
@@ -182,6 +194,22 @@ video.go { cursor: pointer; }
 .info .reason[aria-pressed="true"] { border-color: #10202f; background: #10202f; color: #fff; }
 .info .see { padding: 10px 4px; border-radius: 0; background: none; color: #10202f; font-weight: 800; font-size: 15px; line-height: 1.3; text-decoration: underline; }
 .info em { font-style: normal; font-weight: 800; font-size: 16px; color: #1f7a30; }
+/* Explicit CTA styles sit independently of the card's artwork or a looping video. */
+.end.cta-configured { background: none; pointer-events: none; }
+.end.cta-configured.art:not(.matched) { background: var(--art) center / cover no-repeat; }
+.end.cta-configured > img:not(.whole), .end.cta-configured > h1, .end.cta-configured > p, .end.cta-configured > small, .end.cta-configured > .acts { display: none; }
+.end.cta-configured.custom-failed > .placed { display: none; }
+.cta-panel { position: absolute; top: 0; right: 0; bottom: 0; left: 0; z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 72px 24px 24px; text-align: center; pointer-events: none; }
+.cta-panel.darken { background: #0008; }
+.cta-panel img { width: 96px; height: 96px; border-radius: 22%; box-shadow: 0 6px 20px #0008; }
+.cta-panel h1 { margin: 0; font-weight: 900; font-size: 26px; }
+.cta-panel p { margin: 0; max-width: 30em; font-size: 16px; }
+.cta-panel small { opacity: .7; font-size: 12px; }
+.cta-panel button { pointer-events: auto; margin-top: 8px; padding: 16px 34px; border: 0; border-radius: 999px; background: #1f6fd6; color: #fff; font-weight: 900; font-size: 19px; line-height: 1; box-shadow: 0 4px 0 #154f9c; }
+@media (orientation: landscape) and (max-height: 500px) { .cta-panel { gap: 8px; padding: 52px 24px 16px; } .cta-panel img { width: 64px; height: 64px; } .cta-panel h1 { font-size: 22px; } .cta-panel button { padding: 12px 28px; } }
+@keyframes cta-appear { from { opacity: 0; } to { opacity: 1; } }
+.cta-enter { animation: cta-appear 0.5s ease-out both; }
+@media (prefers-reduced-motion: reduce) { .cta-enter { animation: none; } }
 [hidden] { display: none !important; }
 `;
 
@@ -195,7 +223,7 @@ video.go { cursor: pointer; }
 // stands ended, over the end card or a video's own, and taken away with null.
 // Resolves { granted, watchedSecs, kind }: `kind` is what was shown in the end, 'card' if it came to that;
 // `granted` of an interstitial says only that it stayed up until it could be closed.
-export function play({ creative, app, html, link, ctaText, reward, format = 'rewarded', least = null, limit = null, picture = null, muted = false, emit = () => {}, openStore, banner = null, report = null, more = null, words = stringsFor('en') }) {
+function playCurrent({ creative, app, html, link, ctaText, reward, format = 'rewarded', least = null, limit = null, picture = null, muted = false, emit = () => {}, openStore, banner = null, report = null, more = null, words = stringsFor('en') }) {
   const { t } = words;   // the player's own words, in the player's language (locale.js)
   const doc = document;
   let { kind } = creative;
@@ -205,23 +233,25 @@ export function play({ creative, app, html, link, ctaText, reward, format = 'rew
   const icon = app.icon ? `<img src="${esc(app.icon)}" alt="">` : '';
   // the end card as its creative dresses it: its art, and the store button where it's put, as a picture for this store or in the player's words
   // (`picture`: the button's, for the player's store, if the creative has one)
-  const button = creative.storeButton, inWords = `<b>${esc(ctaText)}</b>`;
+  const matching = creative.endCardMode === 'orientation', failedArt = new Set();
+  const cta = creative.endCardCta, custom = cta?.type === 'custom' && !!cta.image;
+  let customFailed = false;
+  const button = cta ? (custom ? { portrait: cta, landscape: cta, ...(cta.pulse && { pulse: { scale: (cta.pulse.maxSize ?? 105) / 100, secs: cta.pulse.secs ?? 1 } }) } : null) : creative.storeButton;
+  const buttonPicture = cta ? (custom ? cta.image : null) : picture, inWords = `<b>${esc(ctaText)}</b>`;
   let arts = creative.endCard;   // null once its art has failed to come: the player's own card then
   const rests = kind === 'video' && !!creative.ownCard;   // a video that ends on a card of its own, and rests on it: the store button alone over its last frame
-  const placed = link && (arts || button || rests) ? `<button class="placed go${button?.pulse ? ' pulse' : ''}"><span>${picture ? `<img src="${esc(picture)}" alt="${esc(ctaText)}">` : inWords}</span></button>` : '';
+  const placed = link && (cta ? custom : ((!matching && arts) || button || rests)) ? `<button class="placed go${button?.pulse ? ' pulse' : ''}"><span>${buttonPicture ? `<img src="${esc(buttonPicture)}" alt="${esc(ctaText)}">` : inWords}</span></button>` : '';
   root.innerHTML = `<style>${CSS}</style>
 <div class="layer ${kind}" lang="${esc(words.lang)}" dir="${words.rtl ? 'rtl' : 'ltr'}">
   <div class="bar">
-    <button class="x" aria-label="${esc(t.close)}"${format === 'interstitial' ? ' hidden' : ''}>✕</button>
     <button class="about" aria-label="${esc(t.about)}"><i>${esc(t.ad)}</i><b aria-hidden="true">i</b></button>
     <span class="tag">${esc(app.name)}</span>
-    <button class="earned" hidden>${esc(reward ? say(t.earned, { reward }) : t.earnedPlain)}</button>
-    <button class="skip" hidden>${esc(t.skip)}<i aria-hidden="true">▸</i></button>
-    <button class="ring" role="timer" disabled><svg viewBox="0 0 44 44"><circle cx="22" cy="22" r="${R}"/><circle class="left" cx="22" cy="22" r="${R}"/></svg><b></b></button>
     ${link && kind === 'playable' && creative.keepPlaying ? `<button class="get go" hidden>${icon}<span>${esc(ctaText)}</span></button>` : ''}
+    <button class="ring" role="timer" disabled><svg viewBox="0 0 44 44"><circle cx="22" cy="22" r="${R}"/><circle class="left" cx="22" cy="22" r="${R}"/></svg><b></b></button>
   </div>
   <div class="stage" data-loading="${esc(t.loading)}">
-    <div class="end${app.art ? ' art' : ''}" hidden>${arts ? '<div class="blur"></div><img class="whole" alt="">' : ''}${icon}<h1>${esc(app.name)}</h1><p>${esc(creative.line ?? app.line)}</p>${app.studioName ? `<small>${esc(app.studioName)}</small>` : ''}<div class="acts">${link && !placed ? `<button class="go">${esc(ctaText)}</button>` : ''}<button class="more" hidden>${esc(t.keepPlaying)}</button></div>${placed}</div>
+    <div class="end${cta ? ' cta-configured' : ''}${app.art ? ' art' : ''}${kind === 'video' && matching ? ' video-frame' : ''}" hidden>${arts ? '<div class="blur"></div><img class="whole" alt="">' : ''}${icon}<h1>${esc(app.name)}</h1><p>${esc(creative.line ?? app.line)}</p>${app.studioName ? `<small>${esc(app.studioName)}</small>` : ''}<div class="acts">${link && !placed ? `<button class="go">${esc(ctaText)}</button>` : ''}<button class="more" hidden>${esc(t.keepPlaying)}</button></div>${placed}</div>
+    ${cta?.type === 'large' ? `<div class="cta-panel${cta.darken !== false ? ' darken' : ''}" hidden>${icon}<h1>${esc(app.name)}</h1><p>${esc(creative.line ?? app.line)}</p>${app.studioName ? `<small>${esc(app.studioName)}</small>` : ''}${link ? `<button class="go">${esc(ctaText)}</button>` : ''}</div>` : ''}
   </div>
   ${link ? `<button class="store go" hidden>${icon}<span>${esc(app.name)}</span><em>${esc(ctaText)}</em></button>` : ''}
   <div class="ask" hidden><div><b>${esc(t.leaveTitle)}</b><span>${esc(reward ? say(t.miss, { reward }) : t.missPlain)}</span><button class="keep">${esc(t.keep)}</button><button class="leave">${esc(t.leave)}</button></div></div>
@@ -239,9 +269,12 @@ export function play({ creative, app, html, link, ctaText, reward, format = 'rew
   function dress() {
     if (!$('.info').hidden) return;   // a keyboard up over the report box is no turn of the screen; it's dressed again when that's put away
     const w = stage.clientWidth, h = stage.clientHeight, [shape, other] = w > h ? ['landscape', 'portrait'] : ['portrait', 'landscape'], unit = Math.min(w, h) / 720;
-    const art = arts && (arts[shape] || arts[other]);
+    const chosen = arts && (matching ? arts[shape] : (arts[shape] || arts[other]));
+    const art = chosen && !failedArt.has(chosen) ? chosen : null;
     if (art && drawn.getAttribute('src') !== art) { drawn.src = art; $('.end .blur').style.backgroundImage = cssUrl(art); }
-    end.classList.toggle('dressed', !!art);
+    end.classList.toggle('dressed', !!art && !matching);
+    end.classList.toggle('matched', !!art && matching);
+    if (kind === 'video' && matching && !end.hidden && !end.classList.contains('bare')) endLink();
     if (!put) return;
     const at = button?.[shape] ?? {}, [row, col] = (at.anchor ?? 'bottom-center').split('-'), width = (at.width ?? 360) * unit, s = put.style;
     // along one axis: from its centre, or in from the edge it's set against; → how far it's then moved back by its own size
@@ -251,10 +284,16 @@ export function play({ creative, app, html, link, ctaText, reward, format = 'rew
     s.width = `${width}px`; s.fontSize = `${Math.max(14, width / 9)}px`;
   }
   if (button?.pulse) { put?.style.setProperty('--pace', `${button.pulse.secs ?? 1}s`); put?.style.setProperty('--swell', button.pulse.scale ?? 1.05); }
-  $('.placed img')?.addEventListener('error', () => { $('.placed span').innerHTML = inWords; });   // no picture of it: the words
-  drawn?.addEventListener('error', () => { arts = null; dress(); });
+  $('.placed img')?.addEventListener('error', () => {
+    if (custom) { customFailed = true; end.classList.add('custom-failed'); if (!end.hidden) endLink(end.classList.contains('bare') ? 'bare' : 'card'); }
+    else $('.placed span').innerHTML = inWords;
+  });   // no picture of it: the words
+  drawn?.addEventListener('error', () => {
+    if (matching) failedArt.add(drawn.getAttribute('src')); else arts = null;
+    dress();
+  });
 
-  let total = creative.secs, elapsed = 0, shownLeft = null, granted = false, closed = false, video = null, frame = null;
+  let total = creative.secs, elapsed = 0, granted = false, closed = false, video = null, frame = null;
   let over = false;   // a video's showing is past its playing: at its end, or left for it (an overrun video, once the reward is in)
   // a `keepPlaying` playable past its time: 'resting' under the end card, then 'kept' when the player plays on
   let overtime = null;
@@ -262,13 +301,14 @@ export function play({ creative, app, html, link, ctaText, reward, format = 'rew
   // The least time the game holds the player to this ad (`least`, the placement's: pick.js leastOf, which is what a caller that says none gets).
   // A rewarded ad's is null where the game has said none.
   const min = least ?? leastOf({ format }), skipAt = skipAtOf(min);
-  // An interstitial's video isn't closed from where it plays: Skip is there at the game's time (skipAtOf), and takes it to its end, where ✕ is
-  // HOLD_SECS later (`hold` counts them). One that reaches its end by itself has ✕ at once. Anything else of an interstitial's has ✕ at the game's time.
+  // Skip is offered at the placement's time. Every ending then waits out the
+  // creative's minimum endcard time before its close control is enabled.
   const skips = () => !rewarded && !!video && !over;
-  let hold = 0, offered = false;
+  const endSecs = creative.endCardSecs ?? HOLD_SECS;
+  let endRemaining = 0, endStarted = false, endLast = 0, offered = false;
   // Seconds until the way out is free. A rewarded ad's reward: at the game's time, where it says one, or the creative's own earliest (`skipFrom`),
-  // and with both the later; with neither at its end (or at `limit`, for one marked `overrun`). The reward in before a video's end, ✓ takes it to
-  // its end card. An interstitial's ✕; or for its video, Skip.
+  // and with both the later; with neither at its end (or at `limit`, for one marked `overrun`). The reward in before a video's end, Skip takes it to
+  // its end card. An interstitial's Skip or ✕ uses the same control.
   const earns = creative.skipFrom != null ? Math.max(min ?? 0, creative.skipFrom) : min ?? limit ?? Infinity;
   // That earlier reward is for a creative that says it may be left early: any video, and a playable with a `skipFrom` of its own, which then
   // plays on to its time with the reward in (`early`). Another playable, or the still card, is over when its own time is, and its reward
@@ -280,22 +320,38 @@ export function play({ creative, app, html, link, ctaText, reward, format = 'rew
   let finish;
   const result = new Promise(done => { finish = done; });
 
+  // One control stays at the top right throughout the ad. Reward eligibility and
+  // the endcard are separate: Skip reaches the end; ✕ closes only once there.
+  const atEnd = () => kind === 'video' ? over || !video : kind !== 'playable' || !frame || overtime != null || !!creative.ownCard;
   const draw = () => {
-    if (granted || (offered && !hold)) return;
-    const of = hold > 0 ? HOLD_SECS : need(), gone = hold > 0 ? HOLD_SECS - hold : elapsed, left = Math.ceil(Math.max(0, of - gone));
-    if (left !== shownLeft) number.textContent = shownLeft = left;
+    const ready = (granted || (offered && !atEnd())) && endRemaining <= 0;
+    const closing = ready && granted && atEnd();
+    ring.hidden = false;
+    ring.disabled = !ready;
+    $('.more').disabled = endRemaining > 0;
+    ring.classList.toggle('skippable', ready && !closing);
+    ring.classList.toggle('closable', closing);
+    if (ready) {
+      ring.removeAttribute('role');
+      ring.setAttribute('aria-label', closing ? t.close : t.skip);
+      number.textContent = closing ? '✕' : t.skip + ' ▸';
+      return;
+    }
+    ring.setAttribute('role', 'timer'); ring.removeAttribute('aria-label');
+    const eligibleIn = granted ? 0 : Math.max(0, need() - elapsed);
+    const endIsLonger = endRemaining > 0 && endRemaining >= eligibleIn;
+    const of = endIsLonger ? endSecs : need(), gone = endIsLonger ? endSecs - endRemaining : elapsed;
+    const left = Math.ceil(Math.max(eligibleIn, endRemaining));
+    number.textContent = left;
     arc.style.strokeDashoffset = C * (of > 0 ? Math.min(1, gone / of) : 1);
   };
-  // Skip, in the ring's place: the game's time is nearly up (or was none)
-  function offer() { if (offered) return; offered = true; ring.hidden = true; $('.skip').hidden = false; }
+  function offer() { if (offered) return; offered = true; draw(); }
   function grant() {
     if (granted) return;
     granted = true;
-    if (!rewarded) { hold = 0; ring.hidden = true; $('.skip').hidden = true; $('.x').hidden = false; return; }   // free to go: nothing earned, and the clock runs on for how long they stayed
-    if (!video && !(kind === 'playable' && (creative.keepPlaying || elapsed < total))) clearInterval(clock);   // nothing left to count; but a playable with time left, or one that may be played on, counts on, and a video's stops at its end (toEnd)
-    ring.classList.add('done'); number.textContent = '✓';
-    ring.disabled = false; ring.removeAttribute('role'); ring.setAttribute('aria-label', t.done);   // a button now: the way back to the game
-    $('.earned').hidden = false;
+    if (atEnd()) startEndHold();
+    if (!rewarded) { draw(); return; }
+    draw();
     emit('reward', { secs: secs() });
   }
   // the store's own banner, where there is one for this link (a sheet's: the App Store's, by the game's id)
@@ -308,13 +364,40 @@ export function play({ creative, app, html, link, ctaText, reward, format = 'rew
   }
   // the ad stands ended, on `ends`: the player's 'card'; a video's 'own' last frame, nothing of the player's over it (as `ownEndCard` asks);
   // or 'bare', the store button alone over a video's loop or its own last frame, and no banner under that
+  function startEndHold() {
+    if (endStarted) return;
+    endStarted = true; endRemaining = endSecs; endLast = performance.now();
+  }
   function endCard(ends = 'card') {
+    startEndHold();
     const alone = ends === 'bare';
     if (ends === 'card' || (alone && put)) end.hidden = false;   // `put`: the store button as the creative places it, which over a video stands in the bar's place
     end.classList.toggle('bare', alone);
     end.style.opacity = end.style.pointerEvents = '';   // whatever a fade left it at
-    if ($('.store')) $('.store').hidden = !alone || !!put;
-    $('.sound')?.remove(); storeBanner(ends === 'own' || (ends === 'card' && !put));   // the store's banner: under the player's own card, or a video's; never across one a creative has dressed
+    $('.sound')?.remove(); endLink(ends); draw();
+  }
+  // A custom video still and a loop share the same bottom app link. A missing image
+  // restores the default card's action and native banner, including after rotation.
+  function revealCta(element, show) {
+    if (!element) return;
+    const entering = show && element.hidden;
+    element.hidden = !show;
+    if (!show) element.classList.remove('cta-enter');
+    else if (entering && cta?.fade > 0) {
+      element.classList.add('cta-enter');
+    }
+  }
+  function endLink(ends = 'card') {
+    if (cta) {
+      const type = cta.type === 'custom' && (!custom || customFailed) ? 'compact' : cta.type;
+      revealCta($('.cta-panel'), type === 'large');
+      revealCta($('.store'), type === 'compact');
+      storeBanner(false);
+      return;
+    }
+    const image = ends === 'card' && kind === 'video' && matching && end.classList.contains('matched');
+    if ($('.store')) $('.store').hidden = !image && (ends !== 'bare' || !!put);
+    storeBanner(ends === 'own' || (ends === 'card' && !put && !image));
   }
   // the video gone, and its decoder and download with it; `video` is null first, so its last events are heard by no one
   const dropVideo = () => { const v = video; if (!v) return; video = null; v.pause(); v.removeAttribute('src'); v.load(); v.remove(); };
@@ -338,23 +421,22 @@ export function play({ creative, app, html, link, ctaText, reward, format = 'rew
       f.remove(); stage.removeAttribute('data-loading');   // nor "Loading…", which shows where there's no frame
       wait('loading', false);   // one gone before it had loaded: the clock isn't left waiting for a page that won't arrive
       $('.more').hidden = true; $('.get')?.setAttribute('hidden', '');
-      if (rewarded && granted) { ring.hidden = false; $('.earned').hidden = false; }   // the ✓ back, where the store button was
     }
     endCard();
   }
   // Keep playing: the card goes, the page is told it's seen and heard again, and the ✓ (or, for an
-  // interstitial, the place it was) is a store button; ✕ is the way out
+  // interstitial, the same space) offers the store link beside the unified close control
   function keepPlaying() {
-    if (overtime !== 'resting') return;   // only then is there a card to put away, and a page under it
+    if (overtime !== 'resting' || endRemaining > 0) return;   // only then is there a card to put away, and a page under it
     overtime = 'kept';
     end.hidden = true; storeBanner(false);
-    if ($('.get')) { ring.hidden = true; $('.earned').hidden = true; $('.get').hidden = false; }
+    if ($('.get')) $('.get').hidden = false;
     total = elapsed + KEEP_SECS;
     toFrame('volume', muted ? 0 : 100); toFrame('viewable', !waits.size);
-    emit('keep_playing', { secs: secs() });
+    emit('keep_playing', { secs: secs() }); draw();
   }
   // the still card in the creative's place, for CARD_SECS more
-  function toCard() { dropVideo(); kind = 'card'; if (offered && !granted) { offered = false; $('.skip').hidden = true; ring.hidden = false; } total = Math.min(total || Infinity, elapsed + CARD_SECS); endCard(); }
+  function toCard() { dropVideo(); kind = 'card'; if (offered && !granted) offered = false; total = Math.min(total || Infinity, elapsed + CARD_SECS); endCard(); }
   // a video that won't play, or has stopped: no reason to keep the player waiting. The still card; or, the reward already in, the end card as it would have come
   function broken(why) { emit('fail', { why }); if (granted) { dropVideo(); endCard(); } else toCard(); }
   function close() {
@@ -370,6 +452,7 @@ export function play({ creative, app, html, link, ctaText, reward, format = 'rew
     if (on) waits.add(why); else waits.delete(why);
     const now = waits.size > 0;
     if (was === now) return;
+    endLast = performance.now();
     if (video && !video.ended && (!over || creative.loop)) { if (now) video.pause(); else video.play().catch(() => {}); }   // not one left standing under its card
     if (overtime !== 'resting') toFrame('viewable', !now);   // one paused under the card stays paused
   }
@@ -381,11 +464,16 @@ export function play({ creative, app, html, link, ctaText, reward, format = 'rew
     last = now;
     if (video) { if (!over) { elapsed = video.currentTime; during(dt); } }
     else if (!waits.size && !(granted && rewarded && overtime !== 'kept' && (!frame || elapsed >= total))) elapsed += dt;   // the reward in and its time up: nothing more to count, unless it's played on
-    if (hold > 0) { if (!waits.size && (hold -= dt) <= 0) grant(); }   // its end, stood for long enough: ✕
-    else if (skips()) { if (skipAt < total && elapsed >= skipAt) offer(); }   // one shorter than that comes to its end first
+    if (endRemaining > 0) {
+      const endDt = Math.min(dt, Math.max(0, (now - endLast) / 1000));
+      endLast = now;
+      if (!waits.size) endRemaining = Math.max(0, endRemaining - endDt);
+    }
+    if (skips()) { if (skipAt < total && elapsed >= skipAt) offer(); }   // one shorter than that comes to its end first
     else if (!granted && elapsed >= need()) { if (rewarded && !video && need() >= total) elapsed = total; grant(); }   // its time out; or, sooner than that, a playable's reward, which plays on
     if (frame && overtime !== 'resting' && elapsed >= total && !creative.ownCard) endPlayable({ rest: !overtime });   // its time is up (an interstitial's playable runs on past its ✕, to here): a rest the first time, the end if it was played on
     draw();
+    if (granted && rewarded && endRemaining <= 0 && (video ? over : !(kind === 'playable' && (creative.keepPlaying || elapsed < total)))) clearInterval(clock);
   }, TICK);
 
   // ---- the creative ----
@@ -418,25 +506,23 @@ export function play({ creative, app, html, link, ctaText, reward, format = 'rew
     if (link && wholeFrom != null) { go = () => video.classList.toggle('go', whole()); video.addEventListener('click', () => { if (whole()) store('creative'); }); }
     // Past its playing: the reward if it isn't in, and what it ends on: the card, its own last frame, or its loop
     const again = () => { video.muted = true; video.currentTime = loop.from; video.play().catch(() => broken('loop')); };
-    // `skipped`: an interstitial's, left by Skip: its end stands HOLD_SECS before ✕ is there
-    const videoOver = (skipped = false) => {
-      over = true;
-      if (skipped) { hold = HOLD_SECS; shownLeft = null; $('.skip').hidden = true; ring.hidden = false; } else grant();
-      if (rewarded) clearInterval(clock);
+    // Reward eligibility is independent of the endcard's close timer.
+    const videoOver = () => {
+      over = true; grant();
       if (loop) again(); else video.pause();
       go(); endCard(ends);
     };
-    toEnd = () => { if (!rewarded || over || ends === 'own' || rests) return false; emit('skip', { secs: secs() }); videoOver(); return true; };   // an interstitial's ✕ is out; and one's own card is at its last frame, not here
+    toEnd = () => { if (!rewarded || over || ends === 'own') return false; emit('skip', { secs: secs() }); if (rests) { try { video.currentTime = Math.max(0, total - 0.05); } catch { /* keep its current frame if seeking is unavailable */ } } videoOver(); return true; };   // a static ending seeks its final frame before revealing the close action
     on('ended', () => { if (over) { if (loop) again(); return; } emit('q100'); elapsed = total; videoOver(); });
     // Skip: to its end, as if it had played there (its last frame is what one that rests on it shows)
-    skip = () => { if (over || rewarded) return; emit('skip', { secs: secs() }); try { if (!loop) video.currentTime = total; } catch { /* where it is, then */ } videoOver(true); };
+    skip = () => { if (over || rewarded) return; emit('skip', { secs: secs() }); try { if (!loop) video.currentTime = total; } catch { /* where it is, then */ } videoOver(); };
     on('error', () => broken('video'));
     let at = -1, still = 0;
     during = dt => {
       const now = video.currentTime;
       // on screen and not moving: it isn't going to (a play() refused, a download that stopped)
       if (now !== at) { at = now; still = 0; } else if (!waits.size && (still += dt) >= STALL_SECS) return broken('stall');
-      if (pill && now >= buttonFrom) pill.hidden = false;
+      if (pill && cta?.during !== false && now >= buttonFrom) pill.hidden = false;
       go();
       const faded = fade ? Math.min(1, Math.max(0, (now - (total - fade)) / fade)) : 0;
       if (faded) {
@@ -480,7 +566,7 @@ export function play({ creative, app, html, link, ctaText, reward, format = 'rew
     else if (type === 'error') { const message = String(e.data.message).slice(0, 200); if (!errors.has(message) && errors.size < ERRORS_MAX) { errors.add(message); emit('fail', { why: 'playable', message }); } }   // each once, and few
     else if (type === 'complete') {
       if (overtime === 'kept') endPlayable();   // played on, and now done: the card, for good
-      else if (granted) { if (rewarded && frame && !creative.ownCard) endPlayable(); else close(); }   // done, its reward already in: its end card if it was still playing, else out
+      else if (granted) { if (rewarded && frame && !creative.ownCard) endPlayable(); else ask(); }   // done, its reward already in: its end card if it was still playing, else out
       else {   // done before its time: the reward now if that's its to say, else when the countdown is out. On the card; but one with a card of its own is left on that, to be closed by ✓ or by its own close
         if (!said) { said = true; emit('complete', { secs: secs() }); }   // once a showing: one left on its own card may say it again
         if (creative.finishEarly) grant();
@@ -503,7 +589,7 @@ export function play({ creative, app, html, link, ctaText, reward, format = 'rew
   }
   function ask() {
     // a video with more to play: to its end first, where the store button is; then out. A playable with time left and its reward in, likewise: its end card
-    if (granted) { if (rewarded && frame && !overtime && !creative.ownCard) { emit('skip', { secs: secs() }); endPlayable(); } else if (!(video && toEnd())) close(); return; }
+    if (granted) { if (endRemaining > 0) return; if (frame && !overtime && !creative.ownCard) { emit('skip', { secs: secs() }); endPlayable(); } else if (!(video && toEnd())) close(); return; }
     if (!rewarded) return;   // not yet: there's nothing to ask about
     $('.ask').hidden = false; wait('ask', true);
   }
@@ -535,9 +621,8 @@ export function play({ creative, app, html, link, ctaText, reward, format = 'rew
     else if (b.matches('.reason')) pick(b);
     else if (b.matches('.send')) send();
     else if (b.matches('.see')) more();
-    else if (b.matches('.skip')) skip();
-    else if (b.matches('.x, .ring, .earned')) ask();   // any way out: free once the reward is earned, asked about before
-    else if (b.matches('.go')) store(b.closest('.end') ? 'card' : 'button');
+    else if (b.matches('.ring')) { if (offered && !granted && endRemaining <= 0) skip(); else ask(); }   // any way out: free once the reward is earned, asked about before
+    else if (b.matches('.go')) store(b.closest('.end, .cta-panel') ? 'card' : 'button');
     else if (b.matches('.more')) keepPlaying();
     else if (b.matches('.keep')) { $('.ask').hidden = true; wait('ask', false); emit('exit_kept', { secs: secs() }); }
     else if (b.matches('.leave')) { emit('exit_early', { secs: secs() }); close(); }
@@ -549,4 +634,11 @@ export function play({ creative, app, html, link, ctaText, reward, format = 'rew
   doc.body.append(host);
   draw(); seen(); dress();
   return result;
+}
+
+// New display fields opt a creative into the reviewed presentation. Older creatives
+// retain their shipped controls and timing until their catalogue settings change.
+const modernDisplay = creative => creative.endCardMode === 'orientation' || creative.endCardCta != null || creative.endCardSecs != null;
+export function play(options) {
+  return modernDisplay(options.creative) ? playCurrent(options) : playLegacy(options);
 }

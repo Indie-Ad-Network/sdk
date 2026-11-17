@@ -31,6 +31,19 @@ const when = v => v === 'end' || count(v);
 const place = p => obj(p) && (p.anchor == null || ANCHOR.test(p.anchor)) && (p.width == null || between(p.width, 64, 1000)) && ['x', 'y'].every(k => p[k] == null || between(p[k], -1280, 1280));
 const only = (o, keys) => Object.fromEntries(keys.filter(k => o[k] != null).map(k => [k, o[k]]));
 const ANY = {
+  endCardSecs: v => between(v, 0, 30) ? v : BAD,
+  endCardCta(v, c, file) {
+    if (!obj(v) || !['large', 'compact', 'custom'].includes(v.type)) return BAD;
+    if (v.during != null && typeof v.during !== 'boolean' || v.darken != null && typeof v.darken !== 'boolean') return BAD;
+    if (v.fade != null && typeof v.fade !== 'boolean' && !between(v.fade, 0, 5)) return BAD;
+    const common = { type: v.type, ...only(v, ['during']), ...(v.fade != null && { fade: v.fade === true || v.fade > 0 ? 0.5 : 0 }) };
+    if (v.type === 'large') return { ...common, darken: v.darken ?? true };
+    if (v.type === 'compact') return common;
+    const image = file(v.image), pulse = v.pulse;
+    if (!image || !place(v)) return BAD;
+    if (pulse != null && !(obj(pulse) && (pulse.maxSize == null || between(pulse.maxSize, 100, 200)) && (pulse.secs == null || between(pulse.secs, 0.1, 60)))) return BAD;
+    return { ...common, image, ...only(v, ['anchor', 'width', 'x', 'y']), ...(pulse && { pulse: { maxSize: pulse.maxSize ?? 105, secs: pulse.secs ?? 1 } }) };
+  },
   // a playable's `skipFrom`, by the name a release from 0.6.3 to 0.6.7 doesn't take for a video's alone (validate gives it back as `skipFrom`)
   minSecs: (v, c) => count(v) && v <= c.secs + 0.05 ? v : BAD,
   aspectOnly: v => typeof v === 'boolean' ? v : BAD,   // a video's or a playable's: kept to the shape of screen it says (`aspect`)
@@ -48,6 +61,7 @@ const ANY = {
   },
 };
 const VIDEO = {
+  endCardMode: v => v === 'orientation' ? v : BAD,
   loop: (v, c) => obj(v) && count(v.from) && v.from < c.secs ? { from: v.from } : BAD,
   tap: v => obj(v) && (v.button != null || v.whole != null) && ['button', 'whole'].every(k => v[k] == null || when(v[k])) ? only(v, ['button', 'whole']) : BAD,
   overrun: v => typeof v === 'boolean' ? v : BAD,
@@ -68,7 +82,7 @@ function shown(c, url, left) {
   return out;
 }
 // Every file a creative names, as [field, URL or null]: the one list of them, for whoever publishes or keeps them (tools/lib.mjs)
-export const filesOf = c => [['src', c.src], ['poster', c.poster], ...SHAPES.map(s => [`endCard.${s}`, c.endCard?.[s]]), ...STORES.map(s => [`storeButton.${s}`, c.storeButton?.[s]])];
+export const filesOf = c => [['src', c.src], ['poster', c.poster], ...SHAPES.map(s => [`endCard.${s}`, c.endCard?.[s]]), ...STORES.map(s => [`storeButton.${s}`, c.storeButton?.[s]]), ['endCardCta.image', c.endCardCta?.image]];
 
 // Not http, unless it's this machine (a developer's own server). A relative path is as secure as what it's read against.
 const LOCAL = ['localhost', '127.0.0.1', '[::1]'];

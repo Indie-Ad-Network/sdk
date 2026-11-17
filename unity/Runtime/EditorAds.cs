@@ -317,6 +317,11 @@ namespace IndieAdNetwork
 			public bool rests;   // it ends on a card of its own (`ownCard`), and rests on its last frame
 			// how the creative asks to be shown (CREATIVES.md, "Dressing the end card, and how a video is shown")
 			public Ends ends;
+			public bool modern, matching, during = true, darken = true, ctaFade;
+			public string ctaType, artShape;
+			public float endSecs = 3f, endedAt, ctaShownAt = -1f;
+			public Dictionary<string, object> arts;
+			public Texture2D icon;
 			public Texture2D art, picture;                     // the end card's art, and the store button as a picture
 			public Dictionary<string, object> button;          // `storeButton`: where it sits for each shape of screen
 			public float pulseSecs, pulseScale = 1f;
@@ -367,6 +372,9 @@ namespace IndieAdNetwork
 			double skipFrom = Json.Num(c, "skipFrom", -1), maxSecs = Json.Num(place, "maxSecs", 0);
 			ad.rewardAt = Mathf.Min(ad.length, skipFrom >= 0 ? Mathf.Max(least, (float)skipFrom) : least >= 0 ? least : Json.Bool(c, "overrun") && maxSecs > 0 ? (float)maxSecs : ad.length);
 			Dress(c);
+			string iconPath = Json.Str(app, "icon");
+			Ad iconAd = ad;
+			if (ad.modern && iconPath != null) StartCoroutine(Picture(iconPath, "app icon", t => { if (ad == iconAd) iconAd.icon = t; else Destroy(t); }));
 
 			video = gameObject.AddComponent<VideoPlayer>();
 			video.playOnAwake = false;
@@ -431,7 +439,16 @@ namespace IndieAdNetwork
 		void Dress(Dictionary<string, object> c)
 		{
 			Dictionary<string, object> tap = Json.Dict(c, "tap"), loop = Json.Dict(c, "loop"), arts = Json.Dict(c, "endCard");
-			ad.button = Json.Dict(c, "storeButton");
+			ad.matching = Json.Str(c, "endCardMode") == "orientation";
+			Dictionary<string, object> cta = Json.Dict(c, "endCardCta");
+			ad.modern = ad.matching || cta != null || Json.Get(c, "endCardSecs") != null;
+			ad.endSecs = Mathf.Clamp((float)Json.Num(c, "endCardSecs", 3), 0f, 30f);
+			ad.ctaType = Json.Str(cta, "type");
+			ad.during = Json.Get(cta, "during") == null || Json.Bool(cta, "during");
+			ad.darken = Json.Get(cta, "darken") == null || Json.Bool(cta, "darken");
+			ad.ctaFade = Json.Bool(cta, "fade") || Json.Num(cta, "fade", 0) > 0;
+			ad.button = cta != null ? ad.ctaType == "custom" ? cta : null : Json.Dict(c, "storeButton");
+			ad.arts = arts;
 			ad.loopFrom = (float)Json.Num(loop, "from", -1);
 			ad.rests = Json.Bool(c, "ownCard");
 			ad.ends = Json.Bool(c, "ownEndCard") ? Ends.Own : ad.loopFrom >= 0f || ad.rests ? Ends.Bare : Ends.Card;
@@ -442,20 +459,27 @@ namespace IndieAdNetwork
 			if (pulse is Dictionary<string, object> || (pulse is bool on && on))
 			{
 				ad.pulseSecs = Mathf.Max(0.1f, (float)Json.Num(pulse as Dictionary<string, object>, "secs", 1));
-				ad.pulseScale = (float)Json.Num(pulse as Dictionary<string, object>, "scale", 1.05);
+				ad.pulseScale = ad.ctaType == "custom" ? (float)Json.Num(pulse as Dictionary<string, object>, "maxSize", 105) / 100f : (float)Json.Num(pulse as Dictionary<string, object>, "scale", 1.05);
 			}
-			// the art for the screen's shape, or the other's, which stands in for it; the button's picture for the store the build is for
-			bool wide = Screen.width > Screen.height;
-			string art = Json.Str(arts, wide ? "landscape" : "portrait") ?? Json.Str(arts, wide ? "portrait" : "landscape"), picture = Json.Str(ad.button, ForAndroid ? "android" : "ios");
+			RefreshArt();
+			string picture = ad.ctaType == "custom" ? Json.Str(cta, "image") : Json.Str(ad.button, ForAndroid ? "android" : "ios");
 			Ad mine = ad;
-			if (art != null && ad.ends == Ends.Card)
-			{
-				StartCoroutine(Picture(art, "end card art", t => { if (ad == mine) mine.art = t; else Destroy(t); }));
-			}
 			if (picture != null)
 			{
 				StartCoroutine(Picture(picture, "button picture", t => { if (ad == mine) mine.picture = t; else Destroy(t); }));
 			}
+		}
+
+		void RefreshArt()
+		{
+			string shape = Screen.width > Screen.height ? "landscape" : "portrait";
+			if (ad.artShape == shape) return;
+			ad.artShape = shape;
+			Destroy(ad.art); ad.art = null;
+			string path = Json.Str(ad.arts, shape) ?? (ad.matching ? null : Json.Str(ad.arts, shape == "portrait" ? "landscape" : "portrait"));
+			if (path == null || ad.ends != Ends.Card) return;
+			Ad mine = ad;
+			StartCoroutine(Picture(path, "end card art", t => { if (ad == mine && mine.artShape == shape) mine.art = t; else Destroy(t); }));
 		}
 
 		// A picture the creative names, as a texture. Unity reads JPEG and PNG: one in WebP is left out, and said.
@@ -546,7 +570,7 @@ namespace IndieAdNetwork
 			{
 				ad.ended = true;
 			}
-			if (ad.hold > 0f)
+			if (ad.hold > 0f && (!ad.modern || Application.isFocused))
 			{
 				ad.hold = Mathf.Max(0f, ad.hold - Time.unscaledDeltaTime);
 			}
@@ -584,6 +608,8 @@ namespace IndieAdNetwork
 				}
 			}
 			ad.ended = true;
+			ad.endedAt = Time.unscaledTime;
+			if (ad.modern) ad.hold = ad.endSecs;
 			if (ad.rewarded && !ad.granted)
 			{
 				Grant();
@@ -654,6 +680,7 @@ namespace IndieAdNetwork
 			{
 				Destroy(ad.art);
 				Destroy(ad.picture);
+				Destroy(ad.icon);
 			}
 			ad = null;
 			DropVideo();
@@ -695,7 +722,7 @@ namespace IndieAdNetwork
 		// out: bottom centre, 360 wide, 128 up. `tall`: its height for each of its width.
 		Rect Placed(int w, int h, float tall)
 		{
-			Dictionary<string, object> at = Json.Dict(ad.button, w > h ? "landscape" : "portrait");
+			Dictionary<string, object> at = ad.ctaType == "custom" ? ad.button : Json.Dict(ad.button, w > h ? "landscape" : "portrait");
 			string[] anchor = (Json.Str(at, "anchor") ?? "bottom-center").Split('-');
 			string row = anchor[0], col = anchor.Length > 1 ? anchor[1] : "center";
 			float u = Mathf.Min(w, h) / 720f, width = (float)Json.Num(at, "width", 360) * u, height = width * tall, x = (float)Json.Num(at, "x", 0) * u, y = (float)Json.Num(at, "y", 128) * u;
@@ -718,7 +745,7 @@ namespace IndieAdNetwork
 			}
 			else
 			{
-				Fill(r, Blue);
+				Fill(r, ad.modern ? new Color(Blue.r, Blue.g, Blue.b, GUI.color.a) : Blue);
 				pill.fontSize = Mathf.Max(14, Mathf.RoundToInt(r.width / 9f));
 				GUI.Label(r, "Get " + ad.name, pill);
 			}
@@ -734,6 +761,7 @@ namespace IndieAdNetwork
 			GUI.depth = -32000;   // over the game's own IMGUI
 			int w = Screen.width, h = Screen.height, unit = Mathf.Max(12, Mathf.Min(w, h) / 32), pad = unit;
 			Styles(unit);
+			if (ad.modern) RefreshArt();
 			Rect all = new Rect(0, 0, w, h);
 			Fill(all, Color.black);
 			if (video != null && video.texture != null)
@@ -751,7 +779,8 @@ namespace IndieAdNetwork
 			float card = still ? 1f : ad.ends != Ends.Card ? 0f : over ? 1f : Faded;
 			if (card > 0f)
 			{
-				Fill(all, new Color(0f, 0f, 0f, (ad.art != null ? 1f : 0.7f) * card));
+				float shade = ad.modern && (ad.ctaType != null || ad.art != null) ? 0f : ad.art != null ? 1f : 0.7f;
+				Fill(all, new Color(0f, 0f, 0f, shade * card));
 				if (ad.art != null)
 				{
 					Color was = GUI.color;
@@ -759,7 +788,7 @@ namespace IndieAdNetwork
 					GUI.DrawTexture(all, ad.art, ScaleMode.ScaleToFit);
 					GUI.color = was;
 				}
-				else
+				else if (ad.ctaType == null)
 				{
 					GUI.Label(new Rect(pad, h * 0.24f, w - 2 * pad, unit * 3), ad.name ?? "", title);
 					GUI.Label(new Rect(pad * 2, h * 0.24f + unit * 3.2f, w - 4 * pad, unit * 5), ad.line ?? "", label);
@@ -769,7 +798,11 @@ namespace IndieAdNetwork
 			// the store button: as the video plays, the player's own at the foot, from when the creative says; past its end,
 			// where the creative puts it. A video that is its own end card (`ownEndCard`) has none.
 			bool pressed = false;
-			if (ad.started && ad.store != null && !still && ad.ends != Ends.Own)
+			if (ad.ctaType != null && ad.started && ad.store != null && !still)
+			{
+				pressed = ModernAction(w, h, unit, over, watched);
+			}
+			else if (ad.started && ad.store != null && !still && ad.ends != Ends.Own)
 			{
 				if (over)
 				{
@@ -797,7 +830,14 @@ namespace IndieAdNetwork
 			bool leave = false, close = false, toEnd = false;
 			bool playing = !still && !ad.ended, canEnd = ad.ends == Ends.Card || ad.loopFrom >= 0f;   // one that rests on its own card, or is one, has no end to go to
 			float left = ad.rewarded ? ad.rewardAt - watched : ad.hold > 0f ? ad.hold : playing ? Mathf.Min(ad.skipAt, ad.length) - watched : 0f;
-			if (!ad.started)
+			if (ad.modern)
+			{
+				left = Mathf.Max(ad.hold, ad.rewarded && !ad.granted ? ad.rewardAt - watched : playing && !ad.rewarded ? Mathf.Min(ad.skipAt, ad.length) - watched : 0f);
+				if (ad.started && left > 0f) { Fill(corner, new Color(0f, 0f, 0f, 0.55f)); GUI.Label(corner, Mathf.CeilToInt(left).ToString(), small); }
+				else if (ad.started && playing) toEnd = GUI.Button(corner, "Skip  ▸", button);
+				else if (ad.started) close = GUI.Button(corner, "✕  Close", button);
+			}
+			else if (!ad.started)
 			{
 				// nothing to press until there's something to leave
 			}
@@ -843,6 +883,45 @@ namespace IndieAdNetwork
 			{
 				OpenStore();
 			}
+		}
+
+		// The Editor uses Unity's controls; timing, style choice and visibility match the web player.
+		bool ModernAction(int w, int h, int unit, bool over, float watched)
+		{
+			bool show = over || ad.during && watched >= ad.buttonFrom;
+			if (!show) { ad.ctaShownAt = -1f; return false; }
+			bool large = over && ad.ctaType == "large";
+			if (large && ad.darken) Fill(new Rect(0, 0, w, h), new Color(0f, 0f, 0f, 0.55f));
+			// Switching from the playback pill to the large panel starts its own fade.
+			if (ad.ctaShownAt < 0f || large && ad.ctaShownAt < ad.endedAt) ad.ctaShownAt = Time.unscaledTime;
+			Color was = GUI.color;
+			float alpha = ad.ctaFade ? Mathf.Clamp01((Time.unscaledTime - ad.ctaShownAt) / 0.5f) : 1f;
+			GUI.color = new Color(was.r, was.g, was.b, was.a * alpha);
+			bool pressed;
+			if (over && ad.ctaType == "custom" && ad.picture != null)
+			{
+				pressed = StoreButton(Placed(w, h, (float)ad.picture.height / ad.picture.width), ad.picture, true);
+			}
+			else if (large)
+			{
+				if (ad.icon != null) GUI.DrawTexture(new Rect(w / 2f - unit * 2, h * 0.12f, unit * 4, unit * 4), ad.icon, ScaleMode.ScaleToFit);
+				GUI.Label(new Rect(unit, h * 0.28f, w - unit * 2, unit * 3), ad.name ?? "", title);
+				GUI.Label(new Rect(unit * 2, h * 0.28f + unit * 3, w - unit * 4, unit * 4), ad.line ?? "", label);
+				pressed = StoreButton(new Rect(w * 0.25f, h * 0.62f, w * 0.5f, unit * 3), null, false);
+			}
+			else
+			{
+				float bw = Mathf.Min(w - unit * 2, unit * 25);
+				Rect pillRect = new Rect((w - bw) / 2f, h - unit * 4, bw, unit * 3);
+				Fill(pillRect, new Color(1f, 1f, 1f, alpha));
+				if (ad.icon != null) GUI.DrawTexture(new Rect(pillRect.x + unit * 0.3f, pillRect.y + unit * 0.3f, unit * 2.4f, unit * 2.4f), ad.icon, ScaleMode.ScaleToFit);
+				Color textWas = GUI.contentColor; GUI.contentColor = Color.black;
+				GUI.Label(new Rect(pillRect.x + unit * 3, pillRect.y, bw - unit * 12, unit * 3), ad.name ?? "", small);
+				GUI.contentColor = textWas;
+				pressed = StoreButton(new Rect(pillRect.xMax - unit * 8.5f, pillRect.y + unit * 0.3f, unit * 8, unit * 2.4f), null, false);
+			}
+			GUI.color = was;
+			return pressed;
 		}
 
 		// For whoever is testing: the ad's end, now.

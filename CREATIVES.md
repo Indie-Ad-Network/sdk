@@ -19,6 +19,23 @@ The network's player draws these over and after every creative, always in the sa
 
 So a creative is all game. Leave out "Download now" buttons, store badges and an end card of your own, and keep anything that matters out of the top 12% of the frame. (To change the card the player shows, see the next section: that is the player's card dressed, not one baked into your video.)
 
+## Current endcard presentation (unreleased)
+
+New creatives opt in with `endCardCta`, `endCardSecs`, or a video's `endCardMode: "orientation"`. They use one top-right countdown, then Skip, then ✕ on the endcard. There is no separate close button or Reward earned label. Rewards and their callbacks are unchanged. The endcard holds for `endCardSecs` seconds (0–30, default 3), counting only while visible; reward eligibility must also be satisfied before closing.
+
+The dashboard offers **Static Final Frame** (`ownCard: true`), **Looping Video** (`loop: {from: seconds}`), or **Custom Endcard** (`endCard` plus `endCardMode: "orientation"`). A custom image uses the video's contain framing and backdrop, using only the matching portrait or landscape image. Missing or failed images restore the default card. `fade` optionally fades the video into its card over 0–5 seconds.
+
+`endCardCta` controls the action independently:
+
+- `type: "large"`: app details and action at the centre, with `darken` (default true). Only this style displays the creative's `line`.
+- `type: "compact"`: the app icon, name and action in a bottom-centre pill, shared by loops, static frames and custom images.
+- `during`: whether to show that compact pill while playing (default true).
+- `fade: true`: a fixed 0.5-second action fade-in; false disables it. Existing positive numeric durations also become 0.5 seconds. The dashboard defaults this checkbox on for new creatives; absence in a catalogue retains a direct cut. Reduced-motion preferences disable animation.
+
+Earlier `type: "custom"` records remain readable: `image`, `anchor`, `width`, `x`, `y`, and optional `pulse: {maxSize: 105, secs: 1}`. The image is cached with the creative. The dashboard no longer offers this style.
+
+Creatives without these opt-in fields keep the released presentation described below. Device builds use the shared JavaScript player bundled into the Unity resource; the Editor's simulated ad is a stand-in, not a web view.
+
 ## Dressing the end card, and how a video is shown
 
 From 0.5.0 a creative may say more about how it's shown. All of it is optional, set in the creative's form under **How it's shown**, and a game on an older release shows the creative the usual way.

@@ -133,3 +133,27 @@ test("a creative's other files are kept beside it: fetched with it, again when t
     assert.deepEqual(asked, ['https://x/a', 'https://x/taller.jpg']);
   } finally { if (had) Object.defineProperty(globalThis, 'indexedDB', had); else delete globalThis.indexedDB; }
 });
+
+test('SDK prefetch keeps both endcard orientations and a custom CTA image for offline playback', async t => {
+  const globals = { indexedDB: fakeIndexedDB(), innerWidth: 390, innerHeight: 844 };
+  for (const [key, value] of Object.entries(globals)) {
+    const old = Object.getOwnPropertyDescriptor(globalThis, key);
+    Object.defineProperty(globalThis, key, { configurable: true, value });
+    t.after(() => { if (old) Object.defineProperty(globalThis, key, old); else delete globalThis[key]; });
+  }
+  const { createIndieAds } = await import('../core/index.js');
+  const { memoryStorage } = await import('../core/history.js');
+  const asked = [], creative = c('ad', 1, { app: 'game', kind: 'video', secs: 15,
+    endCardMode: 'orientation', endCard: { portrait: 'https://x/p.png', landscape: 'https://x/l.png' },
+    endCardCta: { type: 'custom', image: 'https://x/button.png' },
+  });
+  const ads = createIndieAds({ host: 'host', os: 'ios', storage: memoryStorage(), native: { metered: () => false },
+    catalogue: { apps: { game: { name: 'Example', ios: { id: 1 } } }, creatives: [creative] },
+    fetch: async url => { asked.push(url); return { ok: true, blob: async () => new Blob([new ArrayBuffer(MB)]) }; },
+  });
+  assert.deepEqual(await ads.ready, ['ad']);
+  assert.deepEqual(asked, ['https://x/ad', 'https://x/p.png', 'https://x/l.png', 'https://x/button.png']);
+  asked.length = 0;
+  assert.deepEqual(await ads.prefetch(), []);
+  assert.deepEqual(asked, [], 'cached artwork is not downloaded again');
+});

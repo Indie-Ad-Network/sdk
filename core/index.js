@@ -152,7 +152,7 @@ export function createIndieAds({ host, rating = null, catalogue, placements = {}
   const loaded = catalogue?.apps ? Promise.resolve(validate(catalogue)) : loadCatalogue({ url: asks(String(url), host), fallback: fallback?.apps ? fallback : fallback && String(fallback), fetch, storage, signedBy: key });
   loaded.then(cat => cat.dropped.forEach(d => console.warn(`[indie-ads] dropped ${d}`)));
   // beside what a creative plays: what dresses its end card, with the button's picture for this store and not the other's
-  const dressing = c => filesOf(c).filter(([field, url]) => url && (field.startsWith('endCard.') || field === `storeButton.${os}`));
+  const dressing = c => filesOf(c).filter(([field, url]) => url && (field.startsWith('endCard.') || field === 'endCardCta.image' || field === `storeButton.${os}`));
   const cached = openCache({ fetch, now, keep, more: dressing });
   let showing = false;
   const words = () => stringsFor(typeof lang === 'function' ? lang() : lang, globalThis.navigator?.languages ?? []);
@@ -269,7 +269,11 @@ export function createIndieAds({ host, rating = null, catalogue, placements = {}
       const games = moreGamesAt(cat), more = games && (() => { openGames(games); });
       // as it's on the device: the file it plays, and what dresses its card, each from the cache where it's there
       const here = (field, url) => media?.files?.[field] ?? url;
-      const local = { ...creative, ...(media?.src && { src: media.src }), ...(creative.endCard && { endCard: Object.fromEntries(Object.entries(creative.endCard).map(([shape, url]) => [shape, here(`endCard.${shape}`, url)])) }) };
+      const local = { ...creative,
+        ...(media?.src && { src: media.src }),
+        ...(creative.endCard && { endCard: Object.fromEntries(Object.entries(creative.endCard).map(([shape, url]) => [shape, here(`endCard.${shape}`, url)])) }),
+        ...(creative.endCardCta?.image && { endCardCta: { ...creative.endCardCta, image: here('endCardCta.image', creative.endCardCta.image) } }),
+      };
       const { granted, watchedSecs, kind } = await play({ creative: inWords(local), app: inWords(app), html: page(media), link, ctaText: cta(app, os, now(), said.t, link), reward, format, least, picture: here(`storeButton.${os}`, creative.storeButton?.[os] ?? null), limit: creative.overrun ? who.placement?.maxSecs : null, muted: muted(), emit, more, openStore: shell.openStore, banner: shell.banner, report: r => reported(placement, creative, app, said.locale, r), words: said });
       if (granted && kind !== 'card') history.watched(app.id);
       return { granted: granted && !interstitial, shown: true, via: 'house', creative: creative.id, app: app.id, kind, watchedSecs };

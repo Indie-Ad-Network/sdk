@@ -116,6 +116,114 @@
           "campaign": { "description": "The campaign name in store links. Left out: the creative's id.", "type": "string" },
           "bytes": { "type": "integer" },
           "sha256": { "type": "string" },
+          "endCardMode": {
+            "description": "Opt into matching-orientation endcard art and the current display controls. No image for this orientation: the default card. Video images fit the video stage and keep its backdrop. Without new display fields the legacy presentation is preserved.",
+            "enum": [
+              "orientation"
+            ]
+          },
+          "endCardSecs": {
+            "description": "Opt into current display controls. Minimum visible seconds on the ending before X can close, independent of reward timing. Pauses when hidden or in a store/info panel. Defaults to 3 in the current display; zero allows immediate close once eligible.",
+            "type": "number",
+            "minimum": 0,
+            "maximum": 30,
+            "default": 3
+          },
+          "endCardCta": {
+            "description": "Opt into current display controls. Endcard CTA independent of static frame, loop or custom art. Large centres app details; compact uses the bottom app link. Custom is retained for earlier catalogue records.",
+            "type": "object",
+            "required": [
+              "type"
+            ],
+            "properties": {
+              "type": {
+                "enum": [
+                  "large",
+                  "compact",
+                  "custom"
+                ]
+              },
+              "during": {
+                "type": "boolean",
+                "default": true,
+                "description": "Show the bottom app link while the video plays, independently of the ending style."
+              },
+              "darken": {
+                "type": "boolean",
+                "default": true,
+                "description": "Large style: darken behind the app details."
+              },
+              "fade": {
+                "description": "Fixed 0.5-second CTA fade-in when enabled. Zero/false disables it; older positive durations are normalised to 0.5. An already-visible app link does not restart fading.",
+                "oneOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 5
+                  }
+                ]
+              },
+              "image": {
+                "type": "string",
+                "description": "Custom style: button image."
+              },
+              "anchor": {
+                "description": "The edge or corner it's set against.",
+                "enum": [
+                  "top-left",
+                  "top-center",
+                  "top-right",
+                  "middle-left",
+                  "middle-center",
+                  "middle-right",
+                  "bottom-left",
+                  "bottom-center",
+                  "bottom-right"
+                ],
+                "default": "bottom-center"
+              },
+              "width": {
+                "type": "number",
+                "minimum": 64,
+                "maximum": 1000,
+                "default": 360
+              },
+              "x": {
+                "description": "How far in from the anchor's side; from a centre, to the right.",
+                "type": "number",
+                "minimum": -1280,
+                "maximum": 1280,
+                "default": 0
+              },
+              "y": {
+                "description": "How far in from the anchor's top or bottom; from the middle, down.",
+                "type": "number",
+                "minimum": -1280,
+                "maximum": 1280,
+                "default": 128
+              },
+              "pulse": {
+                "type": "object",
+                "properties": {
+                  "maxSize": {
+                    "type": "number",
+                    "minimum": 100,
+                    "maximum": 200,
+                    "default": 105
+                  },
+                  "secs": {
+                    "type": "number",
+                    "minimum": 0.1,
+                    "maximum": 60,
+                    "default": 1
+                  }
+                }
+              }
+            }
+          },
           "endCard": {
             "description": "Art for the end card, by the screen's shape: either stands in for the other. Left out: the player's own card (icon, name, line). Read from 0.5.0; a release before it shows its own card.",
             "type": "object",
