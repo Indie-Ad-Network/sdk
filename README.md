@@ -1,6 +1,8 @@
 # The Indie Ad Network SDK
 
-Rewarded ads and interstitials for our own and our friends' games, for any game to drop in. No dependencies, no ad SDK, nothing of a third party's running in the game.
+The open-source SDK for [Indie Ad Network](https://indieadnetwork.com): cross-promotion for indie games. Your game shows other indie games' ads, and their games show yours, one impression for one, with no money changing hands. Rewarded ads and interstitials, as 15 or 30 second videos and MRAID playable ads, for Unity and for web or Capacitor games. No dependencies, no ad SDK, nothing of a third party's running in the game, and no advertising ID.
+
+**To join the network**, sign up at [indieadnetwork.com](https://indieadnetwork.com/#signup). [How it works](https://indieadnetwork.com/how-it-works) says what it is, and [the docs](https://indieadnetwork.com/docs) how to put it in a game. The SDK also runs from a catalogue of your own, for your own games: see [The server](SERVER.md).
 
 - **15 s and 30 s videos, and playables.** A playable is one HTML file written to MRAID 2/3, the ad networks' standard, so the playables a studio already makes for user acquisition drop in unchanged.
 - **A countdown and a way out, always in the same places.** The control at the top right counts down, offers Skip while playing, then becomes ✕ once the endcard minimum is complete. The same UI applies to creatives without display settings.

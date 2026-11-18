@@ -1,5 +1,7 @@
 # The Indie Ad Network SDK in a Unity game
 
+The Unity package of [Indie Ad Network](https://indieadnetwork.com): cross-promotion for indie games, where your game shows other indie games' rewarded and interstitial ads (videos and MRAID playables) and theirs show yours, one impression for one. To join, sign up at [indieadnetwork.com](https://indieadnetwork.com/#signup); [How it works](https://indieadnetwork.com/how-it-works) says what it is.
+
 The package's player (`core/`, as one page: `Runtime/Resources/IndieAdsPlayer.html`) in the package's own web view, with a say in how its ads are mixed with a paid network's.
 
 ## Set up

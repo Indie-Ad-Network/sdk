@@ -3,8 +3,10 @@
   "version": "0.6.17",
   "license": "MIT",
   "displayName": "Indie Ads",
-  "description": "Rewarded and interstitial ads for our own and our friends' games (videos and MRAID playables), played in the package's own web view (the system's, on iOS and Android), with a say in how they're mixed with a paid ad network's. The Unity side of the indie-ads package.",
+  "description": "Cross-promotion for indie games, from Indie Ad Network: rewarded and interstitial ads (videos and MRAID playables) swapped between indie games, one impression for one. Played in the system's own web view on iOS and Android, alongside a paid ad network if the game has one.",
   "unity": "2021.3",
+  "documentationUrl": "https://indieadnetwork.com/docs",
+  "keywords": ["ads", "cross-promotion", "indie-games", "rewarded-ads", "interstitial", "playable-ads", "mraid"],
   "author": {
     "name": "Indie Ad Network",
     "url": "https://indieadnetwork.com"
