@@ -69,11 +69,13 @@ namespace IndieAdNetwork
     public static class IndieAdsNative
     {
         public static string closedListener, listener, banner;
+        public static int referrerAsks;
         public static bool StoreSheetIsUp => false;
         public static bool IsMetered() => false;
         public static bool? CmpConsent() => null;
         public static void StoreBanner(string id, string ct, string pt) { banner = id; }
         public static void OpenStore(string id, string ct, string pt, string url, string fallback, string name) { listener = name; }
         internal static void CloseStore(string name) { closedListener = name; }
+        internal static bool ReadInstallReferrer(string name) { referrerAsks++; return true; }
     }
 }

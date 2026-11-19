@@ -68,7 +68,7 @@
 // es-MX is Latin America's Spanish). The catalogue's `line`s may be given per language too.
 //
 // Optional: `os` ('ios' | 'android'; guessed), `native` (what the app shell does better than a
-// page can, e.g. the Capacitor plugin: any of { openStore(link), metered(), banner(link | null) }),
+// page can, e.g. the Capacitor plugin: any of { openStore(link), metered(), banner(link | null), installReferrer() }),
 // `age()` (the player's reported age, or null), `muted()`, `aspect()` ('16:9' | '9:16' | null: the
 // screen's shape, for a page that can't yet see its own), `cache: false` (keep nothing, always
 // stream), `storage`, `fetch`, `now`, `rand`.
@@ -91,7 +91,7 @@
 import { loadCatalogue, validate, within, secure, filesOf } from './catalogue.js';
 import { pick, eligible, cardFor, wanted, isChild, leastOf } from './pick.js';
 import { mix as mixOf, believed, shareOf, turn, settings as settingsOf, leastSaid } from './exchange.js';
-import { storeLink, cta } from './storeLinks.js';
+import { storeLink, cta, campaignOf } from './storeLinks.js';
 import { openHistory, safeStorage, memoryStorage, forget } from './history.js';
 import { OURS } from './keys.js';
 import { openCache, forgetCache } from './cache.js';
@@ -100,7 +100,7 @@ import { VERSION, SDK } from './wire.js';
 import { play } from './player.js';
 import { stringsFor, localised } from './locale.js';
 
-export { storeLink, cta } from './storeLinks.js';
+export { storeLink, cta, campaignOf } from './storeLinks.js';
 export { validate } from './catalogue.js';
 export { cmpConsent } from './consent.js';
 export { createIndieAds as createHouseAds };   // its name before 0.6.0: gone in the release after
@@ -194,7 +194,7 @@ export function createIndieAds({ host, rating = null, catalogue, placements = {}
   const refresh = () => { if (mixUrl && now() - mixAt > MIX_AGE) mixed = loadMix(); };
   if (typeof document !== 'undefined') document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
   // who the player is and where things stand, to the pick
-  const audience = async cat => ({ catalogue: cat, host, rating, age: age(), history: history.get(), now: now(), aspect: shape(aspect()), rand, boost: (await mixed).boost, lang: words().locale, test: !!test(), perDay: settingsOf(cat, host).perDay });
+  const audience = async cat => ({ catalogue: cat, host, os, rating, age: age(), history: history.get(), now: now(), aspect: shape(aspect()), rand, boost: (await mixed).boost, lang: words().locale, test: !!test(), perDay: settingsOf(cat, host).perDay });
   // a playable's page, handed on and no longer held here: megabytes, for the length of the ad
   const page = media => { const html = media?.html; if (html != null) media.html = null; return html; };
   const nothing = granted => ({ granted, shown: false, via: null, creative: null, app: null, kind: null, watchedSecs: 0 });
@@ -210,6 +210,12 @@ export function createIndieAds({ host, rating = null, catalogue, placements = {}
   const openGames = async url => { try { await shell.openStore({ via: 'web', url, fallback: url }); } catch { /* nothing here opens it */ } };
   // For a game's own "more games" button: opens that page. Resolves whether there was one to open.
   async function showMoreGames() { const url = moreGamesAt(await loaded); if (url) await openGames(url); return !!url; }
+
+  // Android's shell asks Google Play (`native.installReferrer`); callers that overlap share the one asking. Nothing is kept.
+  let asking = null;
+  const getInstallCampaign = () => asking ??= (async () => {
+    try { return os === 'android' && shell.installReferrer ? campaignOf(await shell.installReferrer()) : null; } catch { return null; } finally { asking = null; }
+  })();
 
   // Download what's wanted next, if the network costs the player nothing. Resolves the ids fetched.
   async function prefetch() {
@@ -308,5 +314,7 @@ export function createIndieAds({ host, rating = null, catalogue, placements = {}
     showMoreGames, moreGames: async () => moreGamesAt(await loaded),
     // how many of each game's ads this player has watched to the end: { tcb: 3, … }
     watched: () => ({ ...history.get().watched }),
+    // the campaign of the network's ad this game was installed from, or null (README: The ad a game was installed from)
+    getInstallCampaign,
   };
 }

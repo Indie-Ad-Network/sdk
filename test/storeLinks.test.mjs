@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { storeLink, cta } from '../core/storeLinks.js';
+import { storeLink, cta, campaignOf } from '../core/storeLinks.js';
 
 const tcb = { name: 'Game One', price: 'free', ios: { id: 123456789 }, android: { package: 'com.example.gameone' } };
 const ctx = { host: 'tca', creative: 'tcb-crashcam-15', placement: 'saveMe' };
@@ -31,6 +31,16 @@ test('Android: market:// in an app, https in a browser, the referrer saying wher
   assert.equal(web.url, app.fallback);
   const referrer = new URLSearchParams(new URL(web.url).searchParams.get('referrer'));
   assert.deepEqual(Object.fromEntries(referrer), { utm_source: 'tca', utm_medium: 'house', utm_campaign: 'tcb-crashcam-15', utm_content: 'tcb-crashcam-15', utm_term: 'saveMe' });
+});
+
+test('the installed game reads back the campaign of the ad it came from, and nothing of any other install', () => {
+  const referrer = l => new URL(l.fallback).searchParams.get('referrer');   // as Google Play hands it to the game: decoded once
+  assert.equal(campaignOf(referrer(storeLink(tcb, { ...ctx, os: 'android', native: true, campaign: 'starter50' }))), 'starter50');
+  assert.equal(campaignOf(referrer(storeLink(tcb, { ...ctx, os: 'android', campaign: 'half off/now' }))), 'half off/now');
+  assert.equal(campaignOf(referrer(storeLink(tcb, { ...ctx, os: 'android' }))), 'tcb-crashcam-15');   // no campaign: the creative's id
+  assert.equal(campaignOf('utm_source=google-play&utm_medium=organic'), null);
+  assert.equal(campaignOf('utm_source=x&utm_medium=cpc&utm_campaign=someone-elses'), null);
+  for (const nothing of [null, undefined, '', 42]) assert.equal(campaignOf(nothing), null);
 });
 
 test("a partner's tracking link comes first, its macros filled; one per store, or one for both", () => {

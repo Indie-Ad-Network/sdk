@@ -215,6 +215,12 @@ namespace IndieAdNetwork
 				{
 					continue;
 				}
+				// for one platform alone (`os`): the build target's
+				string os = Json.Str(c, "os");
+				if (os != null && os != Os)
+				{
+					continue;
+				}
 				// cut for one shape of screen and kept to it (`aspectOnly`): not for a screen the other way up
 				if (Json.Bool(c, "aspectOnly") && Json.Str(c, "aspect") != null && Json.Str(c, "aspect") != Shape)
 				{
@@ -335,6 +341,7 @@ namespace IndieAdNetwork
 		static float From(object when, float otherwise) => when is double secs ? (float)secs : when as string == "end" ? float.PositiveInfinity : otherwise;
 
 		static bool ForAndroid => UnityEditor.EditorUserBuildSettings.activeBuildTarget == UnityEditor.BuildTarget.Android;
+		static string Os => ForAndroid ? "android" : "ios";   // the build target's platform, as the catalogue names it
 
 		IEnumerator Show(int n, string placement, string reward, bool muted)
 		{
@@ -462,7 +469,7 @@ namespace IndieAdNetwork
 				ad.pulseScale = ad.ctaType == "custom" ? (float)Json.Num(pulse as Dictionary<string, object>, "maxSize", 105) / 100f : (float)Json.Num(pulse as Dictionary<string, object>, "scale", 1.05);
 			}
 			RefreshArt();
-			string picture = ad.ctaType == "custom" ? Json.Str(cta, "image") : Json.Str(ad.button, ForAndroid ? "android" : "ios");
+			string picture = ad.ctaType == "custom" ? Json.Str(cta, "image") : Json.Str(ad.button, Os);
 			Ad mine = ad;
 			if (picture != null)
 			{

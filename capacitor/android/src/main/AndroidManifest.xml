@@ -2,4 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- whether the network is metered: creatives aren't downloaded ahead on one -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- Google Play, to be asked which store link the app was installed from (InstallReferrer.java): an app can't see it otherwise, from Android 11 -->
+    <queries>
+        <package android:name="com.android.vending" />
+    </queries>
 </manifest>

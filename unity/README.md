@@ -63,6 +63,22 @@ IndieAds.SetConsent(IndieAds.CmpConsent() ?? false);
 
 `IndieAds.OnShown` and `IndieAds.OnHidden` say an ad is on screen and has gone, whoever showed it: a game pauses its music and sound on the one and resumes them on the other, once, rather than in every place that calls `Show`. The ad plays in a web view over the game, which keeps running under it (no other activity or window takes the app's place, as a paid network's ad does), so nothing else quiets the game. `OnHidden` comes before `Show`'s `done`, and only for an ad that appeared. `IndieAds.Offered(placement)` when a placement's button is put in front of the player.
 
+## The ad a game was installed from
+
+For a game that unlocks something for players who came from one of its ads (a creative's campaign, the admin's Campaign box; [the SDK's README](../README.md#the-ad-a-game-was-installed-from) has the whole of it):
+
+```csharp
+IndieAds.GetInstallCampaign(campaign => { if (campaign == "starter50") ShowStarterOffer(); });   // after Init
+```
+
+`done` is called once, on the main thread, with the campaign or `null`. Android only: Google Play is asked which store link the game was installed from, which it keeps for 90 days. `null` on iOS, in the Editor, before `Init`, after those days, and for an install not from one of the network's ads. Nothing is kept or sent.
+
+Play must be visible to the game (Android 11 on). A game that sells anything through Google Play already sees it; one that doesn't adds this to its `Assets/Plugins/Android/AndroidManifest.xml`, inside `<manifest>`:
+
+```xml
+<queries><package android:name="com.android.vending" /></queries>
+```
+
 ## Session lifecycle
 
 Call `IndieAds.Shutdown()` on Unity's main thread when a player logs out, opts out of ads, or before initializing a different player/profile. It hides and disposes the ad and More games web views, dismisses this session's iOS App Store sheet, removes the store banner and restores the game's sleep timeout. An outstanding `Show` completes once with `granted = false`; `shown` says whether the ad had appeared. For an ad that appeared, `OnHidden` comes before the completion callback. With no active ad, neither is called.

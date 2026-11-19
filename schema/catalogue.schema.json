@@ -113,6 +113,7 @@
           "from": { "type": "string", "format": "date" },
           "to": { "description": "The first day it no longer shows.", "type": "string", "format": "date" },
           "hosts": { "description": "Only in these host games. Left out: in all.", "type": "array", "items": { "type": "string" } },
+          "os": { "description": "Only on this platform. Left out: on both. Read from 0.6.18: a release before shows it on both, so the network's server gives those releases none of these.", "enum": ["ios", "android"] },
           "campaign": { "description": "The campaign name in store links. Left out: the creative's id.", "type": "string" },
           "bytes": { "type": "integer" },
           "sha256": { "type": "string" },

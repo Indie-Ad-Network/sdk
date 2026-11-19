@@ -3,7 +3,8 @@
 //
 // Nothing at all once the player has been shown `perDay` house ads in 24 h (exchange.js).
 // Otherwise a creative is out if any of these says so, in this order:
-//   1. out of its dates                    5. shown `capPerDay` times in 24 h
+//   1. out of its dates, or for the other  5. shown `capPerDay` times in 24 h
+//      platform (`os`)
 //   2. it advertises the host itself       6. not ready to play (`ready(creative)`: the cache's word)
 //   3. rated above the host; or not one    7. longer than the placement takes (`maxSecs`: but a video marked `overrun`, or one
 //                                              that may be left by then, `skipFrom`), or not a kind it takes; or for an
@@ -60,13 +61,14 @@ export const leastOf = (placement = {}) => placement.format === 'interstitial' ?
 // cut for the other shape of screen than the one it would be shown on; one that says no shape, or a screen that says none, never is
 const wrongShape = (c, aspect) => !!c.aspect && !!aspect && c.aspect !== aspect;
 
-export function eligible({ catalogue, host, placement = {}, rating, age, history, lang = null, now = Date.now(), ready = () => true, test = false, perDay = null, among = null, aspect = null }) {
+export function eligible({ catalogue, host, placement = {}, rating, age, history, lang = null, now = Date.now(), ready = () => true, test = false, perDay = null, among = null, aspect = null, os = null }) {
   if (!test && perDay != null && shownToday(history, now) >= perDay) return [];
   const least = placement.format === 'interstitial' ? leastOf(placement) : null;
   return catalogue.creatives.filter(c => {
     const app = catalogue.apps[c.app];
     if (among && !among.has(c.app)) return false;
     if ((c.from && now < Date.parse(c.from)) || (c.to && now >= Date.parse(c.to))) return false;
+    if (c.os && os && c.os !== os) return false;   // for one platform alone: 'ios' or 'android' (0.6.18 on; the server gives a release before none of these)
     if (!appOk(app, { host, rating, age, history, now, test })) return false;
     if (!test && c.hosts && !c.hosts.includes(host)) return false;
     if (c.langs && lang && !c.langs.some(l => String(l).toLowerCase().split('-')[0] === lang.toLowerCase().split('-')[0])) return false;   // a creative with words in it, for those who read them

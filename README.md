@@ -138,6 +138,19 @@ What to set up in the platform, with Google's as the example (AdMob → Privacy 
 
 **A game with no consent platform** asks in a dialog of its own: what's kept and why, a No as easy as the Yes, before the SDK starts, and a way to change the answer later in its settings.
 
+## The ad a game was installed from
+
+A game can unlock something for players who came from one of its ads ("50% off the starter pack"): give those creatives a campaign (the admin's Campaign box, a creative's `campaign`) and check it on the game's first launches:
+
+```js
+const campaign = await ads.getInstallCampaign();   // 'starter50', or null
+if (campaign === 'starter50') showStarterOffer();
+```
+
+On Android, Google Play keeps the store link a game was installed from for 90 days, and every link of the network's carries the ad's campaign in it. `getInstallCampaign()` asks Play for it (with the Capacitor plugin: `native: capacitorNative()`) and answers the campaign, or `null`: on iOS, in a browser, after those 90 days, and for an install that didn't come from one of the network's ads. It's asked each time, kept nowhere and sent nowhere; what's unlocked, and remembering that it was, are the game's.
+
+The same words go in the ad itself, for everyone else: "code STARTER50". A box for a code in the game takes them, the same as the campaign (any case), for an iPhone, an install after the 90 days, or a player who saw the ad and installed later. The code is the same for everyone who saw the ad, so it says nothing about who they are; anyone can share it, so keep what it unlocks to what you'd give anyone, and let Google Play's limits on the offer (its dates, and how often one player may buy it) do the rest.
+
 ## Languages
 
 The player's own words ("Leave now?", "Play free"…) are in the player's language: 19 of them, with Latin America's Spanish apart from Spain's and Portugal's Portuguese apart from Brazil's. By default that's the device's language. A game with a language setting of its own says so, and only as much as it knows:

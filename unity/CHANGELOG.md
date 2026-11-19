@@ -6,6 +6,12 @@ The repository has one version, [Semantic Versioning](https://semver.org), and a
 
 Two numbers are not this one, and change only when a format does: `VERSION` in `core/wire.js` (what games send the ingest) and the catalogue's `version`. Games already released go on sending and reading the old ones.
 
+## [Unreleased]
+
+### Added
+- **The campaign of the ad a game was installed from**, for a game that unlocks something for those players: `ads.getInstallCampaign()`, and in Unity `IndieAds.GetInstallCampaign(done)`. Android only, for 90 days after an install from Google Play: Play is asked which of the network's store links the game came from, and its campaign is answered (`null` otherwise, and on iOS). Play's own service is asked, so a game takes no library for it; nothing is kept or sent. The Capacitor plugin has `installReferrer()` for it, and asks to see Google Play in its manifest.
+- **A creative for one platform alone** (`os`: `ios` or `android`) is shown only there. A release before this one doesn't read it, so the network's server gives those releases none of these creatives.
+
 ## [0.6.17] - 2026-11-18
 
 ### Added

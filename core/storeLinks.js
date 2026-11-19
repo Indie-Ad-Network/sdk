@@ -49,6 +49,14 @@ export function storeLink(app, { os, native = false, host, campaign, creative, p
   return null;
 }
 
+// The campaign of the ad a game was installed from, out of the referrer Google Play hands it (storeLink's, above): its
+// `utm_campaign`, where the link was one of the network's (`utm_medium=house`). null for any other install. Pure.
+export function campaignOf(referrer) {
+  if (typeof referrer !== 'string' || !referrer) return null;
+  const said = new URLSearchParams(referrer);
+  return said.get('utm_medium') === 'house' ? said.get('utm_campaign') || null : null;
+}
+
 // What the store button says, in the words given (locale.js; English if none). Never a price: prices differ by store region.
 // A game with a page and not on this store: what its page's button says, of WEB_LABELS.
 const EN = { preregister: 'Pre-register', preorder: 'Pre-order', playFree: 'Play free', get: 'Get it', signUp: 'Sign up', playtest: 'Join the playtest', wishlist: 'Wishlist', learnMore: 'Learn more' };

@@ -66,4 +66,14 @@ public class IndieAdsPlugin extends Plugin {
         out.put("metered", cm != null && cm.isActiveNetworkMetered());
         call.resolve(out);
     }
+
+    /** `referrer`: what Google Play keeps of the store link the app was installed from (InstallReferrer), or null. */
+    @PluginMethod
+    public void installReferrer(PluginCall call) {
+        InstallReferrer.read(getContext(), referrer -> {
+            JSObject out = new JSObject();
+            out.put("referrer", referrer);
+            call.resolve(out);
+        });
+    }
 }

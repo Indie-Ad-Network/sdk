@@ -211,6 +211,7 @@ namespace IndieAdNetwork
 			enabled = false;
 			remake = false;
 			demand.Clear();
+			NativeInstallReferrer("");   // anyone still waiting on GetInstallCampaign is answered: no answer will reach this one now
 			try
 			{
 				// NativeWebView.Dispose destroys its GameObject at frame end; hide it now.
@@ -312,6 +313,61 @@ namespace IndieAdNetwork
 			return instance != null ? instance.moreGamesUrl : null;
 		}
 
+		/// The campaign of the network's ad this game was installed from (the creative's campaign, else its id): `done` is
+		/// called once, on the main thread, with it or null. Android only, after Init; the README's "The ad a game was
+		/// installed from" has when it's null, and what Google Play must be able to see.
+		public static void GetInstallCampaign(Action<string> done)
+		{
+			if (done == null)
+			{
+				return;
+			}
+			if (instance == null)
+			{
+				done(null);
+				return;
+			}
+			bool asking = instance.campaignWanted != null;
+			instance.campaignWanted += done;
+			if (!asking && !IndieAdsNative.ReadInstallReferrer(instance.gameObject.name))
+			{
+				instance.NativeInstallReferrer("");
+			}
+		}
+
+		// From the Android side (UnitySendMessage): what Play keeps of the store link, or "". Each who asked is told.
+		void NativeInstallReferrer(string referrer)
+		{
+			Action<string> wanted = campaignWanted;
+			campaignWanted = null;
+			wanted?.Invoke(CampaignOf(referrer));
+		}
+
+		/// As core/storeLinks.js campaignOf: the referrer's utm_campaign, where its utm_medium is the network's ("house").
+		internal static string CampaignOf(string referrer)
+		{
+			if (string.IsNullOrEmpty(referrer))
+			{
+				return null;
+			}
+			string medium = null, campaign = null;
+			foreach (string pair in referrer.Split('&'))
+			{
+				int at = pair.IndexOf('=');
+				string key = Uri.UnescapeDataString((at < 0 ? pair : pair.Substring(0, at)).Replace('+', ' '));
+				string value = at < 0 ? "" : Uri.UnescapeDataString(pair.Substring(at + 1).Replace('+', ' '));
+				if (key == "utm_medium" && medium == null)
+				{
+					medium = value;
+				}
+				else if (key == "utm_campaign" && campaign == null)
+				{
+					campaign = value;
+				}
+			}
+			return medium == "house" && !string.IsNullOrEmpty(campaign) ? campaign : null;
+		}
+
 		/// For a "More games" button of the game's own: opens that page, in the device's browser or in a web view over the
 		/// game with a ✕ of its own. False: there's no page to open (GetMoreGamesURL is null), or an ad is up.
 		/// In the game's web view the page is shown only once it says it can be closed; one that doesn't in a few seconds,
@@ -364,6 +420,7 @@ namespace IndieAdNetwork
 		bool storeOpen;
 		bool storeLeftApp;
 		float storeOpenedTime;
+		Action<string> campaignWanted;   // GetInstallCampaign's, while Play is asked
 
 		// ---- the page ----
 

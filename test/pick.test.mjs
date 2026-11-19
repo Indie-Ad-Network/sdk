@@ -23,6 +23,15 @@ const ids = o => eligible({ ...base, ...o }).map(c => c.id).sort();
 
 test('the catalogue itself is whole', () => assert.deepEqual(cat.dropped, []));
 
+test('one for a platform alone is shown only there, a test among them; one that says none, on both', () => {
+  const both = validate({ apps: cat.apps, creatives: [...cat.creatives, { id: 'pr-android', app: 'pr', kind: 'video', secs: 15, src: 'pa.mp4', os: 'android' }] });
+  const on = o => ids({ catalogue: both, ...o });
+  assert.ok(on({ os: 'android' }).includes('pr-android'));
+  assert.ok(!on({ os: 'ios' }).includes('pr-android'));
+  assert.ok(!on({ os: 'ios', test: true }).includes('pr-android'));
+  assert.ok(on({ os: 'ios' }).includes('tcb-15') && on({ os: 'android' }).includes('tcb-15'));
+});
+
 test('in date', () => {
   assert.deepEqual(ids(), ['pr-play', 'rodeo-15', 'tcb-15', 'tcb-30-wide']);
   assert.deepEqual(ids({ now: Date.UTC(2026, 11, 5) }), ['pr-play', 'rodeo-15', 'tcb-15', 'tcb-30-wide', 'tcb-xmas']);

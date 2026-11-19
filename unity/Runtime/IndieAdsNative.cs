@@ -134,6 +134,30 @@ namespace IndieAdNetwork
 #endif
 		}
 
+		/// Android: Google Play is asked which store link the game was installed from (Plugins/Android/UnityInstallReferrer.java),
+		/// and the GameObject named `listener` is sent NativeInstallReferrer with it, or "". False: it can't be asked here,
+		/// and nothing will be sent.
+		internal static bool ReadInstallReferrer(string listener)
+		{
+#if UNITY_ANDROID && !UNITY_EDITOR
+			try
+			{
+				using (AndroidJavaClass referrer = new AndroidJavaClass("com.indieadnetwork.sdk.UnityInstallReferrer"))
+				using (AndroidJavaObject activity = Activity())
+				{
+					referrer.CallStatic("readFor", activity, listener);
+					return true;
+				}
+			}
+			catch (Exception)   // the class stripped from the build, or no activity yet
+			{
+				return false;
+			}
+#else
+			return false;
+#endif
+		}
+
 #if UNITY_ANDROID && !UNITY_EDITOR
 		const string PlayStore = "com.android.vending";
 		const int FlagActivityNewTask = 0x10000000;

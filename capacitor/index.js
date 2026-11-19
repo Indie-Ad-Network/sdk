@@ -11,6 +11,8 @@
 //               ({ applies, purposes }: core/consent.js reads it; cmpConsent(), below, is the way to ask)
 //   metered     whether the network costs the player (cellular, a hotspot, Low Data Mode):
 //               creatives aren't downloaded ahead on one
+//   installReferrer  Android: what Google Play keeps of the store link the app was installed from
+//               (ads.getInstallCampaign() reads the campaign out of it)
 //
 // Add this folder to the app as a dependency ("indie-ads-capacitor": "file:…/indie-ads/capacitor")
 // and run `npx cap sync`. In a browser, or an app without the plugin, this is {}: the web's ways.
@@ -29,6 +31,7 @@ export function capacitorNative(Capacitor = globalThis.Capacitor) {
     }),
     metered: async () => (await plugin.network()).metered,
     consent: () => plugin.consent(),
+    installReferrer: async () => (await plugin.installReferrer()).referrer,   // Android's alone: core asks only there
   };
 }
 

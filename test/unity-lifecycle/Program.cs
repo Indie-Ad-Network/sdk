@@ -140,6 +140,23 @@ static class Program
             Check(!games.visible && Application.opened.Count == opened && ReferenceEquals(Sdk, successor), "late games callback reopened page or affected successor");
             Reset();
         }
+        // the campaign of the ad a game was installed from: core/storeLinks.js campaignOf's, of the referrer Play hands back
+        Check(IndieAds.CampaignOf("utm_source=tca&utm_medium=house&utm_campaign=half%20off%2Fnow&utm_content=x") == "half off/now", "campaign of a network referrer");
+        Check(IndieAds.CampaignOf("utm_source=google-play&utm_medium=organic") == null && IndieAds.CampaignOf("utm_medium=cpc&utm_campaign=theirs") == null && IndieAds.CampaignOf("") == null, "campaign of another install");
+        {
+            string first = "unset", second = "unset", late = "unset";
+            IndieAds.GetInstallCampaign(c => first = c);
+            Check(first == null, "asked before Init");
+            Start(); IndieAdsNative.referrerAsks = 0;
+            IndieAds.GetInstallCampaign(c => first = c); IndieAds.GetInstallCampaign(c => second = c);
+            Check(IndieAdsNative.referrerAsks == 1, "overlapping callers asked Play more than once");
+            Call(Sdk, "NativeInstallReferrer", "utm_medium=house&utm_campaign=starter50");
+            Check(first == "starter50" && second == "starter50", "campaign not handed to each caller");
+            IndieAds.GetInstallCampaign(c => late = c);
+            IndieAds.Shutdown();
+            Check(late == null && IndieAdsNative.referrerAsks == 2, "a caller still waiting at shutdown was not answered");
+            Reset();
+        }
         Console.WriteLine($"Unity lifecycle harness: {checks} checks passed.");
     }
 }
