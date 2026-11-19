@@ -217,7 +217,7 @@ Don't put "ads" in the hostname: network ad blockers refuse it.
 - **https, and nothing else.** The catalogue, the ingest, the mix, and every file, picture and tracking link a catalogue names: one that's `http://` isn't asked for (but for `localhost`, a developer's own). With `signedBy: '<the network's public key>'` the server's catalogue is used only if the network signed it ([the server](SERVER.md#the-catalogue)), so nobody between a player and the server can serve ads of their own.
 
 - **Reward watching, never installing or tapping the store button.** Both stores forbid incentivised installs.
-- **Ads must suit the host's age rating**: set `rating`, and give each app its own in the catalogue.
+- **Ads must suit the host's age rating**: set `rating`, and give each app one in the catalogue. An app's is the age its ads suit, by what they show, which is often less than the game's own store rating. A creative may have one of its own, and is shown only where both it and its app's are no higher than the host's: so an app whose creatives are rated apart carries the lowest of them.
 
 ## Tests
 

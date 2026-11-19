@@ -61,7 +61,7 @@
           "icon": { "description": "Square icon, 256 px or more.", "type": "string" },
           "art": { "description": "Key art behind the end card.", "type": "string" },
           "price": { "enum": ["free", "paid"] },
-          "rating": { "description": "Age rating, the stricter of the two stores': \"4+\", \"9+\", \"13+\"…", "type": "string", "pattern": "^\\d+\\+$" },
+          "rating": { "description": "The age its ads suit: \"4+\", \"9+\", \"13+\"… A game rated below it shows none of them. It is what the creatives show, which is often less than the game's own store rating; where they differ among themselves, the lowest of theirs.", "type": "string", "pattern": "^\\d+\\+$" },
           "status": { "description": "\"preorder\": the button says Pre-order / Pre-register until `release`.", "enum": ["preorder"] },
           "release": { "type": "string", "format": "date" },
           "ios": {
@@ -109,7 +109,7 @@
           "keepPlaying": { "description": "playable: when `secs` are up it's paused under the end card (told it isn't viewable, volume 0), which offers Keep playing, for up to 2 minutes more. Only for a page that pauses when told.", "type": "boolean" },
           "weight": { "type": "number", "default": 1 },
           "capPerDay": { "description": "Showings per player in 24 hours.", "type": "integer", "default": 2 },
-          "rating": { "description": "If stricter than its app's.", "type": "string", "pattern": "^\\d+\\+$" },
+          "rating": { "description": "The age this creative suits, where it differs from its app's. A game shows it only if this and its app's rating are both no higher than the game's own, so an app with creatives rated apart carries the lowest of them.", "type": "string", "pattern": "^\\d+\\+$" },
           "from": { "type": "string", "format": "date" },
           "to": { "description": "The first day it no longer shows.", "type": "string", "format": "date" },
           "hosts": { "description": "Only in these host games. Left out: in all.", "type": "array", "items": { "type": "string" } },
