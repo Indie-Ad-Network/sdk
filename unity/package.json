@@ -1,6 +1,6 @@
 {
   "name": "com.indieadnetwork.sdk",
-  "version": "0.6.17",
+  "version": "0.6.18",
   "license": "MIT",
   "displayName": "Indie Ads",
   "description": "Cross-promotion for indie games, from Indie Ad Network: rewarded and interstitial ads (videos and MRAID playables) swapped between indie games, one impression for one. Played in the system's own web view on iOS and Android, alongside a paid ad network if the game has one.",
