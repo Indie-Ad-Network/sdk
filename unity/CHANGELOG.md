@@ -6,6 +6,11 @@ The repository has one version, [Semantic Versioning](https://semver.org), and a
 
 Two numbers are not this one, and change only when a format does: `VERSION` in `core/wire.js` (what games send the ingest) and the catalogue's `version`. Games already released go on sending and reading the old ones.
 
+## [0.6.19] - 2026-11-23
+
+### Fixed
+- **A game closed at once on an Android phone with no web view** (none installed, or switched off). Making the ad's web view threw the system's `MissingWebViewPackageException` on the UI thread, which ended the game, as soon as `IndieAds.Init` ran. Seen in Google Play's vitals on a Moto g24 power (Android 14). Now the view says it's lost, as when its page's process goes, and none is made again while the game runs: `NativeWebView.Create()` returns null, so no ad is shown, and the More Games page opens in the browser as it does where house ads aren't running. Nothing for a game to do but take this release.
+
 ## [0.6.18] - 2026-11-20
 
 ### Added

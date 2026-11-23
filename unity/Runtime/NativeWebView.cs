@@ -56,7 +56,7 @@ namespace IndieAdNetwork
 
 		public static NativeWebView Create()
 		{
-			if (!IsSupported)
+			if (!IsSupported || !NativeAvailable())
 			{
 				return null;
 			}
@@ -99,6 +99,7 @@ namespace IndieAdNetwork
 		IntPtr native;
 		bool HasNative => native != IntPtr.Zero;
 
+		static bool NativeAvailable() => true;
 		void CreateNative() { native = _HAWebView_Create(gameObject.name); }
 		void DestroyNative() { _HAWebView_Destroy(native); native = IntPtr.Zero; }
 		public void LoadUrl(string url) { if (HasNative) { _HAWebView_LoadUrl(native, url); } }
@@ -112,6 +113,15 @@ namespace IndieAdNetwork
 #elif UNITY_ANDROID && !UNITY_EDITOR
 		AndroidJavaObject native;
 		bool HasNative => native != null;
+
+		// False once the native side couldn't make a web view (a device with none installed, or it switched off)
+		static bool NativeAvailable()
+		{
+			using (AndroidJavaClass view = new AndroidJavaClass("com.indieadnetwork.sdk.NativeWebView"))
+			{
+				return view.CallStatic<bool>("isAvailable");
+			}
+		}
 
 		void CreateNative()
 		{
@@ -133,6 +143,7 @@ namespace IndieAdNetwork
 #else
 		bool HasNative => false;
 
+		static bool NativeAvailable() => true;
 		void CreateNative() { }
 		void DestroyNative() { }
 		public void LoadUrl(string url) { }

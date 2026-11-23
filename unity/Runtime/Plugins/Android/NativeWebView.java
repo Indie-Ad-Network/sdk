@@ -45,6 +45,13 @@ public class NativeWebView {
     private float left = 0, top = 0, width = 1, height = 1;
     private boolean visible = false;
     private View.OnLayoutChangeListener onLayout;
+    // a web view couldn't be made on this device: there's none to be had until the game starts again
+    private static volatile boolean unavailable = false;
+
+    /** False once a web view couldn't be made here: the Unity side makes no more. */
+    public static boolean isAvailable() {
+        return !unavailable;
+    }
 
     public NativeWebView(Activity activity, String listener, boolean logConsole) {
         this.activity = activity;
@@ -67,17 +74,26 @@ public class NativeWebView {
 
     @SuppressLint({"SetJavaScriptEnabled", "AddJavascriptInterface"})
     private void create() {
-        webView = new WebView(activity) {
-            // the back button is the page's to answer (an ad's ✕), not "leave the game"
-            @Override public boolean onKeyDown(int keyCode, KeyEvent event) {
-                if (keyCode == KeyEvent.KEYCODE_BACK) { return true; }
-                return super.onKeyDown(keyCode, event);
-            }
-            @Override public boolean onKeyUp(int keyCode, KeyEvent event) {
-                if (keyCode == KeyEvent.KEYCODE_BACK) { tell("NativeBack", ""); return true; }
-                return super.onKeyUp(keyCode, event);
-            }
-        };
+        try {
+            webView = new WebView(activity) {
+                // the back button is the page's to answer (an ad's ✕), not "leave the game"
+                @Override public boolean onKeyDown(int keyCode, KeyEvent event) {
+                    if (keyCode == KeyEvent.KEYCODE_BACK) { return true; }
+                    return super.onKeyDown(keyCode, event);
+                }
+                @Override public boolean onKeyUp(int keyCode, KeyEvent event) {
+                    if (keyCode == KeyEvent.KEYCODE_BACK) { tell("NativeBack", ""); return true; }
+                    return super.onKeyUp(keyCode, event);
+                }
+            };
+        } catch (Throwable e) {
+            // No web view on this device (none installed, or switched off: the system throws an Error for it). The
+            // game goes on without one: this view is lost, and none is made again while the game runs.
+            unavailable = true;
+            webView = null;
+            tell("NativeLost", "");
+            return;
+        }
         WebSettings settings = webView.getSettings();
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);                   // localStorage, and with it IndexedDB
