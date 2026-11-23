@@ -31,6 +31,8 @@ namespace UnityEngine
     public enum RuntimePlatform { Android, IPhonePlayer }
     public static class Application
     {
+        public static event Action lowMemory;
+        public static void LowMemory() { lowMemory?.Invoke(); }
         public static RuntimePlatform platform;
         public static readonly List<string> opened = new();
         public static void OpenURL(string url) { opened.Add(url); }

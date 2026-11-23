@@ -27,6 +27,7 @@ sealed class View : IIndieAdsWebView
     public void Dispose()
     { disposed = true; disposals++; if (failDispose) throw new InvalidOperationException("dispose"); }
     public bool Detached => MessageReceived == null && BackPressed == null && Lost == null;
+    public void Lose() { Lost?.Invoke(); }
 }
 
 static class Program
@@ -36,10 +37,11 @@ static class Program
     static object Sdk => typeof(IndieAds).GetField("instance", BindingFlags.Static | BindingFlags.NonPublic).GetValue(null);
     static void Call(object sdk, string method, params object[] args) => sdk.GetType().GetMethod(method, BindingFlags.Instance | BindingFlags.NonPublic).Invoke(sdk, args);
     static void Check(bool condition, string why) { checks++; if (!condition) throw new Exception(why); }
-    static View Start()
+    // `make`: each web view the package asks for (one view, made again and again, unless said); `keep`: keepWebView
+    static View Start(Func<IIndieAdsWebView> make = null, bool keep = true)
     {
-        var view = new View();
-        IndieAds.Init(new IndieAdsConfig { host = "first", age = 16, catalogueUrl = "https://example.com/catalogue.json", createWebView = () => view });
+        var view = make == null ? new View() : null;   // with `make`, the caller keeps its own
+        IndieAds.Init(new IndieAdsConfig { host = "first", age = 16, catalogueUrl = "https://example.com/catalogue.json", createWebView = make ?? (() => view), keepWebView = keep });
         return view;
     }
     static View Showing(bool present = true)
@@ -156,6 +158,69 @@ static class Program
             IndieAds.Shutdown();
             Check(late == null && IndieAdsNative.referrerAsks == 2, "a caller still waiting at shutdown was not answered");
             Reset();
+        }
+        // 0.6.20: the web view is kept between ads; it goes when memory is low, and what it said goes with it (Wants is false
+        // until a page that's up says again); it's made again later. A lost page's word goes too, and one lost while the game
+        // was away, or silent as it comes back, is made again at once. keepWebView off: put away when idle, its word kept.
+        {
+            int made = 0, changed = 0; View current = null;
+            Action onChange = () => changed++;
+            var says = new { type = "demand", demand = new[] { new { placement = "coins", share = 1, available = 2 } } };
+            Func<IIndieAdsWebView> make = () => { made++; return current = new View(); };
+            Time.realtimeSinceStartup = 1000;
+            Start(make);
+            IndieAds.OnDemandChanged += onChange;
+            try
+            {
+                current.Emit(says); current.Emit(new { type = "idle" });
+                Check(made == 1 && !current.disposed && IndieAds.Wants("coins"), "an idle page put away with keepWebView on");
+                Application.LowMemory();
+                Check(current.disposed && !IndieAds.Wants("coins") && changed == 2, "kept when memory was low, or its word kept");
+                Time.realtimeSinceStartup = 1004; Call(Sdk, "Update");
+                Check(made == 1, "made again at once after low memory");
+                Time.realtimeSinceStartup = 1006; Call(Sdk, "Update");
+                Check(made == 2 && !IndieAds.Wants("coins"), "not made again after low memory, or claimed before it said");
+                current.Emit(says);
+                Check(IndieAds.Wants("coins"), "its word not taken once it said");
+                current.Lose();
+                Check(current.disposed && IndieAds.Demand("coins").available == 0 && changed == 4, "a lost page's word kept");
+                Time.realtimeSinceStartup = 1015; Call(Sdk, "Update");
+                Check(made == 2, "made again before the longer wait");
+                Time.realtimeSinceStartup = 1017; Call(Sdk, "Update");
+                Check(made == 3, "a lost web view not made again");
+
+                // lost while the game was away: made again as it comes back, not on the timer
+                Call(Sdk, "OnApplicationFocus", false); current.Lose();
+                Time.realtimeSinceStartup = 1100; Call(Sdk, "OnApplicationFocus", true);
+                Check(made == 4, "a page lost while away not made again as the game came back");
+                // lost just after it came back (word of it arriving late): the same
+                Call(Sdk, "OnApplicationFocus", false); Call(Sdk, "OnApplicationFocus", true);
+                current.Lose(); Call(Sdk, "Update");
+                Check(made == 5, "a page lost just after the game came back waited on the timer");
+                // back at the front, a page must answer what it's told; one that says nothing was emptied in the background
+                current.Emit(new { type = "device" });
+                Call(Sdk, "OnApplicationFocus", false); Time.realtimeSinceStartup = 1200; Call(Sdk, "OnApplicationFocus", true);
+                current.Emit(says);
+                Time.realtimeSinceStartup = 1205; Call(Sdk, "Update");
+                Check(made == 5 && !current.disposed, "a page that answered was taken for lost");
+                Call(Sdk, "OnApplicationFocus", false); Time.realtimeSinceStartup = 1300; Call(Sdk, "OnApplicationFocus", true);
+                Time.realtimeSinceStartup = 1305; Call(Sdk, "Update");
+                Check(made == 6 && !IndieAds.Wants("coins"), "a page that said nothing as the game came back not made again, or its word kept");
+                // a page that ran a minute without trouble: the next is made again after the shortest wait
+                Time.realtimeSinceStartup = 1400; current.Lose();
+                Time.realtimeSinceStartup = 1404; Call(Sdk, "Update");
+                Check(made == 6, "made again at once after a page that ran a minute");
+                Time.realtimeSinceStartup = 1406; Call(Sdk, "Update");
+                Check(made == 7, "the waits not started again after a page that ran a minute");
+            }
+            finally { IndieAds.OnDemandChanged -= onChange; }
+            Reset();
+            Application.LowMemory();   // a session shut down no longer hears it
+            Start(make, keep: false);
+            current.Emit(says); current.Emit(new { type = "idle" });
+            Check(made == 8 && current.disposed && IndieAds.Wants("coins"), "keepWebView off: an idle page's word not kept");
+            Check(IndieAds.Show("coins", r => { done++; result = r; }) && made == 9, "keepWebView off: Show didn't make the page");
+            Reset(); Time.realtimeSinceStartup = 0;
         }
         Console.WriteLine($"Unity lifecycle harness: {checks} checks passed.");
     }

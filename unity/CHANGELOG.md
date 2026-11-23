@@ -6,6 +6,16 @@ The repository has one version, [Semantic Versioning](https://semver.org), and a
 
 Two numbers are not this one, and change only when a format does: `VERSION` in `core/wire.js` (what games send the ingest) and the catalogue's `version`. Games already released go on sending and reading the old ones.
 
+## [0.6.20] - 2026-11-23
+
+### Changed
+- **The web view is kept between ads (`keepWebView` is true unless said).** Before, it was put away 4 seconds after each ad and what its page had said was available kept, so `Wants` gave the house the slot and `Show` made the web view again from nothing: the system's web view, the player's page, then up to 1.5 s each for the catalogue and the mix from the network. On a slow phone that's seconds of nothing on screen, and at `showTimeout` (6 s) the ad was given up, the game's paid network showing after it. Kept, an ad starts at once. It's put away all the same **when the system says memory is low** (`Application.lowMemory`, iOS and Android), and made again 5 seconds later, longer each time (to 10 minutes). Without the player's consent it's kept whatever happens, as before: it's the only record of what's been shown. `keepWebView = false` is as before.
+- **What a page said is available goes with it** when it's put away for memory, made again for a change of consent, lost, or gives up an ad that never started: `Demand` is nothing and `Wants` false until a page that's up says otherwise (`OnDemandChanged` says when), so a slot is never claimed for an ad that would wait on a web view being made, or one that can't be made. A page put away because it's idle, with `keepWebView` off, keeps its word, as before.
+
+### Fixed
+- **A web view that's lost** (its page's process gone, or none to be had), **or that never started an ad**, is made again 5 seconds later, longer after each time (from the shortest again once a page has run a minute without trouble), as for low memory. Before, nothing made it again until an ad was asked for, and what it had said was available stood meanwhile.
+- **A web view the system emptied while the game was in the background** (iOS does it as a matter of course) is made again as the game comes back, not on that timer. One emptied without a word, as iOS now and then does, is found out too: back at the front the page is told something it answers at once, and one that hasn't answered in 4 seconds is taken for lost, rather than given an ad break it can't fill.
+
 ## [0.6.19] - 2026-11-23
 
 ### Fixed

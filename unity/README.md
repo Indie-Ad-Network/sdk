@@ -9,7 +9,7 @@ The package's player (`core/`, as one page: `Runtime/Resources/IndieAdsPlayer.ht
 Add the package by its git URL. In Unity: Window → Package Manager → **+** → *Add package from git URL…*, and paste:
 
 ```
-https://github.com/Indie-Ad-Network/sdk.git?path=/unity#v0.6.19
+https://github.com/Indie-Ad-Network/sdk.git?path=/unity#v0.6.20
 ```
 
 What follows the `#` is the release (`CHANGELOG.md` has each): it's how a game stays on the version it was tested with. Then:
@@ -108,7 +108,7 @@ For the ads themselves, see [Creatives](../CREATIVES.md) and the [playable kit](
 
 - **The player speaks the player's language** (`strings/README.md` has the list). `language` wants only what the game knows: "es" on a phone set to es-MX becomes Latin America's Spanish by itself. The reward's words (`IndieAdPlacement.reward`) are the game's own, so the game translates those.
 
-- **The web view is put away between ads** (it costs tens of MB) once the page says it's idle, and made again for the next ad. `keepWebView = true` keeps it.
+- **The web view is kept between ads** (it costs tens of MB), so an ad starts at once. It's put away when the system says memory is low (`Application.lowMemory`), or if the system takes it, and made again a few seconds later (longer each time it happens again), or as the game comes back if that's where it was taken: back at the front, a page that doesn't answer within 4 seconds is taken for lost too. While it's away `Demand` is nothing and `Wants` is false, so the slot is the paid network's rather than an ad that would wait for the web view. `keepWebView = false` puts it away whenever it's idle instead, and makes it again at `Show`, which on a slow phone can be seconds before the ad appears. Without the player's consent it's always kept: it's the only record of what's been shown.
 - **The game isn't paused for you.** The ad is a view over the game, which goes on running under it: pause, and quiet, your own game from `Show` until its callback.
 - **An ad that hasn't started in `showTimeout` seconds (6) is given up**: the callback gets `shown == false`.
 - **A playable can't speak for the page.** It runs in a sandboxed frame, and though a frame can reach `postMessage` on Android, the game acts only on messages carrying a key made for each page and given to the page alone; on iOS only the page's own frame is heard at all.

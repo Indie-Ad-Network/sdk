@@ -72,9 +72,11 @@ namespace IndieAdNetwork
 		public Func<string> language;
 		/// The player's reported age, or 0 if not known. Under 13, only the games the network has marked as for them are shown.
 		public int age;
-		/// Keep the web view (tens of MB) between ads. Off: it is put away once the page says it's idle, and made
-		/// again for the next ad (a fraction of a second) or the next look at what's available.
-		public bool keepWebView;
+		/// Keep the web view (tens of MB) between ads, as unless said: an ad then starts at once, and what's available is
+		/// always the word of a page that's up. It's put away all the same when the system says memory is low, and made
+		/// again a little later. Off: it's put away whenever the page is idle and made again at Show, which on a slow phone
+		/// can be seconds before the ad appears.
+		public bool keepWebView = true;
 		/// With the web view put away, look again at what's available when the game comes back to the front after this long.
 		public float refreshAfterSeconds = 600f;
 		/// Seconds for an ad to start before it's given up as failed.
@@ -186,6 +188,7 @@ namespace IndieAdNetwork
 			{
 				config.shippedCatalogueJson = LoadShippedCatalogue();
 			}
+			Application.lowMemory += instance.HandleLowMemory;
 			instance.EnsurePage();
 		}
 
@@ -210,6 +213,7 @@ namespace IndieAdNetwork
 			if (instance == this) instance = null; // A callback may initialize the next player.
 			enabled = false;
 			remake = false;
+			Application.lowMemory -= HandleLowMemory;
 			demand.Clear();
 			NativeInstallReferrer("");   // anyone still waiting on GetInstallCampaign is answered: no answer will reach this one now
 			try
@@ -401,6 +405,17 @@ namespace IndieAdNetwork
 		readonly Dictionary<string, IndieAdDemand> demand = new Dictionary<string, IndieAdDemand>();
 		bool asked;   // the page has asked what it can't know: it's told again whenever that may have changed
 		float demandTime;
+		float remakeDelay = 5f;   // how long after the next page lost (or put away for memory) one is made again: doubled each time, to 10 minutes
+		float remakeAt = -1f;     // when that is (-1: none is to be)
+		float pageLoadedTime = -1f;   // when the page that's up said it was there (-1: none has)
+		bool away;                // the game isn't at the front
+		float backTime = -1f;     // when it last came back to the front
+		float askedAliveAt = -1f; // back at the front, the page was told something it answers at once: when (-1: no answer awaited)
+		float heardTime = -1f;    // when the page last said anything
+		// A page that's run this long without trouble starts the waits again from the shortest; one has this long to answer
+		// as the game comes back; and a page lost this soon after it came back (its word arriving late, or its silence
+		// found) was lost while it was away.
+		const float HealthySeconds = 60f, AnswerSeconds = 4f, BackSeconds = AnswerSeconds + 2f;
 
 		bool stopped;
 		bool showing;
@@ -444,6 +459,9 @@ namespace IndieAdNetwork
 				return false;
 			}
 			pageLoaded = false;
+			remakeAt = -1f;
+			pageLoadedTime = -1f;
+			askedAliveAt = -1f;
 			pageKey = Guid.NewGuid().ToString("N");
 			waitingCalls.Clear();
 			view.MessageReceived += Receive;
@@ -456,8 +474,19 @@ namespace IndieAdNetwork
 
 		void RemakePage()
 		{
-			DropPage();
+			Forget();
 			EnsurePage();
+		}
+
+		// The page goes, and what it said is available goes with it: nothing is the house's until a page that's up says
+		// otherwise, so a slot is never claimed for an ad that would wait on a web view being made. (A page put away
+		// because it's idle, with keepWebView off, keeps its word instead: Show makes it again.)
+		void Forget()
+		{
+			DropPage();
+			bool had = demand.Count > 0;
+			demand.Clear();
+			if (had) OnDemandChanged?.Invoke();
 		}
 
 		void DropPage()
@@ -512,6 +541,7 @@ namespace IndieAdNetwork
 				bool first = !pageLoaded && batch.items[i].type == "loaded";
 				if (first || (pageLoaded && batch.k == pageKey))
 				{
+					heardTime = Time.realtimeSinceStartup;
 					Handle(batch.items[i]);
 				}
 			}
@@ -531,6 +561,7 @@ namespace IndieAdNetwork
 						break;
 					}
 					pageLoaded = true;
+					pageLoadedTime = Time.realtimeSinceStartup;
 					view.Evaluate("indieAdsHost.start(" + StartConfig() + ")");
 					for (int i = 0; i < waitingCalls.Count; i++)
 					{
@@ -644,13 +675,15 @@ namespace IndieAdNetwork
 
 		// ---- what a page can't know ----
 
-		void TellDevice()
+		// True: the page was told, and answers at once (what's available, before anything else it does).
+		bool TellDevice()
 		{
-			if (view == null || !asked)
+			if (view == null || !asked || !pageLoaded)
 			{
-				return;
+				return false;
 			}
 			Call("device", IndieAdsNative.IsMetered() ? "{\"metered\":true}" : "{\"metered\":false}");
+			return true;
 		}
 
 		void OnApplicationFocus(bool focused)
@@ -666,16 +699,24 @@ namespace IndieAdNetwork
 					StoreClosed();
 				}
 			}
-			if (stopped || !focused || config == null)
+			if (stopped || config == null)
 			{
 				return;
 			}
-			// Back at the front: the network may have changed, and a day-old cap may have lapsed.
+			away = !focused;
+			if (away)
+			{
+				return;
+			}
+			backTime = Time.realtimeSinceStartup;
+			// Back at the front: the network may have changed, and a day-old cap may have lapsed. A page that's up is told,
+			// and must answer: one the system emptied in the background without a word is lost all the same (Update).
 			if (view != null)
 			{
-				TellDevice();
+				if (TellDevice() && !showing) askedAliveAt = backTime;
 			}
-			else if (Time.realtimeSinceStartup - demandTime > config.refreshAfterSeconds)
+			// One lost, or put away for memory, while the game was away is made again now, not on its timer
+			else if (remakeAt >= 0f || Time.realtimeSinceStartup - demandTime > config.refreshAfterSeconds)
 			{
 				EnsurePage();
 			}
@@ -738,6 +779,23 @@ namespace IndieAdNetwork
 		void Update()
 		{
 			if (stopped) return;
+			// A page lost, or put away for memory, is made again (HandleLost, HandleLowMemory)
+			// Told something as the game came back, and not a word since: the system emptied it in the background
+			if (askedAliveAt >= 0f && Time.realtimeSinceStartup - askedAliveAt > AnswerSeconds)
+			{
+				bool answered = heardTime >= askedAliveAt;
+				askedAliveAt = -1f;
+				if (!answered && !showing && view != null)
+				{
+					if (Logging) Debug.LogWarning("[IndieAds] the web view didn't answer as the game came back");
+					HandleLost();
+				}
+			}
+			if (remakeAt >= 0f && Time.realtimeSinceStartup >= remakeAt)
+			{
+				remakeAt = -1f;
+				if (!showing) EnsurePage();
+			}
 			// A page of games that hasn't said it can be closed isn't put in front of the player: the browser has it
 			if (games != null && !gamesReady && Time.realtimeSinceStartup - gamesAsked > GamesPatience)
 			{
@@ -749,8 +807,12 @@ namespace IndieAdNetwork
 				{
 					Debug.LogWarning("[IndieAds] the ad never started: giving up on it");
 				}
-				DropPage();
-				FinishShow(default(IndieAdResult));
+				try { Forget(); }   // a page that couldn't start an ad: its word goes with it, and one is made again later
+				finally
+				{
+					ScheduleRemake();
+					FinishShow(default(IndieAdResult));
+				}
 			}
 			// A store that never took the game from the front (nothing opened): don't leave the ad's clock standing.
 			if (storeOpen && !storeLeftApp && !IndieAdsNative.StoreSheetIsUp && Time.realtimeSinceStartup - storeOpenedTime > 3f)
@@ -840,11 +902,48 @@ namespace IndieAdNetwork
 				Debug.LogWarning("[IndieAds] the web view was lost");
 			}
 			bool wasShowing = showing;
-			DropPage();
-			if (wasShowing)
+			try { Forget(); }   // what it said goes with it: a page that can't be made at all must claim nothing
+			finally
 			{
-				FinishShow(new IndieAdResult { shown = showStarted });
+				ScheduleRemake();
+				if (wasShowing && showing)   // unless a subscriber shut the package down, which finished it
+				{
+					FinishShow(new IndieAdResult { shown = showStarted });
+				}
 			}
+		}
+
+		// The system says memory is low: the page goes (it's tens of MB), unless an ad is up or, without consent, it's the
+		// only record of what's been shown. It's made again a little later.
+		void HandleLowMemory()
+		{
+			if (stopped || showing || view == null || !config.consent) return;
+			if (Logging)
+			{
+				Debug.LogWarning("[IndieAds] memory is low: the web view is put away");
+			}
+			Forget();
+			ScheduleRemake();
+		}
+
+		// Later after each time, in case the system keeps taking it; but a page lost with the game away (the system empties a
+		// web view in the background as a matter of course) is made again as it comes back, and one that ran a minute
+		// without trouble starts the waits again from the shortest.
+		void ScheduleRemake()
+		{
+			float now = Time.realtimeSinceStartup;
+			if (away || (backTime >= 0f && now - backTime < BackSeconds))
+			{
+				remakeAt = now;
+				return;
+			}
+			if (pageLoadedTime >= 0f && now - pageLoadedTime >= HealthySeconds)
+			{
+				remakeDelay = 5f;
+			}
+			pageLoadedTime = -1f;
+			remakeAt = now + remakeDelay;
+			remakeDelay = Math.Min(remakeDelay * 2f, 600f);
 		}
 
 		// ---- the store ----
