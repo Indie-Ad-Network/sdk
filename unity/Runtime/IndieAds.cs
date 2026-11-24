@@ -219,12 +219,7 @@ namespace IndieAdNetwork
 			NativeInstallReferrer("");   // anyone still waiting on GetInstallCampaign is answered: no answer will reach this one now
 			try
 			{
-				// NativeWebView.Dispose destroys its GameObject at frame end; hide it now.
-				try
-				{
-					try { if (view != null) view.SetVisible(false); }
-					finally { DropPage(); }
-				}
+				try { DropPage(); }
 				finally { CloseGames(); }
 			}
 			finally
@@ -411,8 +406,9 @@ namespace IndieAdNetwork
 		float pageLoadedTime = -1f;   // when the page that's up said it was there (-1: none has)
 		bool away;                // the game isn't at the front
 		float backTime = -1f;     // when it last came back to the front
-		float askedAliveAt = -1f; // back at the front, the page was told something it answers at once: when (-1: no answer awaited)
-		float heardTime = -1f;    // when the page last said anything
+		float askedAliveAt = -1f; // back at the front, the page was asked if it's there: when (-1: no answer awaited)
+		int aliveAsk;             // that question's number: only 'alive' with it is an answer, not anything said before
+		bool aliveHeard;          // and it has been answered
 		// A page that's run this long without trouble starts the waits again from the shortest; one has this long to answer
 		// as the game comes back; and a page lost this soon after it came back (its word arriving late) was lost while it
 		// was away. With an ad up the page has longer to answer (a playable can keep its page busy), but it must: an ad
@@ -465,6 +461,7 @@ namespace IndieAdNetwork
 			remakeAt = -1f;
 			pageLoadedTime = -1f;
 			askedAliveAt = -1f;
+			asked = false;   // a page is asked if it's there only once it has asked what it can't know: it's up by then
 			pageKey = Guid.NewGuid().ToString("N");
 			waitingCalls.Clear();
 			view.MessageReceived += Receive;
@@ -502,7 +499,9 @@ namespace IndieAdNetwork
 			previous.MessageReceived -= Receive;
 			previous.BackPressed -= HandleBack;
 			previous.Lost -= HandleLost;
-			previous.Dispose();
+			// NativeWebView.Dispose destroys its GameObject at frame end; hide it now (an ad's, ended, is still up).
+			try { previous.SetVisible(false); }
+			finally { previous.Dispose(); }
 		}
 
 		void Call(string function, string arguments)
@@ -544,7 +543,6 @@ namespace IndieAdNetwork
 				bool first = !pageLoaded && batch.items[i].type == "loaded";
 				if (first || (pageLoaded && batch.k == pageKey))
 				{
-					heardTime = Time.realtimeSinceStartup;
 					Handle(batch.items[i]);
 				}
 			}
@@ -575,6 +573,9 @@ namespace IndieAdNetwork
 				case "device":
 					asked = true;
 					TellDevice();
+					break;
+				case "alive":
+					if (m.n == aliveAsk) aliveHeard = true;
 					break;
 				case "demand":
 					demand.Clear();
@@ -678,14 +679,15 @@ namespace IndieAdNetwork
 
 		// ---- what a page can't know ----
 
-		// True: the page was told, and answers at once (what's available, before anything else it does).
-		bool TellDevice()
+		// True: the page was told. `ask`: a question's number, which it says back at once ('alive'), before anything else.
+		bool TellDevice(int ask = 0)
 		{
 			if (view == null || !asked || !pageLoaded)
 			{
 				return false;
 			}
-			Call("device", IndieAdsNative.IsMetered() ? "{\"metered\":true}" : "{\"metered\":false}");
+			string metered = IndieAdsNative.IsMetered() ? "true" : "false";
+			Call("device", "{\"metered\":" + metered + (ask > 0 ? ",\"ask\":" + ask : "") + "}");
 			return true;
 		}
 
@@ -717,7 +719,8 @@ namespace IndieAdNetwork
 			// and must answer: one the system emptied in the background without a word is lost all the same (Update).
 			if (view != null)
 			{
-				if (TellDevice()) askedAliveAt = backTime;
+				aliveHeard = false;
+				if (TellDevice(++aliveAsk)) askedAliveAt = backTime;
 			}
 			// One lost, or put away for memory, while the game was away is made again now, not on its timer
 			else if (remakeAt >= 0f || Time.realtimeSinceStartup - demandTime > config.refreshAfterSeconds)
@@ -785,12 +788,11 @@ namespace IndieAdNetwork
 		{
 			if (stopped) return;
 			// A page lost, or put away for memory, is made again (HandleLost, HandleLowMemory)
-			// Told something as the game came back, and not a word since: the system emptied it in the background
+			// Asked if it was there as the game came back, and no answer: the system emptied it in the background
 			if (askedAliveAt >= 0f && Time.realtimeSinceStartup - askedAliveAt > (showing ? ShowingAnswerSeconds : AnswerSeconds))
 			{
-				bool answered = heardTime >= askedAliveAt;
 				askedAliveAt = -1f;
-				if (!answered && view != null)
+				if (!aliveHeard && view != null)
 				{
 					Lose("unanswered");
 				}
@@ -814,7 +816,7 @@ namespace IndieAdNetwork
 				try { Forget(); }   // a page that couldn't start an ad: its word goes with it, and one is made again later
 				finally
 				{
-					ScheduleRemake();
+					ScheduleRemake(LostWhileAway());
 					FinishShow(default(IndieAdResult));
 				}
 			}
@@ -912,7 +914,7 @@ namespace IndieAdNetwork
 			try { Forget(); }   // what it said goes with it: a page that can't be made at all must claim nothing
 			finally
 			{
-				ScheduleRemake(why == "unanswered");   // silent as the game came back: it was emptied while away
+				ScheduleRemake(why == "unanswered" || LostWhileAway());   // silent as the game came back: emptied while away
 				// unless a subscriber (OnDemandChanged, then OnEvent) shut the package down, which finished it
 				if (wasShowing && showing)
 				{
@@ -932,16 +934,19 @@ namespace IndieAdNetwork
 				Debug.LogWarning("[IndieAds] memory is low: the web view is put away");
 			}
 			Forget();
-			ScheduleRemake();
+			ScheduleRemake(false);   // always after the wait: made again at once, it would take the memory straight back
 		}
 
-		// Later after each time, in case the system keeps taking it; but a page lost with the game away (the system empties a
-		// web view in the background as a matter of course) is made again as it comes back, and one that ran a minute
-		// without trouble starts the waits again from the shortest. `lostAway`: the caller knows it was lost while away.
-		void ScheduleRemake(bool lostAway = false)
+		// A page lost with the game away (the system empties a web view in the background as a matter of course), or so soon
+		// after it came back that word of it is late: made again as the game comes back, not on the timer.
+		bool LostWhileAway() => away || (backTime >= 0f && Time.realtimeSinceStartup - backTime < BackSeconds);
+
+		// `atOnce`, or later after each time, in case the system keeps taking it; one that ran a minute without trouble starts
+		// the waits again from the shortest.
+		void ScheduleRemake(bool atOnce)
 		{
 			float now = Time.realtimeSinceStartup;
-			if (lostAway || away || (backTime >= 0f && now - backTime < BackSeconds))
+			if (atOnce)
 			{
 				remakeAt = now;
 				return;

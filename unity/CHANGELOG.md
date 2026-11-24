@@ -6,6 +6,14 @@ The repository has one version, [Semantic Versioning](https://semver.org), and a
 
 Two numbers are not this one, and change only when a format does: `VERSION` in `core/wire.js` (what games send the ingest) and the catalogue's `version`. Games already released go on sending and reading the old ones.
 
+## [0.6.22] - 2026-11-24
+
+### Fixed
+- **An ad page the system emptied could still pass for there** (0.6.20, 0.6.21), leaving the game paused under a blank ad. Anything the page said counted as its answer as the game came back, and something it said just before the player left (a video's q50, say) can reach the game only once it's back. Now the game's question has a number, and the page says that number back (`alive`) first thing, before it looks at anything: only that is an answer.
+- **A page made again could be taken for lost while it was still loading.** It was asked if it was there as the game came back before it had asked what it can't know, which a page does once its catalogue is in, and answering could take longer than the wait. It's asked only once it has.
+- **A web view put away for memory just after the game came back** (or with the game away but still running, as behind Android's notification shade) **was made again at once**, taking the memory straight back. Now it's always made again after the wait, longer each time.
+- **An ad's web view ended because it was lost is hidden at once**, not left over the game until the end of the frame, after `OnHidden` and the callback had run.
+
 ## [0.6.21] - 2026-11-24
 
 ### Fixed

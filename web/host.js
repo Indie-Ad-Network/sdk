@@ -17,7 +17,8 @@
 //   …                                           { type: 'device' }           what can't a page know? (answered with device())
 //   offered(placement)                          { type: 'demand', demand }   [{ placement, share, available, owed }] (core/index.js demand(); owed: how many games)
 //   test(on)          a developer trying the ads out (core/index.js test())
-//   device({ metered })                         { type: 'event', e }         every event of the player, for the game's analytics
+//   device({ metered, ask })                    { type: 'event', e }         every event of the player, for the game's analytics
+//                                               { type: 'alive', n }         device()'s `ask`, said back first: the page is there
 //   storeClosed()                               { type: 'store', link }      open this store link; storeClosed() when it's put away
 //                                               { type: 'banner', link }     the store's banner for link.id at the foot of the screen; no id: away
 //   back()            the device's back button: the player's ✕
@@ -91,7 +92,9 @@ window.indieAdsHost = {
       await around(ads.ready);   // what's already on the device can be shown at once; then what has just been downloaded
     });
   },
-  device({ metered = false } = {}) {
+  // `ask`: the game, back at the front, asks if the page is there; it's answered before anything else, even with nothing loaded
+  device({ metered = false, ask } = {}) {
+    if (ask) post('alive', { n: ask });
     device = { metered: !!metered };
     deviceKnown();
     if (ads) { ads.refresh(); during(() => around(ads.prefetch())); }   // and what's wanted downloaded, if the network no longer costs: the first word on that isn't the last
