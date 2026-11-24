@@ -32,8 +32,9 @@ export function storeLink(app, { os, native = false, host, campaign, creative, p
 
   if (os === 'ios') {
     const id = app.ios?.id;
-    // a campaign link needs both: the provider token (whose App Analytics counts it) and the campaign
-    const provider = app.ios.pt ?? pt, ct = token(`${host}-${creative}`);
+    // a campaign link needs both: the provider token (whose App Analytics counts it) and the campaign: the creative's own
+    // (one name for many ads reaches Apple's five first-time downloads sooner), else the game that showed it and the ad
+    const provider = app.ios.pt ?? pt, ct = token(campaign || `${host}-${creative}`);
     const q = provider ? `?${query([['pt', provider], ['ct', ct], ['mt', 8]])}` : '';
     const fallback = `https://apps.apple.com/app/id${id}${q}`, url = `itms-apps://apps.apple.com/app/id${id}${q}`;
     return native ? { via: 'sheet', url, fallback, sheet: { id, ct, pt: provider ?? null } } : { via: 'https', url: fallback, fallback };

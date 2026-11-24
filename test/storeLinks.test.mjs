@@ -18,6 +18,13 @@ test('iOS in an app: the sheet with its tokens, and itms-apps should there be no
   assert.equal(storeLink(tcb, { ...ctx, os: 'ios', native: true }).sheet.pt, null);
 });
 
+test("iOS: a creative's own campaign is the campaign token, the same in every game that shows it", () => {
+  const l = storeLink(tcb, { ...ctx, os: 'ios', native: true, campaign: 'ian', pt: 123 });
+  assert.equal(l.sheet.ct, 'ian');
+  assert.equal(l.url, 'itms-apps://apps.apple.com/app/id123456789?pt=123&ct=ian&mt=8');
+  assert.equal(storeLink(tcb, { ...ctx, os: 'ios', campaign: '', pt: 123 }).url, 'https://apps.apple.com/app/id123456789?pt=123&ct=tca-tcb-crashcam-15&mt=8');
+});
+
 test("the app's own provider token wins; a campaign token is 40 characters at most", () => {
   const l = storeLink({ ...tcb, ios: { id: 1, pt: 999 } }, { os: 'ios', native: true, host: 'tca', creative: 'a-very-long-creative-name-that-goes-on-and-on-and-on', pt: 123 });
   assert.equal(l.sheet.pt, 999);

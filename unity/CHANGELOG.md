@@ -6,6 +6,11 @@ The repository has one version, [Semantic Versioning](https://semver.org), and a
 
 Two numbers are not this one, and change only when a format does: `VERSION` in `core/wire.js` (what games send the ingest) and the catalogue's `version`. Games already released go on sending and reading the old ones.
 
+## [0.6.23] - 2026-11-24
+
+### Changed
+- **A creative's campaign is its App Store campaign too** (`ct`, which App Store Connect's App Analytics counts under Campaigns). Before, an App Store link's campaign was always the game that showed the ad and the ad's id, whatever the creative's campaign said; that went only to Google Play and tracking links. Apple lists a campaign once it has five first-time downloads, so the network's taps, spread over a campaign for each game and ad, often showed nothing at all: one name for many ads (the admin's Campaign box, say `ian`) puts them together. A creative with no campaign is as before. Games that have shipped keep sending the old campaign until they take this release.
+
 ## [0.6.22] - 2026-11-24
 
 ### Fixed
