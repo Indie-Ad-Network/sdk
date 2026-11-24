@@ -416,6 +416,9 @@ namespace IndieAdNetwork
 		// as the game comes back; and a page lost this soon after it came back (its word arriving late, or its silence
 		// found) was lost while it was away.
 		const float HealthySeconds = 60f, AnswerSeconds = 4f, BackSeconds = AnswerSeconds + 2f;
+		// With an ad up the page has longer to answer (a playable can keep its page busy), but it must: an ad page
+		// emptied while the game was away can't end its own ad, and the game would wait on it for good.
+		const float ShowingAnswerSeconds = 10f;
 
 		bool stopped;
 		bool showing;
@@ -713,7 +716,7 @@ namespace IndieAdNetwork
 			// and must answer: one the system emptied in the background without a word is lost all the same (Update).
 			if (view != null)
 			{
-				if (TellDevice() && !showing) askedAliveAt = backTime;
+				if (TellDevice()) askedAliveAt = backTime;
 			}
 			// One lost, or put away for memory, while the game was away is made again now, not on its timer
 			else if (remakeAt >= 0f || Time.realtimeSinceStartup - demandTime > config.refreshAfterSeconds)
@@ -781,13 +784,14 @@ namespace IndieAdNetwork
 			if (stopped) return;
 			// A page lost, or put away for memory, is made again (HandleLost, HandleLowMemory)
 			// Told something as the game came back, and not a word since: the system emptied it in the background
-			if (askedAliveAt >= 0f && Time.realtimeSinceStartup - askedAliveAt > AnswerSeconds)
+			if (askedAliveAt >= 0f && Time.realtimeSinceStartup - askedAliveAt > (showing ? ShowingAnswerSeconds : AnswerSeconds))
 			{
 				bool answered = heardTime >= askedAliveAt;
 				askedAliveAt = -1f;
-				if (!answered && !showing && view != null)
+				if (!answered && view != null)
 				{
 					if (Logging) Debug.LogWarning("[IndieAds] the web view didn't answer as the game came back");
+					// With an ad up, HandleLost ends it too (shown, if it had started; no reward).
 					HandleLost();
 				}
 			}
