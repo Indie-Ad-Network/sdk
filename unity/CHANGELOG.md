@@ -6,6 +6,15 @@ The repository has one version, [Semantic Versioning](https://semver.org), and a
 
 Two numbers are not this one, and change only when a format does: `VERSION` in `core/wire.js` (what games send the ingest) and the catalogue's `version`. Games already released go on sending and reading the old ones.
 
+## [0.6.21] - 2026-11-24
+
+### Fixed
+- **A game left paused under a blank ad.** If the player left mid-ad (the store button, or home) and the system emptied the web view while they were away, as iOS now and then does without a word, the page never said the ad was done, and its close button went with it: the game waited on the ad for good. The check made as the game comes back (0.6.20) was skipped with an ad up; now it isn't. With an ad up the page has 10 seconds to answer, not 4 (a playable can keep it busy). One that doesn't is taken for lost: the ad ends, shown if it had started and with no reward, and the page is made again at once.
+- **An ad page taken for lost when it wasn't.** An answer still awaited as the game went away again was looked for on the way back, and on Android frames can run before focus returns (the lock screen), so a page that hadn't had the chance to answer could be taken for lost. It's asked again on the way back instead.
+
+### Added
+- **`OnEvent` hears when an ad's web view goes while it's up**: `fail`, with `why` `lost` (the system said its page's process went) or `unanswered` (silent as the game came back), and the placement. It's the package's own: the page can't say it, so the network's ingest doesn't hear it. Many `unanswered` and few `lost` would mean pages too busy to answer in time rather than emptied.
+
 ## [0.6.20] - 2026-11-23
 
 ### Changed

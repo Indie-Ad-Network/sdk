@@ -116,7 +116,8 @@ namespace IndieAdNetwork
 
 	/// An event of the player, for the game's own analytics: offer, show, q25…q100, first_touch, complete, reward,
 	/// exit_kept, exit_early, keep_playing, store_banner, store_open, cache_miss, fail; and step, a playable's own name (`step`) for
-	/// somewhere in it a showing reached.
+	/// somewhere in it a showing reached. One fail is the package's own, not the page's, and the network's ingest doesn't hear it:
+	/// an ad's web view went while it was up, `why` lost (the system said) or unanswered (silent as the game came back).
 	[Serializable]
 	public struct IndieAdEvent
 	{
@@ -413,12 +414,10 @@ namespace IndieAdNetwork
 		float askedAliveAt = -1f; // back at the front, the page was told something it answers at once: when (-1: no answer awaited)
 		float heardTime = -1f;    // when the page last said anything
 		// A page that's run this long without trouble starts the waits again from the shortest; one has this long to answer
-		// as the game comes back; and a page lost this soon after it came back (its word arriving late, or its silence
-		// found) was lost while it was away.
-		const float HealthySeconds = 60f, AnswerSeconds = 4f, BackSeconds = AnswerSeconds + 2f;
-		// With an ad up the page has longer to answer (a playable can keep its page busy), but it must: an ad page
-		// emptied while the game was away can't end its own ad, and the game would wait on it for good.
-		const float ShowingAnswerSeconds = 10f;
+		// as the game comes back; and a page lost this soon after it came back (its word arriving late) was lost while it
+		// was away. With an ad up the page has longer to answer (a playable can keep its page busy), but it must: an ad
+		// page emptied while the game was away can't end its own ad, and the game would wait on it for good.
+		const float HealthySeconds = 60f, AnswerSeconds = 4f, ShowingAnswerSeconds = 10f, BackSeconds = AnswerSeconds + 2f;
 
 		bool stopped;
 		bool showing;
@@ -426,6 +425,7 @@ namespace IndieAdNetwork
 		int? sleepTimeoutWas;   // the game's own Screen.sleepTimeout while an ad has the screen kept on, put back when it closes
 		bool showStarted;
 		int showNumber;
+		string showPlacement;
 		float showRequestedTime;
 		Action<IndieAdResult> showDone;
 
@@ -709,6 +709,7 @@ namespace IndieAdNetwork
 			away = !focused;
 			if (away)
 			{
+				askedAliveAt = -1f;   // asked again on the way back: frames can run before focus returns, and would find it late
 				return;
 			}
 			backTime = Time.realtimeSinceStartup;
@@ -736,6 +737,7 @@ namespace IndieAdNetwork
 			showing = true;
 			showStarted = false;
 			showDone = done;
+			showPlacement = placement;
 			// The screen stays on for as long as an ad is up: nobody touches a video, or a playable's opening, for
 			// longer than a phone waits before it dims, and a web view's page can't ask this of the device itself.
 			sleepTimeoutWas = Screen.sleepTimeout;
@@ -790,9 +792,7 @@ namespace IndieAdNetwork
 				askedAliveAt = -1f;
 				if (!answered && view != null)
 				{
-					if (Logging) Debug.LogWarning("[IndieAds] the web view didn't answer as the game came back");
-					// With an ad up, HandleLost ends it too (shown, if it had started; no reward).
-					HandleLost();
+					Lose("unanswered");
 				}
 			}
 			if (remakeAt >= 0f && Time.realtimeSinceStartup >= remakeAt)
@@ -899,20 +899,25 @@ namespace IndieAdNetwork
 			}
 		}
 
-		void HandleLost()
+		void HandleLost() { Lose("lost"); }
+
+		// An ad that was up ends (shown, if it had started; no reward), with a fail of this `why` (see IndieAdEvent).
+		void Lose(string why)
 		{
 			if (Logging)
 			{
-				Debug.LogWarning("[IndieAds] the web view was lost");
+				Debug.LogWarning("[IndieAds] the web view was lost (" + why + ")");
 			}
 			bool wasShowing = showing;
 			try { Forget(); }   // what it said goes with it: a page that can't be made at all must claim nothing
 			finally
 			{
-				ScheduleRemake();
-				if (wasShowing && showing)   // unless a subscriber shut the package down, which finished it
+				ScheduleRemake(why == "unanswered");   // silent as the game came back: it was emptied while away
+				// unless a subscriber (OnDemandChanged, then OnEvent) shut the package down, which finished it
+				if (wasShowing && showing)
 				{
-					FinishShow(new IndieAdResult { shown = showStarted });
+					try { OnEvent?.Invoke(new IndieAdEvent { @event = "fail", why = why, placement = showPlacement }); }
+					finally { if (showing) FinishShow(new IndieAdResult { shown = showStarted }); }
 				}
 			}
 		}
@@ -932,11 +937,11 @@ namespace IndieAdNetwork
 
 		// Later after each time, in case the system keeps taking it; but a page lost with the game away (the system empties a
 		// web view in the background as a matter of course) is made again as it comes back, and one that ran a minute
-		// without trouble starts the waits again from the shortest.
-		void ScheduleRemake()
+		// without trouble starts the waits again from the shortest. `lostAway`: the caller knows it was lost while away.
+		void ScheduleRemake(bool lostAway = false)
 		{
 			float now = Time.realtimeSinceStartup;
-			if (away || (backTime >= 0f && now - backTime < BackSeconds))
+			if (lostAway || away || (backTime >= 0f && now - backTime < BackSeconds))
 			{
 				remakeAt = now;
 				return;
