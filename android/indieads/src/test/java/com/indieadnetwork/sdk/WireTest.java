@@ -25,7 +25,7 @@ public class WireTest {
 
     @Test public void theStartConfig() {
         IndieAdsConfig c = new IndieAdsConfig();
-        c.host = "duet";
+        c.host = "mygame";
         c.catalogueUrl = "https://indieadnetwork.com/catalogue.json";
         c.placements = new IndieAdPlacement[] {
             IndieAdPlacement.rewarded("FreeCoins").reward("100 coins"),
@@ -35,7 +35,7 @@ public class WireTest {
         c.age = 12;
         c.shippedCatalogueJson = "{\"version\":1}";
         c.language = "fr";
-        assertEquals("{\"key\":\"k1\",\"lang\":\"fr\",\"host\":\"duet\",\"rating\":null,\"os\":\"android\","
+        assertEquals("{\"key\":\"k1\",\"lang\":\"fr\",\"host\":\"mygame\",\"rating\":null,\"os\":\"android\","
                 + "\"catalogue\":\"https://indieadnetwork.com/catalogue.json\",\"ingest\":null,\"reports\":null,\"mix\":null,\"signedBy\":null,"
                 + "\"age\":12,\"test\":false,\"consent\":true,\"wide\":true,\"placements\":{"
                 + "\"FreeCoins\":{\"format\":\"rewarded\",\"maxSecs\":30,\"reward\":\"100 coins\"},"
@@ -51,13 +51,13 @@ public class WireTest {
 
     // As core/index.js moreGamesAt: for a device with no web view, where no page will say it
     @Test public void thePageOfMoreGames() {
-        assertEquals("https://indieadnetwork.com/games/duet", Wire.moreGames("https://indieadnetwork.com/games/", "duet", 0));
+        assertEquals("https://indieadnetwork.com/games/mygame", Wire.moreGames("https://indieadnetwork.com/games/", "mygame", 0));
         assertEquals("https://x.test/g/my%20game", Wire.moreGames("https://x.test/g/", "my game", 13));
-        assertNull(Wire.moreGames("https://indieadnetwork.com/games/", "duet", 12));   // not for a child
-        assertNull(Wire.moreGames(null, "duet", 0));
-        assertNull(Wire.moreGames("", "duet", 0));
-        assertNull(Wire.moreGames("http://indieadnetwork.com/games/", "duet", 0));   // https only
-        assertNull(Wire.moreGames("https://indieadnetwork.com/games", "duet", 0));   // and ending in a /
+        assertNull(Wire.moreGames("https://indieadnetwork.com/games/", "mygame", 12));   // not for a child
+        assertNull(Wire.moreGames(null, "mygame", 0));
+        assertNull(Wire.moreGames("", "mygame", 0));
+        assertNull(Wire.moreGames("http://indieadnetwork.com/games/", "mygame", 0));   // https only
+        assertNull(Wire.moreGames("https://indieadnetwork.com/games", "mygame", 0));   // and ending in a /
     }
 
     @Test public void thePageOrigin() {
