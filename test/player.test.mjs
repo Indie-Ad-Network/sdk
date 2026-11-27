@@ -26,6 +26,7 @@ function showing(t, creative, options = {}) {
     querySelector(selector) { return nodes.get(selector) ?? null; }
     querySelectorAll() { return []; }
     insertBefore() {}
+    getBoundingClientRect() { (this.flushes ??= []).push(this.style.transition); return {}; }   // a style flush: what the transition was as it happened
     remove() { this.removed = true; }
     load() {}
     pause() { this.paused = true; }
@@ -208,6 +209,21 @@ for (const format of ['rewarded', 'interstitial']) test(`${format} creatives wit
   s.click();
   await s.result;
   assert.equal(s.events.filter(e => e.name === 'reward').length, format === 'rewarded' ? 1 : 0);
+});
+
+test("the ring snaps full for the end card's countdown, rather than tweening back up", async t => {
+  const s = showing(t, { endCardSecs: 3 }, { format: 'rewarded' });
+  const arc = s.nodes.get('.left');
+  s.video.currentTime = 29.9; s.advance(0.5);
+  assert.deepEqual(arc.flushes ?? [], [], 'nothing snaps while the video counts down');
+  s.video.dispatch('ended');
+  assert.equal(s.label, 3);
+  assert.equal(arc.style.strokeDashoffset, -0);
+  assert.deepEqual(arc.flushes, ['none'], 'the end card countdown starts full without a transition');
+  assert.equal(arc.style.transition, '', 'and its countdown tweens as ever');
+  s.advance(1);
+  assert.deepEqual(arc.flushes, ['none'], 'the end card countdown runs down smoothly');
+  s.advance(2.2); s.click(); await s.result;
 });
 
 for (const format of ['rewarded', 'interstitial']) {

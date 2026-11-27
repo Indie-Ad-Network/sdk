@@ -322,7 +322,7 @@ export function play({ creative, app, html, link, ctaText, reward, format = 'rew
   // creative's minimum endcard time before its close control is enabled.
   const skips = () => !rewarded && !!video && !over;
   const endSecs = creative.endCardSecs ?? HOLD_SECS;
-  let endRemaining = 0, endStarted = false, endLast = 0, offered = false;
+  let endRemaining = 0, endStarted = false, endLast = 0, offered = false, arcGone = 0;   // arcGone: the share of the ring last drawn gone
   // Seconds until the way out is free. A rewarded ad's reward: at the game's time, where it says one, or the creative's own earliest (`skipFrom`),
   // and with both the later; with neither at its end (or at `limit`, for one marked `overrun`). The reward in before a video's end, Skip takes it to
   // its end card. An interstitial's Skip or ✕ uses the same control.
@@ -355,7 +355,13 @@ export function play({ creative, app, html, link, ctaText, reward, format = 'rew
     const of = playingVideo ? total : endIsLonger ? endSecs : need();
     const gone = playingVideo ? elapsed : endIsLonger ? endSecs - endRemaining : elapsed;
     // A negative offset removes the arc clockwise from twelve o'clock, matching Unity.
-    arc.style.strokeDashoffset = -C * (of > 0 ? Math.max(0, Math.min(1, gone / of)) : 1);
+    const fraction = of > 0 ? Math.max(0, Math.min(1, gone / of)) : 1;
+    arc.style.strokeDashoffset = -C * fraction;
+    // The arc only empties as a countdown runs, and its transition is for that. One that fills again (the end card's
+    // countdown after the reward's, or ✕'s full ring) snaps full instead of tweening back up before it counts down.
+    const shown = closing ? 0 : fraction;
+    if (shown < arcGone) { arc.style.transition = 'none'; arc.getBoundingClientRect?.(); arc.style.transition = ''; }
+    arcGone = shown;
     if (ready) {
       ring.removeAttribute('role');
       ring.setAttribute('aria-label', closing ? t.close : t.skip);
