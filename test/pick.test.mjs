@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { pick, eligible, cardFor, DAY } from '../core/pick.js';
+import { pick, eligible, wanted, cardFor, DAY } from '../core/pick.js';
 import { validate } from '../core/catalogue.js';
 
 const NOW = Date.UTC(2026, 10, 10, 12);
@@ -160,4 +160,18 @@ test('a placement\'s least time, and who fits it: skipFrom and minSecs', async (
   const game = { exchange: { hosts: { h: { minSecs: { interstitial: 8 }, placements: { between: { minSecs: 12 } } } } } };   // the game's, for a kind; a placement's own before it
   assert.deepEqual([leastSaid(game, 'h', 'between', 'interstitial'), leastSaid(game, 'h', 'loading', 'interstitial'), leastSaid(game, 'h', 'coins', 'rewarded'), leastSaid(game, 'h', 'coins')], [12, 8, null, null]);
   assert.equal(leastSaid({ exchange: { hosts: { h: { minSecs: { interstitial: 8 }, placements: { between: { minSecs: -1 } } } } } }, 'h', 'between', 'interstitial'), 8);   // one that can't be read is as none said
+});
+
+test("a developer's test sees every kind: a kind first, each as likely, and the likeliest of each downloaded ahead", () => {
+  const seen = test => { const kinds = {}; for (let i = 0; i < 100; i++) { const k = pick({ ...base, test, rand: () => (i + 0.5) / 100 }).kind; kinds[k] = (kinds[k] ?? 0) + 1; } return kinds; };
+  assert.deepEqual(seen(true), { playable: 50, video: 50 });   // one playable among three videos, half the time all the same
+  assert.ok(seen(false).playable < 50);                         // a player's: by weight, as ever
+  const placements = { coins: { format: 'rewarded' } };
+  const few = cat2 => wanted({ ...base, catalogue: cat2, placements, keep: 2, test: true }).map(c => c.kind).sort();
+  const many = validate({ apps: cat.apps, creatives: [
+    ...['a', 'b', 'c'].map(x => ({ id: `pr-${x}`, app: 'pr', kind: 'playable', secs: 30, src: `${x}.html`, weight: 3 })),
+    { id: 'rodeo-wide', app: 'rodeo', kind: 'video', secs: 15, src: 'w.mp4', aspect: '16:9' },
+  ] });
+  assert.deepEqual(few(many), ['playable', 'video']);   // the one video, a wrong shape and light, is downloaded all the same
+  assert.deepEqual(wanted({ ...base, catalogue: many, placements, keep: 2 }).map(c => c.kind), ['playable', 'playable']);   // and for a player, not
 });

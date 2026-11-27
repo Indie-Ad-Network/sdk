@@ -19,7 +19,9 @@
 // under every rule above: being owed lifts no cap and ends no rest.
 //
 // `test`, a developer trying the ads out, drops the rules about this player and this host: 2, 4, 5,
-// `perDay` and a creative's own `hosts`. So the host's own ads play too, on a device that has every game.
+// `perDay` and a creative's own `hosts`. So the host's own ads play too, on a device that has every game. And it sees
+// every kind there is, not mostly the commonest: a kind first, each as likely (a video or a playable), then one of that
+// kind by weight; and the likeliest of each kind is among those downloaded ahead (`wanted`).
 import { studioOf } from './catalogue.js';
 
 export const DAY = 864e5;
@@ -100,7 +102,12 @@ export function pick(o) {
   let list = eligible(o);
   if (list.length > 1) list = list.filter(c => c.id !== o.history?.last);
   if (!list.length) return null;
-  return weighted(list, c => creativeWeight(c, o), o.rand ?? Math.random);
+  const rand = o.rand ?? Math.random;
+  if (o.test) {
+    const kinds = [...new Set(list.map(c => c.kind))], kind = kinds[Math.min(kinds.length - 1, Math.floor(rand() * kinds.length))];
+    list = list.filter(c => c.kind === kind);
+  }
+  return weighted(list, c => creativeWeight(c, o), rand);
 }
 
 // The `keep` creatives to have downloaded and ready, most wanted first: each placement's
@@ -110,8 +117,9 @@ export function wanted({ placements = {}, keep = 3, ...o }) {
   const byWeight = list => [...list].sort((a, b) => creativeWeight(b, o) - creativeWeight(a, o));
   const each = Object.values(placements);
   const lists = (each.length ? each : [{}]).map(placement => byWeight(eligible({ ...o, placement })));
-  const out = new Set(lists.map(list => list[0]).filter(Boolean));
-  for (const c of byWeight(new Set(lists.flat()))) out.add(c);
+  const out = new Set(lists.map(list => list[0]).filter(Boolean)), all = byWeight(new Set(lists.flat()));
+  if (o.test) for (const kind of new Set(all.map(c => c.kind))) out.add(all.find(c => c.kind === kind));   // a developer's test: each kind ready to see
+  for (const c of all) out.add(c);
   return [...out].slice(0, keep);
 }
 
