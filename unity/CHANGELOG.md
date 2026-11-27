@@ -6,6 +6,13 @@ The repository has one version, [Semantic Versioning](https://semver.org), and a
 
 Two numbers are not this one, and change only when a format does: `VERSION` in `core/wire.js` (what games send the ingest) and the catalogue's `version`. Games already released go on sending and reading the old ones.
 
+## [0.7.1] - 2026-11-27
+
+### Added
+- **`ShowIfWanted`: a slot in one call** (Unity `IndieAds.ShowIfWanted`, Android `IndieAds.showIfWanted`, iOS `[IndieAds showIfWanted:done:]`). It decides whose turn the slot is, shows the network's ad on its turn, and calls back exactly once whatever happens: `result.shown` false is the paid network's, for any reason (not the network's turn, nothing to show, before `Init`, another ad up, or one that never appeared). Before, a game asked `Wants`, then `Show`, and had to fall back to its paid network in three places, one of them `Show` answering false with no callback to come. The turn is as a Capacitor game's `show({ paid })` has it: the network's when a game your studio owes showings has an ad ready (and then theirs is shown), else by the share, rolled once. So a Unity or native game that takes it pays off what its studio owes as quickly as a web game does. `Wants` and `Show` are as they were, for a game that decides for itself.
+- **`IndieAdDemand.owed`**: how many of the games available your studio owes showings. **`IndieAdResult.via`**: `"house"` when the network's ad was shown, else null.
+- The page's `show()` takes a sixth argument, `owed`: only the games owed showings. A game of 0.7.0 or before never sends it.
+
 ## [0.7.0] - 2026-11-27
 
 ### Added

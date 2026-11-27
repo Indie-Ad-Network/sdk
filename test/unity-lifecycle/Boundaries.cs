@@ -27,7 +27,7 @@ namespace UnityEngine
     public class TextAsset { public string text = "{}"; }
     public static class Resources { public static T Load<T>(string name) where T : new() => new T(); }
     public static class Time { public static float realtimeSinceStartup; }
-    public static class Random { public static float value => 0; }
+    public static class Random { public static float value = 0; }
     public enum RuntimePlatform { Android, IPhonePlayer }
     public static class Application
     {

@@ -1,7 +1,7 @@
 apply plugin: 'com.android.library'
 
 // The repository's one version (package.json; test/version.test.mjs keeps them the same)
-version = '0.7.0'
+version = '0.7.1'
 
 android {
     namespace = 'com.indieadnetwork.sdk'

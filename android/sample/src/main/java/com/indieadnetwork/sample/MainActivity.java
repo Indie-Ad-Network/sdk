@@ -69,7 +69,8 @@ public class MainActivity extends Activity {
     }
 
     private void showInterstitial() {
-        // A real game asks first, and shows its paid network's ad on "no": if (IndieAds.wants(INTERSTITIAL)) …
+        // Every tap is the network's here. A real game with a paid network calls IndieAds.showIfWanted instead, and shows
+        // the paid network's ad when result.shown is false.
         boolean showing = IndieAds.show(INTERSTITIAL, new IndieAds.ShowCallback() {
             @Override public void onDone(IndieAdResult result) { say("interstitial done: " + result); }
         });

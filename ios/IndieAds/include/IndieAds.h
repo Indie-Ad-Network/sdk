@@ -105,6 +105,9 @@ typedef NS_ENUM(NSInteger, IndieAdsOpenIn) {
 /// How many creatives this player could be shown here: 0 if they have every game, or have seen each as often as it may
 /// be shown today, or none is downloaded yet.
 @property (nonatomic, readonly) NSInteger available;
+/// How many of the games among them this game's studio owes showings (0.7.1). showIfWanted: gives the slot to them whenever
+/// there's one, before the share is rolled; wants: goes by the share alone.
+@property (nonatomic, readonly) NSInteger owed;
 @end
 
 /// How a showing went: show:'s block has it once the ad has closed, or failed to appear.
@@ -115,6 +118,9 @@ typedef NS_ENUM(NSInteger, IndieAdsOpenIn) {
 @property (nonatomic, readonly) BOOL granted;
 @property (nonatomic, readonly, copy, nullable) NSString *creative, *app, *kind;
 @property (nonatomic, readonly) double watchedSecs;
+/// @"house": the network's ad was put in front of the player. Nil: none was; with showIfWanted:, because the slot wasn't the
+/// network's, or none appeared: either way, show your paid network's.
+@property (nonatomic, readonly, copy, nullable) NSString* via;
 @end
 
 /// An event of the player, for the game's own analytics: offer, show, q25…q100, first_touch, complete, reward, exit_kept,
@@ -170,6 +176,17 @@ typedef NS_ENUM(NSInteger, IndieAdsOpenIn) {
 + (BOOL)show:(NSString*)placement done:(nullable void (^)(IndieAdResult* result))done;
 /// `reward`: what watching earns, as the player is told it ("Earned: …"), for this showing; nil for the placement's.
 + (BOOL)show:(NSString*)placement reward:(nullable NSString*)reward done:(nullable void (^)(IndieAdResult* result))done;
+
+/// wants: and show: in one (0.7.1): the network's ad in this slot if it's the network's turn, and `done` called once, always,
+/// on the main thread. result.shown NO (via nil): show your paid network's ad, whatever the reason (not the network's turn,
+/// nothing to show, before start, another ad up, or one that never appeared). The turn is the network's when a game this
+/// game's studio owes showings has an ad ready (then theirs is shown), else by the share, rolled once here. Declined on the
+/// main thread, `done` is called before showIfWanted: returns.
+///
+///   [IndieAds showIfWanted:@"FreeCoins" done:^(IndieAdResult* r) { if (r.granted) [self giveCoins]; else if (!r.shown) [self showPaidAd]; }];
++ (void)showIfWanted:(NSString*)placement done:(nullable void (^)(IndieAdResult* result))done;
+/// `reward`: what watching earns, as the player is told it, for this showing; nil for the placement's.
++ (void)showIfWanted:(NSString*)placement reward:(nullable NSString*)reward done:(nullable void (^)(IndieAdResult* result))done;
 
 /// Turns test mode (IndieAdsConfig.test) on or off. What's available changes with it: indieAdsDemandChanged says when it's in.
 + (void)setTest:(BOOL)on;

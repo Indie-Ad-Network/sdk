@@ -51,7 +51,7 @@ import java.util.UUID;
  */
 public final class IndieAds {
 
-    public static final String VERSION = "0.7.0";
+    public static final String VERSION = "0.7.1";
 
     /** What the SDK says of itself, for a game that wants to hear it. Every method may be left out. Main thread. */
     public static abstract class Listener {
@@ -172,9 +172,38 @@ public final class IndieAds {
 
     /** `reward`: what watching earns, as the player is told it ("Earned: …"), for this showing; null for the placement's. */
     public static boolean show(final String placement, final String reward, final ShowCallback done) {
+        return show(placement, reward, false, done);
+    }
+
+    /**
+     * wants and show in one (0.7.1): the network's ad in this slot if it's the network's turn, and `done` called once,
+     * always, on the main thread. result.shown false (via null): show your paid network's ad, whatever the reason (not the
+     * network's turn, nothing to show, before init, another ad up, or one that never appeared). The turn is the network's
+     * when a game this game's studio owes showings has an ad ready (then theirs is shown), else by the share, rolled once
+     * here. Declined on the main thread, `done` is called before showIfWanted returns.
+     *
+     * <pre>
+     *   IndieAds.showIfWanted("FreeCoins", result -&gt; { if (result.granted) giveCoins(); else if (!result.shown) showPaidAd(); });
+     * </pre>
+     */
+    public static void showIfWanted(String placement, ShowCallback done) {
+        showIfWanted(placement, null, done);
+    }
+
+    /** `reward`: what watching earns, as the player is told it, for this showing; null for the placement's. */
+    public static void showIfWanted(String placement, String reward, final ShowCallback done) {
+        IndieAdDemand d = demand(placement);
+        boolean owed = d.available > 0 && d.owed > 0;   // as core/exchange.js turn()
+        boolean turn = owed || (d.available > 0 && Math.random() < d.share);
+        if (turn && show(placement, reward, owed, done)) return;
+        if (done != null) onMain(new Runnable() { @Override public void run() { done.onDone(IndieAdResult.ended(false)); } });
+    }
+
+    // `owed`: only the games this one's studio owes showings (showIfWanted, on their turn)
+    private static boolean show(final String placement, final String reward, final boolean owed, final ShowCallback done) {
         final IndieAds s = instance;
         if (s == null) return false;
-        if (onMain()) return !s.showPending && s.doShow(placement, done, reward);
+        if (onMain()) return !s.showPending && s.doShow(placement, done, reward, owed);
         // From another thread: the answer is the one the main thread will give, as far as it can be known here. Should it
         // turn out otherwise, `done` is told nothing was shown.
         synchronized (s) {
@@ -184,7 +213,7 @@ public final class IndieAds {
         MAIN.post(new Runnable() {
             @Override public void run() {
                 s.showPending = false;
-                if (!s.doShow(placement, done, reward) && done != null) s.callDone(done, IndieAdResult.ended(false));
+                if (!s.doShow(placement, done, reward, owed) && done != null) s.callDone(done, IndieAdResult.ended(false));
             }
         });
         return true;
@@ -516,7 +545,7 @@ public final class IndieAds {
                 JSONArray rows = m.optJSONArray("demand");
                 for (int i = 0; rows != null && i < rows.length(); i++) {
                     JSONObject row = rows.optJSONObject(i);
-                    if (row != null) now.put(row.optString("placement", ""), new IndieAdDemand(row.optDouble("share", 0), row.optInt("available", 0)));
+                    if (row != null) now.put(row.optString("placement", ""), new IndieAdDemand(row.optDouble("share", 0), row.optInt("available", 0), row.optInt("owed", 0)));
                 }
                 demand = Collections.unmodifiableMap(now);
                 demandTime = now();
@@ -630,7 +659,7 @@ public final class IndieAds {
 
     // ---- showing ----
 
-    private boolean doShow(String placement, ShowCallback done, String reward) {
+    private boolean doShow(String placement, ShowCallback done, String reward, boolean owed) {
         if (showing || !ensurePage()) return false;
         showing = true;
         showStarted = false;
@@ -643,7 +672,7 @@ public final class IndieAds {
         showRequestedTime = now();
         ++showNumber;
         view.setVisible(true);
-        call("show", showNumber + "," + Wire.quote(placement) + "," + Wire.quote(reward) + "," + (config.muted ? "true" : "false") + "," + Wire.quote(config.language));
+        call("show", showNumber + "," + Wire.quote(placement) + "," + Wire.quote(reward) + "," + (config.muted ? "true" : "false") + "," + Wire.quote(config.language) + "," + owed);
         tickSoon();
         return true;
     }

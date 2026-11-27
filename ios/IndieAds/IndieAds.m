@@ -3,7 +3,7 @@
 #import <QuartzCore/QuartzCore.h>
 #import "IndieAdsPrivate.h"
 
-static NSString* const kVersion = @"0.7.0";
+static NSString* const kVersion = @"0.7.1";
 
 #define IALog(...) do { if (self.config.log) NSLog(@"[IndieAds] " __VA_ARGS__); } while (0)
 
@@ -95,11 +95,11 @@ static NSString* const kVersion = @"0.7.0";
 
 @interface IndieAdDemand ()
 @property (nonatomic, readwrite) double share;
-@property (nonatomic, readwrite) NSInteger available;
+@property (nonatomic, readwrite) NSInteger available, owed;
 @end
 
 @implementation IndieAdDemand
-- (NSString*)description { return [NSString stringWithFormat:@"%ld available, share %g", (long)self.available, self.share]; }
+- (NSString*)description { return [NSString stringWithFormat:@"%ld available, share %g, %ld owed", (long)self.available, self.share, (long)self.owed]; }
 @end
 
 @interface IndieAdResult ()
@@ -110,6 +110,8 @@ static NSString* const kVersion = @"0.7.0";
 @end
 
 @implementation IndieAdResult
+- (NSString*)via { return self.shown ? @"house" : nil; }
+
 + (instancetype)ended:(BOOL)shown
 {
     IndieAdResult* r = [self new];
@@ -118,7 +120,7 @@ static NSString* const kVersion = @"0.7.0";
 }
 - (NSString*)description
 {
-    return [NSString stringWithFormat:@"shown=%d granted=%d creative=%@ app=%@ kind=%@ watchedSecs=%g", self.shown, self.granted, self.creative, self.app, self.kind, self.watchedSecs];
+    return [NSString stringWithFormat:@"shown=%d granted=%d via=%@ creative=%@ app=%@ kind=%@ watchedSecs=%g", self.shown, self.granted, self.via, self.creative, self.app, self.kind, self.watchedSecs];
 }
 @end
 
@@ -363,9 +365,29 @@ static void OnMain(dispatch_block_t work)
 
 + (BOOL)show:(NSString*)placement reward:(NSString*)reward done:(void (^)(IndieAdResult*))done
 {
+    return [self show:placement reward:reward owed:NO done:done];
+}
+
++ (void)showIfWanted:(NSString*)placement done:(void (^)(IndieAdResult*))done
+{
+    [self showIfWanted:placement reward:nil done:done];
+}
+
++ (void)showIfWanted:(NSString*)placement reward:(NSString*)reward done:(void (^)(IndieAdResult*))done
+{
+    IndieAdDemand* d = [self demandFor:placement];
+    BOOL owed = d.available > 0 && d.owed > 0;   // as core/exchange.js turn()
+    BOOL turn = owed || (d.available > 0 && (double)arc4random() / ((double)UINT32_MAX + 1) < d.share);
+    if (turn && [self show:placement reward:reward owed:owed done:done]) return;
+    if (done) OnMain(^{ done([IndieAdResult ended:NO]); });
+}
+
+// `owed`: only the games this one's studio owes showings (showIfWanted:, on their turn)
++ (BOOL)show:(NSString*)placement reward:(NSString*)reward owed:(BOOL)owed done:(void (^)(IndieAdResult*))done
+{
     IndieAds* s = [self instance];
     if (!s) return NO;
-    if (NSThread.isMainThread) return !s.showPending && [s doShow:placement done:done reward:reward];
+    if (NSThread.isMainThread) return !s.showPending && [s doShow:placement done:done reward:reward owed:owed];
     // From another thread: the answer is the one the main thread will give, as far as it can be known here. Should it
     // turn out otherwise, `done` is told nothing was shown.
     @synchronized (s) {
@@ -374,7 +396,7 @@ static void OnMain(dispatch_block_t work)
     }
     dispatch_async(dispatch_get_main_queue(), ^{
         s.showPending = NO;
-        if (![s doShow:placement done:done reward:reward] && done) done([IndieAdResult ended:NO]);
+        if (![s doShow:placement done:done reward:reward owed:owed] && done) done([IndieAdResult ended:NO]);
     });
     return YES;
 }
@@ -658,6 +680,7 @@ static double Number(NSDictionary* o, NSString* name)
             IndieAdDemand* d = [IndieAdDemand new];
             d.share = Number(row, @"share");
             d.available = (NSInteger)Number(row, @"available");
+            d.owed = (NSInteger)Number(row, @"owed");
             now[placement] = d;
         }
         self.demand = now;
@@ -755,7 +778,8 @@ static double Number(NSDictionary* o, NSString* name)
 
 // ---- showing ----
 
-- (BOOL)doShow:(NSString*)placement done:(void (^)(IndieAdResult*))done reward:(NSString*)reward
+// `owed`: only the games this one's studio owes showings (showIfWanted:, on their turn)
+- (BOOL)doShow:(NSString*)placement done:(void (^)(IndieAdResult*))done reward:(NSString*)reward owed:(BOOL)owed
 {
     if (self.showing || ![self ensurePage]) return NO;
     self.showing = YES;
@@ -769,8 +793,8 @@ static double Number(NSDictionary* o, NSString* name)
     _showRequestedTime = Now();
     ++_showNumber;
     [self.view setVisible:YES];
-    [self call:@"show" arguments:[NSString stringWithFormat:@"%ld,%@,%@,%@,%@", (long)_showNumber, [IAWire quote:placement], [IAWire quote:reward],
-                                  self.config.muted ? @"true" : @"false", [IAWire quote:self.config.language]]];
+    [self call:@"show" arguments:[NSString stringWithFormat:@"%ld,%@,%@,%@,%@,%@", (long)_showNumber, [IAWire quote:placement], [IAWire quote:reward],
+                                  self.config.muted ? @"true" : @"false", [IAWire quote:self.config.language], owed ? @"true" : @"false"]];
     [self tickSoon];
     return YES;
 }

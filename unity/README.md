@@ -9,7 +9,7 @@ The package's player (`core/`, as one page: `Runtime/Resources/IndieAdsPlayer.ht
 Add the package by its git URL. In Unity: Window → Package Manager → **+** → *Add package from git URL…*, and paste:
 
 ```
-https://github.com/Indie-Ad-Network/sdk.git?path=/unity#v0.7.0
+https://github.com/Indie-Ad-Network/sdk.git?path=/unity#v0.7.1
 ```
 
 What follows the `#` is the release (`CHANGELOG.md` has each): it's how a game stays on the version it was tested with. Then:
@@ -35,16 +35,28 @@ IndieAds.Init(new IndieAdsConfig {
     },
 });
 
-// before each ad: whose is it?
-if (IndieAds.Wants("FreeCoins")) {
-    IndieAds.Show("FreeCoins", result => {
+// each ad: the network's if it's its turn, and the callback always comes
+IndieAds.ShowIfWanted("FreeCoins", result => {
+    if (result.granted) { /* the reward */ }
+    else if (!result.shown) { /* not the network's turn, or nothing appeared: the paid network's */ }
+});
+```
+
+`ShowIfWanted` (0.7.1) is the whole of a slot: it decides whose turn it is, shows the network's ad on its turn, and calls back exactly once whatever happens, so there's one place to fall back to the paid network. The turn is the network's when a game your studio owes showings has an ad ready (theirs is shown), else by the share, rolled once. Declined, the callback comes before `ShowIfWanted` returns. `result.via` is `"house"` when the network's ad was shown.
+
+A game that decides for itself (a waterfall of networks, say) asks and shows in two steps, as before 0.7.1:
+
+```csharp
+if (IndieAds.Wants("FreeCoins")) {   // rolls the share: once per ad
+    bool showing = IndieAds.Show("FreeCoins", result => {
         if (!result.shown) { /* nothing appeared: the paid network's after all */ }
         else if (result.granted) { /* the reward */ }
     });
+    if (!showing) { /* the paid network's: no callback will come */ }
 } else { /* the paid network's */ }
 ```
 
-`IndieAds.Demand(placement)` is `{ share, available }`, always to hand (the page sends it whenever it may have changed): `available` is how many creatives this player could be shown there now, and `share` what the network asks of that placement's slots (the game's share, or the placement's own), 0 when nothing is available, or when the player has had the game's `perDay` of house ads today or every game left is resting (the root README's exchange). `Wants` rolls it. The share is the catalogue's `exchange` (`core/exchange.js`), or with `mixUrl` the ingest's count of what's owed between studios.
+`IndieAds.Demand(placement)` is `{ share, available, owed }`, always to hand (the page sends it whenever it may have changed): `available` is how many creatives this player could be shown there now, and `share` what the network asks of that placement's slots (the game's share, or the placement's own), 0 when nothing is available, or when the player has had the game's `perDay` of house ads today or every game left is resting (the root README's exchange). `Wants` rolls it; `owed` is how many of those games your studio owes showings, which `ShowIfWanted` gives the slot to first. The share is the catalogue's `exchange` (`core/exchange.js`), or with `mixUrl` the ingest's count of what's owed between studios.
 
 `IndieAds.OnEvent` hears every event of the player, for the game's own analytics.
 

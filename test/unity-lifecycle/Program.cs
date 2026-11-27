@@ -13,12 +13,15 @@ sealed class View : IIndieAdsWebView
     public int disposals;
     public string key;
     public int ask;   // the last device() call's question: whether the page is there
+    public string shown;   // the last show() call's arguments
     public object Alive => new { type = "alive", n = ask };
     public void LoadHtml(string html, string origin) { Emit(new { type = "loaded" }); }
     public void Evaluate(string js)
     {
         if (js.StartsWith("indieAdsHost.start("))
             key = JsonDocument.Parse(js[19..^1]).RootElement.GetProperty("key").GetString();
+        else if (js.StartsWith("indieAdsHost.show("))
+            shown = js[18..^1];
         else if (js.StartsWith("indieAdsHost.device(") && JsonDocument.Parse(js[20..^1]).RootElement.TryGetProperty("ask", out var a))
             ask = a.GetInt32();
     }
@@ -301,6 +304,36 @@ static class Program
             Time.realtimeSinceStartup = 3206; Call(Sdk, "Update");
             Check(made == 3, "put away for memory, and not made again after the wait");
             Reset(); Time.realtimeSinceStartup = 0;
+        }
+        // 0.7.1: ShowIfWanted is Wants and Show in one, and its callback always comes: shown false is the paid network's.
+        {
+            int calls = 0; IndieAdResult got = default;
+            Action<IndieAdResult> note = r => { calls++; got = r; };
+            IndieAds.ShowIfWanted("coins", note);
+            Check(calls == 1 && !got.shown && got.via == null, "before Init: no callback, or a showing");
+            var page = Start(); page.Emit(new { type = "demand", demand = new[] { new { placement = "coins", share = 0.5, available = 2, owed = 0 } } });
+            UnityEngine.Random.value = 0.7f; IndieAds.ShowIfWanted("coins", note);
+            Check(calls == 2 && !got.shown && !IndieAds.IsShowing && !page.visible, "not the network's turn, and shown anyway");
+            UnityEngine.Random.value = 0.2f; IndieAds.ShowIfWanted("coins", note, "50 coins");
+            Check(calls == 2 && IndieAds.IsShowing && page.visible && page.shown.EndsWith(",false"), "the network's turn, and not shown");
+            Check(page.shown.Contains("\"50 coins\""), "the reward not passed on");
+            IndieAds.ShowIfWanted("coins", note);
+            Check(calls == 3 && !got.shown && IndieAds.IsShowing, "a second ad over the first, or no callback for it");
+            page.Emit(new { type = "event", e = new { @event = "show" } }, new { type = "done", n = 1, shown = true, granted = true });
+            Check(calls == 4 && got.shown && got.granted && got.via == "house", "the network's showing not told as the house's");
+            // a game owed showings has the slot whatever the roll, and the page is told to show only theirs
+            page.Emit(new { type = "demand", demand = new[] { new { placement = "coins", share = 0.0, available = 1, owed = 1 } } });
+            Check(IndieAds.Demand("coins").owed == 1, "owed not kept from the page");
+            UnityEngine.Random.value = 0.99f; IndieAds.ShowIfWanted("coins", note);
+            Check(calls == 4 && IndieAds.IsShowing && page.shown.EndsWith(",true"), "an owed game's turn not taken, or not said");
+            page.Emit(new { type = "done", n = 2, shown = false });
+            Check(calls == 5 && !got.shown && got.via == null, "none appeared, and not the paid network's");
+            // nothing available: never the network's, owed or not
+            page.Emit(new { type = "demand", demand = new[] { new { placement = "coins", share = 1.0, available = 0, owed = 1 } } });
+            UnityEngine.Random.value = 0f; IndieAds.ShowIfWanted("coins", note);
+            Check(calls == 6 && !got.shown && !IndieAds.IsShowing, "a slot taken with nothing to show");
+            UnityEngine.Random.value = 0f;
+            Reset();
         }
         Console.WriteLine($"Unity lifecycle harness: {checks} checks passed.");
     }

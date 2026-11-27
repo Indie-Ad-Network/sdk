@@ -49,7 +49,8 @@ static NSString* const kInterstitial = @"LevelEnd";
 
 - (void)showInterstitial
 {
-    // A real game asks first, and shows its paid network's ad on "no": if ([IndieAds wants:kInterstitial]) …
+    // Every tap is the network's here. A real game with a paid network calls [IndieAds showIfWanted:done:] instead, and
+    // shows the paid network's ad when result.shown is NO.
     BOOL showing = [IndieAds show:kInterstitial done:^(IndieAdResult* result) {
         [self say:[NSString stringWithFormat:@"interstitial done: %@", result]];
     }];

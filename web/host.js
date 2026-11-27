@@ -13,7 +13,7 @@
 //
 //   the game calls                              the page says
 //   start(config)                               { type: 'loaded' }           the page is up: start() may be called
-//   show(n, placement, reward, muted, lang)
+//   show(n, placement, reward, muted, lang, owed)   owed: only the games the host's studio owes (ShowIfWanted, on their turn)
 //   …                                           { type: 'device' }           what can't a page know? (answered with device())
 //   offered(placement)                          { type: 'demand', demand }   [{ placement, share, available, owed }] (core/index.js demand(); owed: how many games)
 //   test(on)          a developer trying the ads out (core/index.js test())
@@ -100,12 +100,17 @@ window.indieAdsHost = {
     if (ads) { ads.refresh(); during(() => around(ads.prefetch())); }   // and what's wanted downloaded, if the network no longer costs: the first word on that isn't the last
   },
   // `language`: the game's, if it has a setting of its own (null: the device's)
-  show(n, placement, reward, isMuted, language) {
+  // `owed`: the slot is the games owed showings' (the game's ShowIfWanted found some, as exchange.js turn() does): only theirs,
+  // if there still are any by now. A game of 0.7.0 or before never says it.
+  show(n, placement, reward, isMuted, language, owed) {
     muted = !!isMuted;
     lang = language ?? null;
     during(async () => {
       let result = { granted: false, shown: false };
-      try { result = await ads.show(placement, reward ? { reward } : undefined); } finally { post('done', { n, ...result }); }
+      try {
+        const among = owed ? (await ads.demand(placement)).owed : [];
+        result = await ads.show(placement, { ...reward && { reward }, ...among.length && { among } });
+      } finally { post('done', { n, ...result }); }
       await around(ads.settled());   // the one just shown may have reached its cap; then what's fetched in its place
     });
   },

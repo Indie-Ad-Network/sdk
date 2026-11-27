@@ -42,16 +42,13 @@ IndieAds.init(activity, config);   // in the activity's onCreate
 Then, at each ad break:
 
 ```java
-if (IndieAds.wants("FreeCoins")) {                 // the house's slot: rolls the network's share, once per ad
-    IndieAds.show("FreeCoins", result -> {
-        if (result.granted) giveCoins(100);
-    });
-} else {
-    // the paid network's ad
-}
+IndieAds.showIfWanted("FreeCoins", result -> {
+    if (result.granted) giveCoins(100);
+    else if (!result.shown) showPaidAd();   // not the network's turn, or nothing appeared
+});
 ```
 
-`show` returns false when nothing will be shown, and `done` isn't called; otherwise `done` is called once, when the ad has closed or failed to appear (`result.shown` false: show the paid network's instead). The rest is as the [Unity package](../unity/README.md) says, method for method in camelCase: `demand`, `offered`, `setTest`, `setConsent`, `cmpConsent`, `getMoreGamesUrl`, `showMoreGames(OpenIn.GAME)`, `getInstallCampaign`, `shutdown`, and on the listener `onEvent` and `onDemandChanged`. `setMuted` and `setLanguage` take what Unity asks through a function, for the next ad.
+`showIfWanted` is the whole of a slot: it decides whose turn it is (a game your studio owes showings first, else the share, rolled once), shows the network's ad on its turn, and calls back exactly once, on the main thread, whatever happens. `result.via` is `"house"` when the network's ad was shown. A game that decides for itself asks `wants` and then calls `show`, which returns false when nothing will be shown (and then calls nothing back). The rest is as the [Unity package](../unity/README.md) says, method for method in camelCase: `demand`, `offered`, `setTest`, `setConsent`, `cmpConsent`, `getMoreGamesUrl`, `showMoreGames(OpenIn.GAME)`, `getInstallCampaign`, `shutdown`, and on the listener `onEvent` and `onDemandChanged`. `setMuted` and `setLanguage` take what Unity asks through a function, for the next ad.
 
 ### Threads
 

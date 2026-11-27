@@ -36,16 +36,13 @@ config.placements = @[coins, levelEnd];
 Then, at each ad break:
 
 ```objc
-if ([IndieAds wants:@"FreeCoins"]) {   // the house's slot: rolls the network's share, once per ad
-    [IndieAds show:@"FreeCoins" done:^(IndieAdResult* result) {
-        if (result.granted) [self giveCoins:100];
-    }];
-} else {
-    // the paid network's ad
-}
+[IndieAds showIfWanted:@"FreeCoins" done:^(IndieAdResult* result) {
+    if (result.granted) [self giveCoins:100];
+    else if (!result.shown) [self showPaidAd];   // not the network's turn, or nothing appeared
+}];
 ```
 
-`show:` returns NO when nothing will be shown, and `done` isn't called; otherwise `done` is called once, when the ad has closed or failed to appear (`result.shown` NO: show the paid network's instead). The rest is as the [Unity package](../unity/README.md) says: `demandFor:`, `offered:`, `setTest:`, `setConsent:`, `cmpConsent`, `moreGamesUrl`, `showMoreGames:`, `shutdown`, and on the delegate `indieAdsEvent:` and `indieAdsDemandChanged`. `setMuted:` and `setLanguage:` take what Unity asks through a function, for the next ad. `getInstallCampaign:` is Android's, and always nil here.
+`showIfWanted:` is the whole of a slot: it decides whose turn it is (a game your studio owes showings first, else the share, rolled once), shows the network's ad on its turn, and calls back exactly once, on the main thread, whatever happens. `result.via` is `@"house"` when the network's ad was shown. A game that decides for itself asks `wants:` and then calls `show:`, which returns NO when nothing will be shown (and then calls nothing back). The rest is as the [Unity package](../unity/README.md) says: `demandFor:`, `offered:`, `setTest:`, `setConsent:`, `cmpConsent`, `moreGamesUrl`, `showMoreGames:`, `shutdown`, and on the delegate `indieAdsEvent:` and `indieAdsDemandChanged`. `setMuted:` and `setLanguage:` take what Unity asks through a function, for the next ad. `getInstallCampaign:` is Android's, and always nil here.
 
 ### Threads
 

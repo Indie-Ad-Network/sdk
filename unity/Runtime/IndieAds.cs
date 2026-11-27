@@ -102,6 +102,9 @@ namespace IndieAdNetwork
 		/// How many creatives this player could be shown here: 0 if they have every game, or have seen each as often
 		/// as it may be shown today, or none is downloaded yet.
 		public int available;
+		/// How many of the games among them this game's studio owes showings (0.7.1). ShowIfWanted gives the slot to them
+		/// whenever there's one, before the share is rolled; Wants goes by the share alone, as ever.
+		public int owed;
 	}
 
 	public struct IndieAdResult
@@ -112,6 +115,9 @@ namespace IndieAdNetwork
 		public bool granted;
 		public string creative, app, kind;
 		public float watchedSecs;
+		/// "house": the network's ad was put in front of the player. Null: none was (0.7.1); with ShowIfWanted, because the
+		/// slot wasn't the network's, or none appeared: either way, show your paid network's.
+		public string via;
 	}
 
 	/// An event of the player, for the game's own analytics: offer, show, q25…q100, first_touch, complete, reward,
@@ -389,7 +395,23 @@ namespace IndieAdNetwork
 		/// closed (or failed to appear: result.shown false).
 		public static bool Show(string placement, Action<IndieAdResult> done, string reward = null)
 		{
-			return instance != null && instance.DoShow(placement, done, reward);
+			return instance != null && instance.DoShow(placement, done, reward, false);
+		}
+
+		/// Wants and Show in one (0.7.1): the network's ad in this slot if it's the network's turn, and `done` called once,
+		/// always. result.shown false (via null): show your paid network's ad, whatever the reason (not the network's turn,
+		/// nothing to show, before Init, another ad up, or one that never appeared). The turn is the network's when a game this
+		/// game's studio owes showings has an ad ready (then theirs is shown), else by the share, rolled once here. Declined, `done`
+		/// is called before ShowIfWanted returns.
+		///
+		///   IndieAds.ShowIfWanted("FreeCoins", r => { if (r.granted) GiveCoins(); else if (!r.shown) ShowPaidAd(); });
+		public static void ShowIfWanted(string placement, Action<IndieAdResult> done, string reward = null)
+		{
+			IndieAdDemand demand = Demand(placement);
+			bool owed = demand.available > 0 && demand.owed > 0;   // as core/exchange.js turn()
+			bool turn = owed || (demand.available > 0 && UnityEngine.Random.value < demand.share);
+			if (turn && instance != null && instance.DoShow(placement, done, reward, owed)) return;
+			done?.Invoke(default(IndieAdResult));
 		}
 
 		IndieAdsConfig config;
@@ -581,7 +603,7 @@ namespace IndieAdNetwork
 					demand.Clear();
 					for (int i = 0; m.demand != null && i < m.demand.Length; i++)
 					{
-						demand[m.demand[i].placement] = new IndieAdDemand { share = m.demand[i].share, available = m.demand[i].available };
+						demand[m.demand[i].placement] = new IndieAdDemand { share = m.demand[i].share, available = m.demand[i].available, owed = m.demand[i].owed };
 					}
 					demandTime = Time.realtimeSinceStartup;
 					OnDemandChanged?.Invoke();
@@ -731,7 +753,8 @@ namespace IndieAdNetwork
 
 		// ---- showing ----
 
-		bool DoShow(string placement, Action<IndieAdResult> done, string reward)
+		// `owed`: only the games this one's studio owes showings (ShowIfWanted, on their turn)
+		bool DoShow(string placement, Action<IndieAdResult> done, string reward, bool owed)
 		{
 			if (showing || !EnsurePage())
 			{
@@ -750,7 +773,7 @@ namespace IndieAdNetwork
 			bool muted = config.muted != null && config.muted();
 			view.SetVisible(true);
 			string language = config.language != null ? config.language() : null;
-			Call("show", showNumber + "," + Quote(placement) + "," + Quote(reward) + "," + (muted ? "true" : "false") + "," + Quote(language));
+			Call("show", showNumber + "," + Quote(placement) + "," + Quote(reward) + "," + (muted ? "true" : "false") + "," + Quote(language) + "," + (owed ? "true" : "false"));
 			return true;
 		}
 
@@ -772,6 +795,7 @@ namespace IndieAdNetwork
 			}
 			Action<IndieAdResult> done = showDone;
 			showDone = null;
+			if (result.shown && result.via == null) result.via = "house";
 			try
 			{
 				if (wasShown) OnHidden?.Invoke();
@@ -1047,7 +1071,7 @@ namespace IndieAdNetwork
 		{
 			public string placement;
 			public float share;
-			public int available;
+			public int available, owed;
 		}
 
 		[Serializable]

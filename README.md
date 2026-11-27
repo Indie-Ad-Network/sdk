@@ -51,7 +51,7 @@ Add `capacitor/` as a dependency (`"indie-ads-capacitor": "file:…/sdk/capacito
 
 ## In a Unity game
 
-`unity/` is a UPM package (add by git URL with `?path=/unity`): the same player, in the package's own web view (the system's, on iOS and Android: no web-view plugin to buy), with `IndieAds.Wants(placement)` to hand for mixing with a paid network. See [Unity](unity/README.md).
+`unity/` is a UPM package (add by git URL with `?path=/unity`): the same player, in the package's own web view (the system's, on iOS and Android: no web-view plugin to buy), with `IndieAds.ShowIfWanted(placement, done)` to share each slot with a paid network (or `Wants` and `Show`, to decide it yourself). See [Unity](unity/README.md).
 
 ## In a native Android game
 
