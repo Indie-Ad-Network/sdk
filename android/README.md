@@ -15,6 +15,8 @@ Build the AAR (the Android SDK's path in `local.properties`, or `ANDROID_HOME`):
 
 Put it in the game's `libs/` and add `implementation files('libs/indieads-release.aar')`. Its manifest brings `INTERNET`, `ACCESS_NETWORK_STATE` and a `<queries>` for Google Play (to read the install campaign); its R8 rule keeps what the page calls. Or include `indieads/` as a module of the game's own build, from a checkout of this repository: it takes the player and `InstallReferrer.java` from `../unity/` as it builds.
 
+Google Play's Data safety form is the game's to fill in: the SDK sends each ad's events and a player's report of an ad (with any words they write), with no identifier of any kind and linked to no one, and shares nothing for tracking. The iOS SDK's `PrivacyInfo.xcprivacy` says the same for Apple.
+
 Ship a copy of the catalogue as the asset `indie-ads-catalogue.json` (`src/main/assets/`): it's what a first run with no server shows, and its `signedBy` is the key the server's catalogue is checked against.
 
 ## Use

@@ -6,11 +6,13 @@ The repository has one version, [Semantic Versioning](https://semver.org), and a
 
 Two numbers are not this one, and change only when a format does: `VERSION` in `core/wire.js` (what games send the ingest) and the catalogue's `version`. Games already released go on sending and reading the old ones.
 
-## [Unreleased]
+## [0.7.0] - 2026-11-27
 
 ### Added
 - **An SDK for native Android games** (`android/`): the same player as the Unity package, in the system's web view over the game's activity, for a game written in Java, Kotlin or C++ with no Unity. `IndieAds` is the Unity package's API in Java, and keeps its page alive the same way; every method may be called from any thread (a C++ game's GL thread), and callbacks come on the main thread. It's an AAR with no dependencies, minSdk 21, and the player is taken from the Unity package's as it's built. `android/sample` is a game with three buttons (Interstitial, Rewarded, More games) in test mode. Tried on a Galaxy A16 (Android 16): both formats, the back button as the ad's ✕, More games and Google Play from it, going home mid-ad, and memory running low.
 - **An SDK for native iOS games** (`ios/`): the same, in Objective-C, over the game's view controller: the App Store sheet and banner as in the Unity package, files to drag into a game's project or a local Swift package, iOS 15 on. `tools/build-player.mjs` writes the player into it beside the Unity package's, and `npm test` checks they're the same page. `ios/Sample` is the same three-button game, run on an iPhone 15 Pro Max.
+
+- **A privacy manifest for the iOS SDK** (`ios/IndieAds/PrivacyInfo.xcprivacy`): no tracking; advertising data (each ad's events) and other user content (a player's report of an ad), linked to no one; user defaults (the consent platform's answer) and system boot time (the clock between two things in the app). A Swift package brings it; a game that drags the files in merges it into its own.
 
 ### Changed
 - **A developer's test sees videos as well as playables.** In test mode the kind is chosen first, each as likely, then a creative of that kind by weight as before; and the likeliest of each kind is among the few downloaded ahead. Before, a catalogue of mostly playables, or a portrait game whose videos are all landscape (half the weight), could go a whole test without a video. What a player sees is unchanged.

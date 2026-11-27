@@ -51,7 +51,7 @@ import java.util.UUID;
  */
 public final class IndieAds {
 
-    public static final String VERSION = "0.6.23";
+    public static final String VERSION = "0.7.0";
 
     /** What the SDK says of itself, for a game that wants to hear it. Every method may be left out. Main thread. */
     public static abstract class Listener {

@@ -3,7 +3,7 @@
 #import <QuartzCore/QuartzCore.h>
 #import "IndieAdsPrivate.h"
 
-static NSString* const kVersion = @"0.6.23";
+static NSString* const kVersion = @"0.7.0";
 
 #define IALog(...) do { if (self.config.log) NSLog(@"[IndieAds] " __VA_ARGS__); } while (0)
 

@@ -11,7 +11,7 @@ let package = Package(
         .target(
             name: "IndieAds",
             path: "IndieAds",
-            resources: [.copy("IndieAdsPlayer.html")],
+            resources: [.copy("IndieAdsPlayer.html"), .copy("PrivacyInfo.xcprivacy")],
             publicHeadersPath: "include",
             linkerSettings: [.linkedFramework("WebKit"), .linkedFramework("StoreKit")]
         ),

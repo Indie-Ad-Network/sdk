@@ -9,6 +9,8 @@ The SDK for a game whose iOS side is Objective-C, Swift or C++ under a thin UIKi
 
 Drag the `IndieAds` folder into the game's Xcode project (Copy items if needed; the game's target ticked), so its `.m` files are compiled and `IndieAdsPlayer.html` is copied as a resource. If the game's target doesn't use modules, link `WebKit.framework` and `StoreKit.framework`. Or add this folder as a local Swift package (File › Add Package Dependencies… › Add Local…).
 
+**The privacy manifest.** `PrivacyInfo.xcprivacy` says what the SDK does for Apple's privacy report: no tracking and no identifier of any kind; each ad's events (advertising data) and a player's report of an ad (other user content), linked to no one; and why it reads user defaults (a consent platform's answer) and the system's clock (the time between two things in the app). A Swift package brings it as it is. With the files dragged in, Xcode reads only the app's own: if the game has none, keep this one in its target as the app's; if it has one, copy these entries into it and take this file out of the target.
+
 Ship a copy of the catalogue as the resource `indie-ads-catalogue.json`: it's what a first run with no server shows, and its `signedBy` is the key the server's catalogue is checked against.
 
 ## Use
