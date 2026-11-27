@@ -34,6 +34,7 @@ final class Device {
      * → true (agreed, or needn't be asked), false, or null: no platform has said.
      */
     static Boolean cmpConsent(Context context) {
+        // PreferenceManager.getDefaultSharedPreferences, by its name: that class is deprecated, and the name is fixed
         SharedPreferences kept = context.getSharedPreferences(context.getPackageName() + "_preferences", Context.MODE_PRIVATE);
         try {
             if (!kept.contains("IABTCF_gdprApplies")) return null;

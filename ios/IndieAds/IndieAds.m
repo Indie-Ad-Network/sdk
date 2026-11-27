@@ -131,9 +131,9 @@ static NSString* const kVersion = @"0.6.23";
 - (NSString*)description
 {
     NSMutableString* s = [NSMutableString stringWithString:self.event ?: @"?"];
-    NSDictionary* fields = @{ @"placement": self.placement ?: @"", @"creative": self.creative ?: @"", @"app": self.app ?: @"", @"kind": self.kind ?: @"", @"why": self.why ?: @"", @"via": self.via ?: @"", @"step": self.step ?: @"" };
     for (NSString* name in @[@"placement", @"creative", @"app", @"kind", @"why", @"via", @"step"]) {
-        if ([fields[name] length]) [s appendFormat:@" %@=%@", name, fields[name]];
+        NSString* value = [self valueForKey:name];
+        if (value.length) [s appendFormat:@" %@=%@", name, value];
     }
     if (self.secs) [s appendFormat:@" secs=%g", self.secs];
     return s;
@@ -170,12 +170,12 @@ static NSString* const kVersion = @"0.6.23";
     return [NSString stringWithFormat:@"%.15g", d];
 }
 
-+ (NSString*)startConfig:(IndieAdsConfig*)config key:(NSString*)key language:(NSString*)language wide:(BOOL)wide
++ (NSString*)startConfig:(IndieAdsConfig*)config key:(NSString*)key wide:(BOOL)wide
 {
     NSString* shipped = config.shippedCatalogueJson;
     NSMutableString* json = [NSMutableString stringWithCapacity:256 + shipped.length];
     [json appendFormat:@"{\"key\":%@", [self quote:key]];
-    [json appendFormat:@",\"lang\":%@", [self quote:language]];
+    [json appendFormat:@",\"lang\":%@", [self quote:config.language]];
     [json appendFormat:@",\"host\":%@", [self quote:config.host]];
     [json appendFormat:@",\"rating\":%@", [self quote:config.rating]];
     [json appendString:@",\"os\":\"ios\""];
@@ -198,9 +198,8 @@ static NSString* const kVersion = @"0.6.23";
         if (p.reward.length) [json appendFormat:@",\"reward\":%@", [self quote:p.reward]];
         [json appendString:@"}"];
     }];
-    // the shipped catalogue is JSON already, and JSON is JavaScript
-    NSString* trimmed = [shipped stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet];
-    [json appendFormat:@"},\"shipped\":%@}", trimmed.length ? shipped : @"null"];
+    // the shipped catalogue is JSON already, and JSON is JavaScript (IndieAds has made a blank one nil)
+    [json appendFormat:@"},\"shipped\":%@}", shipped ?: @"null"];
     return json;
 }
 
@@ -220,7 +219,6 @@ static NSString* const kVersion = @"0.6.23";
 static const double kHealthySeconds = 60, kAnswerSeconds = 4, kShowingAnswerSeconds = 10, kBackSeconds = kAnswerSeconds + 2;
 static const double kGamesPatience = 6;   // for the page of games to load and say it can be closed, before Safari has it
 static const double kStorePatience = 3;   // for a store to take the game from the front, before the ad's clock goes on
-static const double kTick = 0.25;
 static NSString* const kGamesReady = @"indie-ads:games-ready";   // what that page says (the server's games.js)
 static NSString* const kGamesClose = @"indie-ads:close";
 
@@ -232,6 +230,8 @@ static NSString* const kGamesClose = @"indie-ads:close";
 @property (atomic, copy) NSDictionary<NSString*, IndieAdDemand*>* demand;   // replaced whole, so any thread may read it
 @property (atomic, copy, nullable) NSString* moreGamesUrl;
 @property (atomic) BOOL stopped, showing, showPending;
+// an ad is up, or about to be: shown from another thread, and the main thread hasn't yet had it
+@property (nonatomic, readonly) BOOL busy;
 @end
 
 @implementation IndieAds {
@@ -265,7 +265,7 @@ static NSString* const kGamesClose = @"indie-ads:close";
     BOOL _storeLeftApp;
     double _storeOpenedTime;
 
-    BOOL _ticking;
+    NSUInteger _clock;   // the clock's setting: one set before the latest is let go when it comes
     NSMutableArray* _observers;
 }
 
@@ -274,6 +274,8 @@ static id<IndieAdsDelegate> gDelegate;
 static NSString* gPlayerPage;   // the resource, read once (main thread)
 
 + (NSString*)version { return kVersion; }
+
+- (BOOL)busy { return self.showing || self.showPending; }
 
 + (IndieAds*)instance
 {
@@ -316,7 +318,9 @@ static void OnMain(dispatch_block_t work)
         session = [[IndieAds alloc] initWithViewController:viewController config:[config copy]];
         gInstance = session;
     }
-    OnMain(^{ [session start]; });
+    // Always queued, from the main thread too: nothing of it (the player page read, a web view made) runs inside the
+    // game's own launch.
+    dispatch_async(dispatch_get_main_queue(), ^{ [session start]; });
 }
 
 + (void)shutdown
@@ -334,14 +338,13 @@ static void OnMain(dispatch_block_t work)
 
 + (BOOL)isShowing
 {
-    IndieAds* s = [self instance];
-    return s && (s.showing || s.showPending);
+    return [self instance].busy;
 }
 
 + (IndieAdDemand*)demandFor:(NSString*)placement
 {
     IndieAds* s = [self instance];
-    IndieAdDemand* d = (s && !s.showing && !s.showPending) ? s.demand[placement] : nil;
+    IndieAdDemand* d = (s && !s.busy) ? s.demand[placement] : nil;
     return d ?: [IndieAdDemand new];
 }
 
@@ -364,7 +367,7 @@ static void OnMain(dispatch_block_t work)
     // From another thread: the answer is the one the main thread will give, as far as it can be known here. Should it
     // turn out otherwise, `done` is told nothing was shown.
     @synchronized (s) {
-        if (s.stopped || s.showing || s.showPending) return NO;
+        if (s.stopped || s.busy) return NO;
         s.showPending = YES;
     }
     dispatch_async(dispatch_get_main_queue(), ^{
@@ -425,7 +428,7 @@ static void OnMain(dispatch_block_t work)
 + (BOOL)showMoreGames:(IndieAdsOpenIn)where
 {
     IndieAds* s = [self instance];
-    if (!s || s.showing || s.showPending || !s.moreGamesUrl) return NO;
+    if (!s || s.busy || !s.moreGamesUrl) return NO;
     OnMain(^{
         NSString* url = s.moreGamesUrl;
         if (s.stopped || s.showing || !url) return;
@@ -466,10 +469,13 @@ static double Now(void)
 - (void)start
 {
     if (self.stopped) return;
+    [IADevice startMonitor];
     if (!self.config.shippedCatalogueJson) {
         NSString* path = [NSBundle.mainBundle pathForResource:@"indie-ads-catalogue" ofType:@"json"];
         if (path) self.config.shippedCatalogueJson = [NSString stringWithContentsOfFile:path encoding:NSUTF8StringEncoding error:nil];
     }
+    NSString* shipped = [self.config.shippedCatalogueJson stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet];
+    if (!shipped.length) self.config.shippedCatalogueJson = nil;   // once, not at every page
     // Unity's OnApplicationFocus and Application.lowMemory, for this SDK
     __weak IndieAds* weakSelf = self;
     NSNotificationCenter* centre = NSNotificationCenter.defaultCenter;
@@ -633,7 +639,7 @@ static double Number(NSDictionary* o, NSString* name)
         if (_pageLoaded) return;
         _pageLoaded = YES;
         _pageLoadedTime = Now();
-        [self.view evaluate:[NSString stringWithFormat:@"indieAdsHost.start(%@)", [IAWire startConfig:self.config key:_pageKey language:self.config.language wide:[self isWide]]]];
+        [self.view evaluate:[NSString stringWithFormat:@"indieAdsHost.start(%@)", [IAWire startConfig:self.config key:_pageKey wide:[self isWide]]]];
         for (NSString* js in _waitingCalls) [self.view evaluate:js];
         [_waitingCalls removeAllObjects];
     } else if ([type isEqualToString:@"device"]) {
@@ -794,23 +800,38 @@ static double Number(NSDictionary* o, NSString* name)
 
 // ---- the clock: Unity's Update, for what's waited on ----
 
-- (BOOL)waiting
+static double Sooner(double at, double other)
 {
-    return _askedAliveAt >= 0 || _remakeAt >= 0 || (self.games && !_gamesReady) || (self.showing && !_showStarted) || (_storeOpen && !_storeLeftApp);
+    return at < 0 ? other : MIN(at, other);
 }
 
+// The soonest of what's waited on (update), or -1 for nothing: the clock is woken then, and not before. The App Store's
+// sheet isn't waited on: it says when it's put away.
+- (double)nextAt
+{
+    double at = -1;
+    if (_askedAliveAt >= 0) at = Sooner(at, _askedAliveAt + (self.showing ? kShowingAnswerSeconds : kAnswerSeconds));
+    if (_remakeAt >= 0) at = Sooner(at, _remakeAt);
+    if (self.games && !_gamesReady) at = Sooner(at, _gamesAsked + kGamesPatience);
+    if (self.showing && !_showStarted) at = Sooner(at, _showRequestedTime + self.config.showTimeout);
+    if (_storeOpen && !_storeLeftApp && ![IADevice storeSheetIsUp]) at = Sooner(at, _storeOpenedTime + kStorePatience);
+    return at;
+}
+
+// The clock set again for what's now waited on: called whenever that may have changed.
 - (void)tickSoon
 {
-    if (_ticking || self.stopped || _away || ![self waiting]) return;
-    _ticking = YES;
+    NSUInteger setting = ++_clock;
+    double at = [self nextAt];
+    if (self.stopped || _away || at < 0) return;
     __weak IndieAds* weakSelf = self;
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(kTick * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{ [weakSelf tick]; });
+    double wait = MAX(0, at - Now()) + 0.001;   // + a moment: what's waited on is past its time, not at it
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(wait * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{ [weakSelf tick:setting]; });
 }
 
-- (void)tick
+- (void)tick:(NSUInteger)setting
 {
-    _ticking = NO;
-    if (self.stopped || _away) return;   // the game away runs nothing of this, as Unity's player loop doesn't; front: starts it again
+    if (setting != _clock || self.stopped || _away) return;   // set again since; or the game away, which runs nothing of this, as Unity's player loop doesn't
     [self update];
     [self tickSoon];
 }
@@ -953,7 +974,12 @@ static double Number(NSDictionary* o, NSString* name)
         [IADevice openOutside:Text(link, @"url") fallback:Text(link, @"fallback")];
     } else {
         [IADevice openStore:Text(link, @"id") ?: @"" ct:Text(link, @"ct") ?: @"" pt:Text(link, @"pt") ?: @"" url:Text(link, @"url") ?: @""
-                   fallback:Text(link, @"fallback") ?: @"" presenter:presenter closed:^{ [weakSelf storeClosed]; }];
+                   fallback:Text(link, @"fallback") ?: @"" presenter:presenter closed:^(BOOL outside) {
+            IndieAds* s = weakSelf;
+            if (!outside) { [s storeClosed]; return; }
+            // the sheet couldn't load it, and the link went outside: waited on as any store outside the game is
+            if (s) { s->_storeOpenedTime = Now(); [s tickSoon]; }
+        }];
     }
     [self tickSoon];
 }

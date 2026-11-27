@@ -35,16 +35,16 @@ final class Wire {
 
     /** A number as JavaScript reads it, whatever the device's locale: 2.5, not 2,5; 5, not 5.0. */
     static String number(double d) {
-        if (d == Math.rint(d) && !Double.isInfinite(d) && Math.abs(d) < 1e15) return Long.toString((long) d);
+        if (d == Math.rint(d) && Math.abs(d) < 1e15) return Long.toString((long) d);
         return Double.toString(d);
     }
 
     /** The argument of indieAdsHost.start(). `wide`: the game's screen is wider than tall. */
-    static String startConfig(IndieAdsConfig config, String key, String language, boolean wide) {
+    static String startConfig(IndieAdsConfig config, String key, boolean wide) {
         String shipped = config.shippedCatalogueJson;
         StringBuilder json = new StringBuilder(256 + (shipped != null ? shipped.length() : 0));
         json.append("{\"key\":").append(quote(key));
-        json.append(",\"lang\":").append(quote(language));
+        json.append(",\"lang\":").append(quote(config.language));
         json.append(",\"host\":").append(quote(config.host));
         json.append(",\"rating\":").append(quote(config.rating));
         json.append(",\"os\":\"android\"");
@@ -70,7 +70,7 @@ final class Wire {
             json.append("}");
         }
         // the shipped catalogue is JSON already, and JSON is JavaScript
-        json.append("},\"shipped\":").append(shipped == null || shipped.trim().isEmpty() ? "null" : shipped);
+        json.append("},\"shipped\":").append(shipped == null ? "null" : shipped);   // IndieAds has made a blank one null
         return json.append("}").toString();
     }
 

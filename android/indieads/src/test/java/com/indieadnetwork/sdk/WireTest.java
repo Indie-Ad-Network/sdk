@@ -34,17 +34,19 @@ public class WireTest {
         };
         c.age = 12;
         c.shippedCatalogueJson = "{\"version\":1}";
+        c.language = "fr";
         assertEquals("{\"key\":\"k1\",\"lang\":\"fr\",\"host\":\"duet\",\"rating\":null,\"os\":\"android\","
                 + "\"catalogue\":\"https://indieadnetwork.com/catalogue.json\",\"ingest\":null,\"reports\":null,\"mix\":null,\"signedBy\":null,"
                 + "\"age\":12,\"test\":false,\"consent\":true,\"wide\":true,\"placements\":{"
                 + "\"FreeCoins\":{\"format\":\"rewarded\",\"maxSecs\":30,\"reward\":\"100 coins\"},"
                 + "\"LevelEnd\":{\"format\":\"interstitial\",\"maxSecs\":30,\"minSecs\":2.5,\"skipAfter\":5},"
                 + "\"Any\":{\"format\":\"rewarded\"}},\"shipped\":{\"version\":1}}",
-                Wire.startConfig(c, "k1", "fr", true));
-        c.shippedCatalogueJson = "  ";
+                Wire.startConfig(c, "k1", true));
+        c.shippedCatalogueJson = null;   // a blank one IndieAds makes null as it starts
+        c.language = null;
         c.placements = null;
         c.age = 0;
-        assertEquals(true, Wire.startConfig(c, "k", null, false).endsWith("\"age\":null,\"test\":false,\"consent\":true,\"wide\":false,\"placements\":{},\"shipped\":null}"));
+        assertEquals(true, Wire.startConfig(c, "k", false).endsWith("\"age\":null,\"test\":false,\"consent\":true,\"wide\":false,\"placements\":{},\"shipped\":null}"));
     }
 
     @Test public void thePageOrigin() {

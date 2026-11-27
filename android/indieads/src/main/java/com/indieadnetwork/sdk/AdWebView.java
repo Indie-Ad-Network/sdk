@@ -2,7 +2,6 @@ package com.indieadnetwork.sdk;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
-import android.content.Intent;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
@@ -37,14 +36,15 @@ import android.widget.FrameLayout;
  */
 final class AdWebView {
 
+    /** What a web view says, with which one it is. */
     interface Listener {
-        void onMessage(String message);
+        void onMessage(AdWebView from, String message);
         /** The device's back button, with the page on screen. */
-        void onBack();
-        /** The page's process is gone, or there's no web view on this device: this one is no more use. */
-        void onLost();
+        void onBack(AdWebView from);
+        /** The page's process is gone: this one is no more use. */
+        void onLost(AdWebView from);
         /** The main frame wouldn't load (an error, or an HTTP status that is one). */
-        void onPageFailed(int code, String message);
+        void onPageFailed(AdWebView from, int code, String message);
     }
 
     // a web view couldn't be made on this device: there's none to be had until the game starts again
@@ -129,7 +129,7 @@ final class AdWebView {
         @JavascriptInterface public void postMessage(final String message) {
             main.post(new Runnable() {
                 @Override public void run() {
-                    if (webView != null) listener.onMessage(message);
+                    if (webView != null) listener.onMessage(AdWebView.this, message);
                 }
             });
         }
@@ -139,22 +139,22 @@ final class AdWebView {
         long now = SystemClock.elapsedRealtime();
         if (webView == null || !visible || now - backAt < 300) return;
         backAt = now;
-        listener.onBack();
+        listener.onBack(this);
     }
 
     private void lost() {
         if (webView == null) return;
         destroy();
-        listener.onLost();
+        listener.onLost(this);
     }
 
     private final class Client extends WebViewClient {
         @Override public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
-            if (request.isForMainFrame()) listener.onPageFailed(error.getErrorCode(), String.valueOf(error.getDescription()));
+            if (request.isForMainFrame()) listener.onPageFailed(AdWebView.this, error.getErrorCode(), String.valueOf(error.getDescription()));
         }
 
         @Override public void onReceivedHttpError(WebView view, WebResourceRequest request, WebResourceResponse response) {
-            if (request.isForMainFrame()) listener.onPageFailed(response.getStatusCode(), "HTTP " + response.getStatusCode());
+            if (request.isForMainFrame()) listener.onPageFailed(AdWebView.this, response.getStatusCode(), "HTTP " + response.getStatusCode());
         }
 
         // http(s) is the page's own business; anything else (market:, mailto:, another app's scheme) is the system's,
@@ -164,12 +164,7 @@ final class AdWebView {
             Uri url = request.getUrl();
             String scheme = url.getScheme() == null ? "" : url.getScheme().toLowerCase();
             if (scheme.equals("http") || scheme.equals("https") || scheme.equals("about") || scheme.equals("data") || scheme.equals("blob")) return false;
-            if (!request.isForMainFrame()) return true;
-            try {
-                activity.startActivity(new Intent(Intent.ACTION_VIEW, url).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
-            } catch (Exception e) {
-                // nothing on this device opens it
-            }
+            if (request.isForMainFrame()) Device.view(activity, url.toString());   // false: nothing on this device opens it
             return true;
         }
 

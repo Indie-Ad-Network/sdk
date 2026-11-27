@@ -36,8 +36,9 @@ const html = `<!doctype html>
 ${js}
 </script></body></html>
 `;
+const checking = process.argv.includes('--check');
 for (const out of outs) {
-  if (process.argv.includes('--check')) {
+  if (checking) {
     let now = ''; try { now = readFileSync(out, 'utf8'); } catch { /* not built yet */ }
     if (now !== html) { console.error(`${fileURLToPath(out)} is stale: run tools/build-player.mjs`); process.exit(1); }
   } else {

@@ -13,7 +13,7 @@ Build the AAR (the Android SDK's path in `local.properties`, or `ANDROID_HOME`):
 ./gradlew :indieads:assembleRelease      # → indieads/build/outputs/aar/indieads-release.aar
 ```
 
-Put it in the game's `libs/` and add `implementation files('libs/indieads-release.aar')`. Its manifest brings `INTERNET`, `ACCESS_NETWORK_STATE` and a `<queries>` for Google Play (to read the install campaign); its R8 rule keeps what the page calls. Or include `indieads/` as a module of the game's own build, from a checkout of this repository: it takes the player from `../unity/Runtime/Resources/` as it builds.
+Put it in the game's `libs/` and add `implementation files('libs/indieads-release.aar')`. Its manifest brings `INTERNET`, `ACCESS_NETWORK_STATE` and a `<queries>` for Google Play (to read the install campaign); its R8 rule keeps what the page calls. Or include `indieads/` as a module of the game's own build, from a checkout of this repository: it takes the player and `InstallReferrer.java` from `../unity/` as it builds.
 
 Ship a copy of the catalogue as the asset `indie-ads-catalogue.json` (`src/main/assets/`): it's what a first run with no server shows, and its `signedBy` is the key the server's catalogue is checked against.
 
@@ -71,4 +71,4 @@ Interstitial and More games are tapped on the main thread; Rewarded is shown fro
 
 ## Inside
 
-`IndieAds.java` is the Unity package's `IndieAds.cs`, in Java, and `AdWebView.java` its `NativeWebView.java` without Unity: they say the same things to the page (`web/host.js`), and keep it alive the same way (asked if it's there as the game comes back, made again when it's lost or put away for memory, an ad that never starts given up). `Wire.java` is what's said, tested on the JVM (`./gradlew :indieads:testDebugUnitTest`). `InstallReferrer.java` is the same file as Unity's and Capacitor's (`npm test` keeps them so), and the version is the repository's (`npm test` again).
+`IndieAds.java` is the Unity package's `IndieAds.cs`, in Java, and `AdWebView.java` its `NativeWebView.java` without Unity: they say the same things to the page (`web/host.js`), and keep it alive the same way (asked if it's there as the game comes back, made again when it's lost or put away for memory, an ad that never starts given up). `Wire.java` is what's said, tested on the JVM (`./gradlew :indieads:testDebugUnitTest`). `InstallReferrer.java` is Unity's, taken as the AAR is built, as the player is, and the version is the repository's (`npm test` again).

@@ -18,8 +18,6 @@ public final class IndieAdResult {
         this.watchedSecs = watchedSecs;
     }
 
-    static IndieAdResult notShown() { return new IndieAdResult(false, false, null, null, null, 0); }
-
     static IndieAdResult ended(boolean shown) { return new IndieAdResult(shown, false, null, null, null, 0); }
 
     @Override public String toString() {

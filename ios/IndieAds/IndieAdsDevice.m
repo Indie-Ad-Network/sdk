@@ -5,29 +5,18 @@
 #import "IndieAdsPrivate.h"
 
 // ---- the network: cellular, a personal hotspot, or Low Data Mode ----
-// The monitor says what the network is a moment after it's started, not as it's started: so it is started as the game
-// is (long before anyone asks), it's metered until the monitor says otherwise, and the first to ask waits for its first
-// word, briefly, if it must. "Not metered" for want of knowing was megabytes of mobile data at every launch.
+// The monitor says what the network is a moment after it's started, not as it's started: so it is started as the SDK is
+// (well before the page asks, once its catalogue is in), it's metered until the monitor says otherwise, and the first to
+// ask waits for its first word, briefly, if it must. "Not metered" for want of knowing was megabytes of mobile data at
+// every launch. A game that links the SDK and never starts it runs none of this.
 static nw_path_monitor_t gMonitor;
 static volatile BOOL gMetered = YES;
 static dispatch_semaphore_t gPathSaid;
 
-__attribute__((constructor)) static void IAStartMonitor(void)
-{
-    gPathSaid = dispatch_semaphore_create(0);
-    gMonitor = nw_path_monitor_create();
-    nw_path_monitor_set_queue(gMonitor, dispatch_get_global_queue(QOS_CLASS_UTILITY, 0));
-    nw_path_monitor_set_update_handler(gMonitor, ^(nw_path_t path) {
-        gMetered = nw_path_is_expensive(path) || nw_path_is_constrained(path);
-        dispatch_semaphore_signal(gPathSaid);
-    });
-    nw_path_monitor_start(gMonitor);
-}
-
 // ---- the App Store sheet ----
 @interface IAStoreSheet : NSObject <SKStoreProductViewControllerDelegate>
 @property (nonatomic, strong) SKStoreProductViewController* sheet;
-@property (nonatomic, copy) void (^closed)(void);
+@property (nonatomic, copy) void (^closed)(BOOL outside);
 @end
 
 static IAStoreSheet* gSheet;   // main thread
@@ -38,16 +27,31 @@ static IAStoreSheet* gSheet;   // main thread
     if (gSheet != self) return;
     [viewController dismissViewControllerAnimated:YES completion:nil];
     gSheet = nil;
-    if (self.closed) self.closed();
+    if (self.closed) self.closed(NO);
 }
 @end
 
 @implementation IADevice
 
++ (void)startMonitor
+{
+    static dispatch_once_t once;
+    dispatch_once(&once, ^{
+        gPathSaid = dispatch_semaphore_create(0);
+        gMonitor = nw_path_monitor_create();
+        nw_path_monitor_set_queue(gMonitor, dispatch_get_global_queue(QOS_CLASS_UTILITY, 0));
+        nw_path_monitor_set_update_handler(gMonitor, ^(nw_path_t path) {
+            gMetered = nw_path_is_expensive(path) || nw_path_is_constrained(path);
+            dispatch_semaphore_signal(gPathSaid);
+        });
+        nw_path_monitor_start(gMonitor);
+    });
+}
+
 + (BOOL)isMetered
 {
     static BOOL waited = NO;
-    if (!waited) {
+    if (!waited && gPathSaid) {
         waited = YES;
         dispatch_semaphore_wait(gPathSaid, dispatch_time(DISPATCH_TIME_NOW, 300 * NSEC_PER_MSEC));
     }
@@ -83,7 +87,7 @@ static IAStoreSheet* gSheet;   // main thread
 }
 
 + (void)openStore:(NSString*)itemId ct:(NSString*)ct pt:(NSString*)pt url:(NSString*)url fallback:(NSString*)fallback
-        presenter:(UIViewController*)presenter closed:(void (^)(void))closed
+        presenter:(UIViewController*)presenter closed:(void (^)(BOOL outside))closed
 {
     while (presenter.presentedViewController) presenter = presenter.presentedViewController;
     if (!itemId.longLongValue || gSheet || !presenter) {
@@ -107,6 +111,7 @@ static IAStoreSheet* gSheet;   // main thread
                 if (gSheet != holder) return;   // closed while it was going
                 gSheet = nil;
                 [IADevice openOutside:url fallback:fallback];
+                if (closed) closed(YES);
             }];
         });
     }];

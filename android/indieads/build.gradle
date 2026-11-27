@@ -19,6 +19,7 @@ android {
     sourceSets {
         main {
             assets.srcDirs += layout.buildDirectory.dir('generated/indieads-player').get().asFile
+            java.srcDirs += layout.buildDirectory.dir('generated/indieads-shared').get().asFile
         }
     }
     lint {
@@ -32,7 +33,12 @@ def copyPlayer = tasks.register('copyPlayer', Copy) {
     from(file('../../unity/Runtime/Resources')) { include 'IndieAdsPlayer.html' }
     into layout.buildDirectory.dir('generated/indieads-player/indieads')
 }
-preBuild.dependsOn copyPlayer
+// InstallReferrer.java is the Unity package's (and Capacitor's), taken the same way: the one file, not the Unity-only ones beside it.
+def copyShared = tasks.register('copyShared', Copy) {
+    from(file('../../unity/Runtime/Plugins/Android')) { include 'InstallReferrer.java' }
+    into layout.buildDirectory.dir('generated/indieads-shared/com/indieadnetwork/sdk')
+}
+preBuild.dependsOn copyPlayer, copyShared
 
 dependencies {
     testImplementation 'junit:junit:4.13.2'

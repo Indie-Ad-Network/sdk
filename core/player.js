@@ -107,7 +107,6 @@ button { font-family: inherit; cursor: pointer; }
 .ring.skippable b, .ring.closable b { background: center / ${UI.iconSize}px ${UI.iconSize}px no-repeat; }
 .ring.skippable b { background-image: url("${SKIP_ICON}"); }
 .ring.closable b { background-image: url("${CLOSE_ICON}"); }
-.ring.closable .left { stroke-dashoffset: 0 !important; }
 .ring.closable b { font-size: 22px; }
 .ring b { position: absolute; top: 0; right: 0; bottom: 0; left: 0; display: flex; align-items: center; justify-content: center; font: 900 ${UI.numberSize}px/1 "IndieAdsCairoBlack", system-ui, sans-serif; font-variant-numeric: tabular-nums; }
 /* Optical correction for the italic info glyph and countdown digits, measured
@@ -355,13 +354,13 @@ export function play({ creative, app, html, link, ctaText, reward, format = 'rew
     const of = playingVideo ? total : endIsLonger ? endSecs : need();
     const gone = playingVideo ? elapsed : endIsLonger ? endSecs - endRemaining : elapsed;
     // A negative offset removes the arc clockwise from twelve o'clock, matching Unity.
-    const fraction = of > 0 ? Math.max(0, Math.min(1, gone / of)) : 1;
+    // ✕'s ring is whole.
+    const fraction = closing ? 0 : of > 0 ? Math.max(0, Math.min(1, gone / of)) : 1;
     arc.style.strokeDashoffset = -C * fraction;
     // The arc only empties as a countdown runs, and its transition is for that. One that fills again (the end card's
-    // countdown after the reward's, or ✕'s full ring) snaps full instead of tweening back up before it counts down.
-    const shown = closing ? 0 : fraction;
-    if (shown < arcGone) { arc.style.transition = 'none'; arc.getBoundingClientRect?.(); arc.style.transition = ''; }
-    arcGone = shown;
+    // countdown after the reward's, or ✕'s) snaps full instead of tweening back up before it counts down.
+    if (fraction < arcGone) { arc.style.transition = 'none'; arc.getBoundingClientRect(); arc.style.transition = ''; }
+    arcGone = fraction;
     if (ready) {
       ring.removeAttribute('role');
       ring.setAttribute('aria-label', closing ? t.close : t.skip);

@@ -3,7 +3,7 @@ package com.indieadnetwork.sdk;
 /** A place in the game where an ad may be shown, by the name the game and the dashboard call it. */
 public final class IndieAdPlacement {
     public String id;
-    public IndieAdFormat format = IndieAdFormat.REWARDED;
+    public IndieAdFormat format;
     /** The longest creative this placement takes, in seconds. 0 = any. */
     public int maxSecs = 30;
     /**

@@ -19,8 +19,8 @@ import android.os.Parcel;
  * Play must be visible to the app (Android 11 on): the Capacitor plugin's and the native SDK's manifests ask to see it,
  * and unity/README.md says when a Unity game must.
  *
- * The same file is in capacitor/android/…, android/indieads/… and unity/Runtime/Plugins/Android/ (test/installReferrer.test.mjs
- * keeps them so).
+ * The same file is in capacitor/android/… and unity/Runtime/Plugins/Android/ (test/installReferrer.test.mjs keeps them so), and
+ * the native SDK (android/indieads) takes Unity's as it builds.
  */
 final class InstallReferrer {
 

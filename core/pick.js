@@ -20,8 +20,9 @@
 //
 // `test`, a developer trying the ads out, drops the rules about this player and this host: 2, 4, 5,
 // `perDay` and a creative's own `hosts`. So the host's own ads play too, on a device that has every game. And it sees
-// every kind there is, not mostly the commonest: a kind first, each as likely (a video or a playable), then one of that
-// kind by weight; and the likeliest of each kind is among those downloaded ahead (`wanted`).
+// every kind there is, not mostly the commonest: each kind's weights are made to add up to one, so a video and a playable
+// are as likely as each other, and each is by weight within its kind; and the likeliest of each kind is among those
+// downloaded ahead (`wanted`).
 import { studioOf } from './catalogue.js';
 
 export const DAY = 864e5;
@@ -102,12 +103,9 @@ export function pick(o) {
   let list = eligible(o);
   if (list.length > 1) list = list.filter(c => c.id !== o.history?.last);
   if (!list.length) return null;
-  const rand = o.rand ?? Math.random;
-  if (o.test) {
-    const kinds = [...new Set(list.map(c => c.kind))], kind = kinds[Math.min(kinds.length - 1, Math.floor(rand() * kinds.length))];
-    list = list.filter(c => c.kind === kind);
-  }
-  return weighted(list, c => creativeWeight(c, o), rand);
+  const ofKind = {};
+  if (o.test) for (const c of list) ofKind[c.kind] = (ofKind[c.kind] ?? 0) + creativeWeight(c, o);
+  return weighted(list, c => creativeWeight(c, o) / (ofKind[c.kind] ?? 1), o.rand ?? Math.random);
 }
 
 // The `keep` creatives to have downloaded and ready, most wanted first: each placement's

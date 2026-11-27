@@ -114,7 +114,9 @@ public final class IndieAds {
             session = new IndieAds(activity, config.copy());
             instance = session;
         }
-        onMain(new Runnable() { @Override public void run() { session.start(); } });
+        // Always posted, from the main thread too: nothing of it (the player page read, a web view made) runs inside the
+        // game's onCreate.
+        MAIN.post(new Runnable() { @Override public void run() { session.start(); } });
     }
 
     /**
@@ -138,13 +140,13 @@ public final class IndieAds {
 
     public static boolean isShowing() {
         IndieAds s = instance;
-        return s != null && (s.showing || s.showPending);
+        return s != null && s.busy();
     }
 
     /** What there is to show this player in `placement` now, as the page last said: always to hand, without waiting. */
     public static IndieAdDemand demand(String placement) {
         IndieAds s = instance;
-        if (s == null || s.showing || s.showPending) return IndieAdDemand.NONE;
+        if (s == null || s.busy()) return IndieAdDemand.NONE;
         IndieAdDemand d = s.demand.get(placement);
         return d != null ? d : IndieAdDemand.NONE;
     }
@@ -171,13 +173,13 @@ public final class IndieAds {
         // From another thread: the answer is the one the main thread will give, as far as it can be known here. Should it
         // turn out otherwise, `done` is told nothing was shown.
         synchronized (s) {
-            if (s.stopped || s.showing || s.showPending || !AdWebView.isAvailable()) return false;
+            if (s.stopped || s.busy() || !AdWebView.isAvailable()) return false;
             s.showPending = true;
         }
         MAIN.post(new Runnable() {
             @Override public void run() {
                 s.showPending = false;
-                if (!s.doShow(placement, done, reward) && done != null) s.callDone(done, IndieAdResult.notShown());
+                if (!s.doShow(placement, done, reward) && done != null) s.callDone(done, IndieAdResult.ended(false));
             }
         });
         return true;
@@ -252,7 +254,7 @@ public final class IndieAds {
      */
     public static boolean showMoreGames(final OpenIn where) {
         final IndieAds s = instance;
-        if (s == null || s.showing || s.showPending || s.moreGamesUrl == null) return false;
+        if (s == null || s.busy() || s.moreGamesUrl == null) return false;
         onMain(new Runnable() { @Override public void run() {
             if (s.stopped || s.showing || s.moreGamesUrl == null) return;
             if (where != OpenIn.GAME || !s.openGames(s.moreGamesUrl)) Device.view(s.activity, s.moreGamesUrl);
@@ -311,7 +313,6 @@ public final class IndieAds {
     private static final long HEALTHY_MS = 60000, ANSWER_MS = 4000, SHOWING_ANSWER_MS = 10000, BACK_MS = ANSWER_MS + 2000;
     private static final long GAMES_PATIENCE_MS = 6000;   // for the page of games to load and say it can be closed, before the browser has it
     private static final long STORE_PATIENCE_MS = 3000;   // for a store to take the game from the front, before the ad's clock goes on
-    private static final long TICK_MS = 250;
     private static final String GAMES_READY = "indie-ads:games-ready", GAMES_CLOSE = "indie-ads:close";   // what that page says (the server's games.js)
 
     private final Activity activity;
@@ -355,8 +356,6 @@ public final class IndieAds {
     private long storeOpenedTime;
     private final List<CampaignCallback> campaignWanted = new ArrayList<CampaignCallback>();   // getInstallCampaign's, while Play is asked
 
-    private boolean ticking;
-
     private IndieAds(Activity activity, IndieAdsConfig config) {
         this.activity = activity;
         this.config = config;
@@ -370,9 +369,15 @@ public final class IndieAds {
         return config.log;
     }
 
+    // an ad is up, or about to be: shown from another thread, and the main thread hasn't yet had it
+    private boolean busy() {
+        return showing || showPending;
+    }
+
     private void start() {
         if (stopped) return;
         if (config.shippedCatalogueJson == null) config.shippedCatalogueJson = readAsset(activity, SHIPPED_ASSET);
+        if (config.shippedCatalogueJson != null && config.shippedCatalogueJson.trim().isEmpty()) config.shippedCatalogueJson = null;   // once, not at every page
         activity.getApplication().registerActivityLifecycleCallbacks(lifecycle);
         activity.getApplication().registerComponentCallbacks(memory);
         ensurePage();   // at the front, as the game is when it starts us: onActivityPaused says otherwise
@@ -409,20 +414,11 @@ public final class IndieAds {
             if (logging()) Log.e(TAG, "the player page (assets/" + PLAYER_ASSET + ") isn't in the app");
             return false;
         }
-        final AdWebView[] made = new AdWebView[1];
-        made[0] = AdWebView.create(activity, new AdWebView.Listener() {
-            @Override public void onMessage(String message) { if (view == made[0]) receive(message); }
-            @Override public void onBack() { if (view == made[0]) handleBack(); }
-            @Override public void onLost() { if (view == made[0]) lose("lost"); }
-            @Override public void onPageFailed(int code, String message) {
-                if (view == made[0] && logging()) Log.w(TAG, "the player page failed: " + code + " " + message);
-            }
-        }, config.log);
-        if (made[0] == null) {
+        view = AdWebView.create(activity, views, config.log);
+        if (view == null) {
             if (logging()) Log.w(TAG, "there's no web view on this device: no ads");
             return false;
         }
-        view = made[0];
         pageLoaded = false;
         remakeAt = -1;
         pageLoadedTime = -1;
@@ -497,7 +493,7 @@ public final class IndieAds {
                 if (pageLoaded) break;
                 pageLoaded = true;
                 pageLoadedTime = now();
-                view.evaluate("indieAdsHost.start(" + Wire.startConfig(config, pageKey, config.language, isWide()) + ")");
+                view.evaluate("indieAdsHost.start(" + Wire.startConfig(config, pageKey, isWide()) + ")");
                 for (String js : waitingCalls) view.evaluate(js);
                 waitingCalls.clear();
                 break;
@@ -543,8 +539,6 @@ public final class IndieAds {
                 moreGamesUrl = url != null && !url.isEmpty() ? url : null;
                 break;
             }
-            case "banner":
-                break;   // the App Store's banner: iOS's alone
             case "done":
                 if (showing && m.optInt("n", -1) == showNumber) {
                     finishShow(new IndieAdResult(m.optBoolean("shown"), m.optBoolean("granted"), text(m, "creative"), text(m, "app"), text(m, "kind"), m.optDouble("watchedSecs", 0)));
@@ -554,7 +548,7 @@ public final class IndieAds {
                 // without the player's consent what's been shown is remembered in the page alone, so the page is kept
                 if (!showing && !config.keepWebView && config.consent) dropPage();
                 break;
-            default:
+            default:   // 'banner', the App Store's: iOS's alone
                 break;
         }
     }
@@ -671,21 +665,33 @@ public final class IndieAds {
 
     private final Runnable tick = new Runnable() {
         @Override public void run() {
-            ticking = false;
             if (stopped || away) return;   // the game away runs nothing of this, as Unity's player loop doesn't; onFront starts it again
             update();
             tickSoon();
         }
     };
 
-    private boolean waiting() {
-        return askedAliveAt >= 0 || remakeAt >= 0 || (games != null && !gamesReady) || (showing && !showStarted) || (storeOpen && !storeLeftApp);
+    // The soonest of what's waited on (update), or -1 for nothing: the clock is woken then, and not before.
+    private long nextAt() {
+        long at = -1;
+        if (askedAliveAt >= 0) at = sooner(at, askedAliveAt + (showing ? SHOWING_ANSWER_MS : ANSWER_MS));
+        if (remakeAt >= 0) at = sooner(at, remakeAt);
+        if (games != null && !gamesReady) at = sooner(at, gamesAsked + GAMES_PATIENCE_MS);
+        if (showing && !showStarted) at = sooner(at, showRequestedTime + (long) (config.showTimeout * 1000));
+        if (storeOpen && !storeLeftApp) at = sooner(at, storeOpenedTime + STORE_PATIENCE_MS);
+        return at;
     }
 
+    private static long sooner(long at, long other) {
+        return at < 0 ? other : Math.min(at, other);
+    }
+
+    // The clock set again for what's now waited on: called whenever that may have changed.
     private void tickSoon() {
-        if (ticking || stopped || away || !waiting()) return;
-        ticking = true;
-        MAIN.postDelayed(tick, TICK_MS);
+        MAIN.removeCallbacks(tick);
+        long at = nextAt();
+        if (stopped || away || at < 0) return;
+        MAIN.postDelayed(tick, Math.max(0, at - now()) + 1);   // + 1: what's waited on is past its time, not at it
     }
 
     private void update() {
@@ -710,7 +716,7 @@ public final class IndieAds {
             try { forget(); }   // a page that couldn't start an ad: its word goes with it, and one is made again later
             finally {
                 scheduleRemake(lostWhileAway());
-                finishShow(IndieAdResult.notShown());
+                finishShow(IndieAdResult.ended(false));
             }
         }
         // A store that never took the game from the front (nothing opened): don't leave the ad's clock standing.
@@ -722,15 +728,8 @@ public final class IndieAds {
     // False: there's no web view to be had here.
     private boolean openGames(String url) {
         closeGames();
-        final AdWebView[] made = new AdWebView[1];
-        made[0] = AdWebView.create(activity, new AdWebView.Listener() {
-            @Override public void onMessage(String said) { if (games == made[0]) handleGamesSaid(said); }
-            @Override public void onBack() { if (games == made[0]) closeGames(); }
-            @Override public void onLost() { if (games == made[0]) closeGames(); }
-            @Override public void onPageFailed(int code, String message) { if (games == made[0]) handleGamesFailed(); }
-        }, config.log);
-        if (made[0] == null) return false;
-        games = made[0];
+        games = AdWebView.create(activity, views, config.log);
+        if (games == null) return false;
         gamesUrl = url;
         gamesReady = false;
         gamesAsked = now();
@@ -861,6 +860,27 @@ public final class IndieAds {
         try { l.onDemandChanged(); } catch (RuntimeException x) { Log.e(TAG, "the game's onDemandChanged threw", x); }
     }
 
+    // ---- what the web views say: the ad's page, or the page of games, by which it is ----
+
+    private final AdWebView.Listener views = new AdWebView.Listener() {
+        @Override public void onMessage(AdWebView from, String message) {
+            if (from == view) receive(message);
+            else if (from == games) handleGamesSaid(message);
+        }
+        @Override public void onBack(AdWebView from) {
+            if (from == view) handleBack();
+            else if (from == games) closeGames();
+        }
+        @Override public void onLost(AdWebView from) {
+            if (from == view) lose("lost");
+            else if (from == games) closeGames();
+        }
+        @Override public void onPageFailed(AdWebView from, int code, String message) {
+            if (from == view && logging()) Log.w(TAG, "the player page failed: " + code + " " + message);
+            else if (from == games) handleGamesFailed();
+        }
+    };
+
     // ---- the system ----
 
     private final Application.ActivityLifecycleCallbacks lifecycle = new Application.ActivityLifecycleCallbacks() {
@@ -868,11 +888,7 @@ public final class IndieAds {
         @Override public void onActivityPaused(Activity a) { if (a == activity) onFront(false); }
         // The web views are the activity's: with it gone, so is the session. A game made again calls init again.
         @Override public void onActivityDestroyed(Activity a) {
-            if (a != activity) return;
-            synchronized (IndieAds.class) {
-                if (instance == IndieAds.this) instance = null;
-            }
-            stopSession();
+            if (a == activity) stopSession();
         }
         @Override public void onActivityCreated(Activity a, Bundle saved) {}
         @Override public void onActivityStarted(Activity a) {}

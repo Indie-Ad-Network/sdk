@@ -30,15 +30,17 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// What the device is asked, on the page's behalf. The Unity package's Plugins/iOS/IndieAdsNative.mm, without Unity.
 @interface IADevice : NSObject
+/// The network's monitor, started once: as the SDK is, before the page first asks.
++ (void)startMonitor;
 /// Cellular, a personal hotspot, or Low Data Mode: creatives aren't downloaded ahead on one.
 + (BOOL)isMetered;
 /// @YES, @NO or nil, by the IAB framework's names in the standard user defaults.
 + (nullable NSNumber*)cmpConsent;
-/// `itemId` (with `ct`, `pt`): the App Store sheet over `presenter`, and `closed` once it's put away. Without an id, or if
-/// the sheet can't load the product: `url`, then `fallback`, outside the game (and `closed` never: the game hears of the
-/// store by coming back to the front).
+/// `itemId` (with `ct`, `pt`): the App Store sheet over `presenter`, and `closed(NO)` once it's put away; if the sheet
+/// can't load the product, `url`, then `fallback`, outside the game, and `closed(YES)`. Without an id: outside the game,
+/// and `closed` never. Outside, the game hears of the store by coming back to the front.
 + (void)openStore:(NSString*)itemId ct:(NSString*)ct pt:(NSString*)pt url:(NSString*)url fallback:(NSString*)fallback
-        presenter:(UIViewController*)presenter closed:(void (^)(void))closed;
+        presenter:(UIViewController*)presenter closed:(void (^)(BOOL outside))closed;
 /// The App Store sheet is over the game: the game hasn't left the front, but the store is open.
 + (BOOL)storeSheetIsUp;
 /// This session's sheet away, a product still loading too, without a word.
@@ -56,7 +58,7 @@ NS_ASSUME_NONNULL_BEGIN
 /// A number as JavaScript reads it: 2.5, 5.
 + (NSString*)number:(double)d;
 /// The argument of indieAdsHost.start(). `wide`: the game's screen is wider than tall.
-+ (NSString*)startConfig:(IndieAdsConfig*)config key:(NSString*)key language:(nullable NSString*)language wide:(BOOL)wide;
++ (NSString*)startConfig:(IndieAdsConfig*)config key:(NSString*)key wide:(BOOL)wide;
 /// The origin of the catalogue's address, which is the page's: where its storage and downloads are kept.
 + (NSString*)origin:(NSString*)catalogueUrl;
 @end
