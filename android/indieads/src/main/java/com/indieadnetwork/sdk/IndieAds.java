@@ -108,6 +108,11 @@ public final class IndieAds {
     public static void init(Activity activity, IndieAdsConfig config) {
         if (activity == null || config == null) throw new IllegalArgumentException("IndieAds.init: an activity and a config");
         if (config.catalogueUrl == null) throw new IllegalArgumentException("IndieAds.init: the config has no catalogueUrl");
+        try {
+            Wire.origin(config.catalogueUrl);   // the page's origin: said now, to the game, not later on the main thread
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("IndieAds.init: catalogueUrl isn't an address: " + config.catalogueUrl, e);
+        }
         final IndieAds session;
         synchronized (IndieAds.class) {
             if (instance != null) return;
@@ -656,13 +661,15 @@ public final class IndieAds {
         ShowCallback done = showDone;
         showDone = null;
         try {
+            // the player's consent changed while the ad was up: the page is made again before the game hears the ad has
+            // closed, so an ad it starts from onHidden or the callback is the new page's, not one about to go
+            if (remake && !stopped) {
+                remake = false;
+                remakePage();
+            }
             Listener l = listener;
             if (wasShown && l != null) {
                 try { l.onHidden(); } catch (RuntimeException x) { Log.e(TAG, "the game's onHidden threw", x); }
-            }
-            if (remake && !stopped) {   // the player's consent changed while the ad was up
-                remake = false;
-                remakePage();
             }
         } finally {
             if (done != null) callDone(done, result);

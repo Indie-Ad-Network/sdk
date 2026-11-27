@@ -192,6 +192,9 @@ final class AdWebView {
     void setVisible(boolean show) {
         if (webView == null || visible == show) return;
         visible = show;
+        // A game that set its content again since (setContentView empties the content view) took this with it: put back,
+        // or an ad would play where no one can see it, nor close it.
+        if (show && webView.getParent() == null) content().addView(webView, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         webView.setVisibility(show ? View.VISIBLE : View.GONE);
         if (show) {
             webView.bringToFront();

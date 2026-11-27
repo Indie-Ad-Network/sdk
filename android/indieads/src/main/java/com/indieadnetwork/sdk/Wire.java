@@ -89,7 +89,10 @@ final class Wire {
         }
     }
 
-    /** The origin of the catalogue's address, which is the page's: where its storage and downloads are kept. */
+    /**
+     * The origin of the catalogue's address, which is the page's: where its storage and downloads are kept. Throws
+     * IllegalArgumentException for one that isn't an address (IndieAds.init says so to the game).
+     */
     static String origin(String catalogueUrl) {
         return URI.create(catalogueUrl).resolve("/").toString();
     }

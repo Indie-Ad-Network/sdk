@@ -174,4 +174,19 @@ test("a developer's test sees every kind: a kind first, each as likely, and the 
   ] });
   assert.deepEqual(few(many), ['playable', 'video']);   // the one video, a wrong shape and light, is downloaded all the same
   assert.deepEqual(wanted({ ...base, catalogue: many, placements, keep: 2 }).map(c => c.kind), ['playable', 'playable']);   // and for a player, not
+  // more placements than are kept, each with a playable of its own first: the video is downloaded all the same
+  const three = { a: { kinds: ['playable'] }, b: { kinds: ['playable'] }, c: {} };
+  const spread = validate({ apps: cat.apps, creatives: [...['a', 'b', 'c'].map((x, i) => ({ id: `pr-${x}`, app: 'pr', kind: 'playable', secs: 30, src: `${x}.html`, weight: 3 - i })),
+    { id: 'rodeo-wide', app: 'rodeo', kind: 'video', secs: 15, src: 'w.mp4', aspect: '16:9' }] });
+  assert.ok(wanted({ ...base, catalogue: spread, placements: three, keep: 1, test: true }).some(c => c.kind === 'video'));
+});
+
+test("a developer's test with a kind that weighs nothing: that kind isn't shown, and the pick goes by rand as ever", () => {
+  const paused = validate({ apps: cat.apps, creatives: [
+    { id: 'pr-play', app: 'pr', kind: 'playable', secs: 30, src: 'p.html', weight: 0 },
+    { id: 'tcb-15', app: 'tcb', kind: 'video', secs: 15, src: 'a.mp4', aspect: '9:16' },
+    { id: 'rodeo-15', app: 'rodeo', kind: 'video', secs: 15, src: 'r.mp4', aspect: '9:16' },
+  ] });
+  const ids = new Set(Array.from({ length: 20 }, (_, i) => pick({ ...base, catalogue: paused, test: true, rand: () => (i + 0.5) / 20 }).id));
+  assert.deepEqual([...ids].sort(), ['rodeo-15', 'tcb-15']);
 });

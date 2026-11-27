@@ -166,6 +166,8 @@ static NSString* const kVersion = @"0.7.0";
 
 + (NSString*)number:(double)d
 {
+    if (isnan(d)) return @"NaN";   // as JavaScript writes them, which %g doesn't ("inf", "nan" would end the page's start)
+    if (isinf(d)) return d > 0 ? @"Infinity" : @"-Infinity";
     if (d == floor(d) && fabs(d) < 1e15) return [NSString stringWithFormat:@"%lld", (long long)d];
     return [NSString stringWithFormat:@"%.15g", d];
 }
@@ -787,13 +789,15 @@ static double Number(NSDictionary* o, NSString* name)
     [self.view setVisible:NO];
     void (^done)(IndieAdResult*) = _showDone;
     _showDone = nil;
+    // the player's consent changed while the ad was up: the page is made again before the game hears the ad has closed,
+    // so an ad it starts from indieAdsHidden or the block is the new page's, not one about to go
+    if (_remake && !self.stopped) {
+        _remake = NO;
+        [self remakePage];
+    }
     if (wasShown) {
         id<IndieAdsDelegate> d = [IndieAds delegate];
         if ([d respondsToSelector:@selector(indieAdsHidden)]) [d indieAdsHidden];
-    }
-    if (_remake && !self.stopped) {   // the player's consent changed while the ad was up
-        _remake = NO;
-        [self remakePage];
     }
     if (done) done(result);
 }

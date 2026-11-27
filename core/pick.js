@@ -105,7 +105,9 @@ export function pick(o) {
   if (!list.length) return null;
   const ofKind = {};
   if (o.test) for (const c of list) ofKind[c.kind] = (ofKind[c.kind] ?? 0) + creativeWeight(c, o);
-  return weighted(list, c => creativeWeight(c, o) / (ofKind[c.kind] ?? 1), o.rand ?? Math.random);
+  // a kind whose every creative weighs nothing (paused by its weight) weighs nothing, rather than 0 / 0
+  const weight = c => { const w = creativeWeight(c, o), of = ofKind[c.kind]; return of === undefined ? w : of > 0 ? w / of : 0; };
+  return weighted(list, weight, o.rand ?? Math.random);
 }
 
 // The `keep` creatives to have downloaded and ready, most wanted first: each placement's
@@ -117,8 +119,9 @@ export function wanted({ placements = {}, keep = 3, ...o }) {
   const lists = (each.length ? each : [{}]).map(placement => byWeight(eligible({ ...o, placement })));
   const out = new Set(lists.map(list => list[0]).filter(Boolean)), all = byWeight(new Set(lists.flat()));
   if (o.test) for (const kind of new Set(all.map(c => c.kind))) out.add(all.find(c => c.kind === kind));   // a developer's test: each kind ready to see
+  const first = out.size;   // never cut: in a test with more placements than `keep`, a kind left out would never be seen
   for (const c of all) out.add(c);
-  return [...out].slice(0, keep);
+  return [...out].slice(0, o.test ? Math.max(keep, first) : keep);
 }
 
 // With nothing to play, a game to put on the still card: any the player may be shown, whatever
