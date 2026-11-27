@@ -1,0 +1,40 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {};
+	objectVersion = 56;
+	objects = {
+		AD0000000000000000000001 = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "main.m"; sourceTree = "<group>"; };
+		AD0000000000000000000002 = {isa = PBXBuildFile; fileRef = AD0000000000000000000001; };
+		AD0000000000000000000003 = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "GameViewController.m"; sourceTree = "<group>"; };
+		AD0000000000000000000004 = {isa = PBXBuildFile; fileRef = AD0000000000000000000003; };
+		AD0000000000000000000005 = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "Info.plist"; sourceTree = "<group>"; };
+		AD0000000000000000000006 = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "include/IndieAds.h"; sourceTree = "<group>"; };
+		AD0000000000000000000007 = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "IndieAdsPrivate.h"; sourceTree = "<group>"; };
+		AD0000000000000000000008 = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "IndieAds.m"; sourceTree = "<group>"; };
+		AD0000000000000000000009 = {isa = PBXBuildFile; fileRef = AD0000000000000000000008; };
+		AD000000000000000000000A = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "IndieAdsDevice.m"; sourceTree = "<group>"; };
+		AD000000000000000000000B = {isa = PBXBuildFile; fileRef = AD000000000000000000000A; };
+		AD000000000000000000000C = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "IndieAdsWebView.m"; sourceTree = "<group>"; };
+		AD000000000000000000000D = {isa = PBXBuildFile; fileRef = AD000000000000000000000C; };
+		AD000000000000000000000E = {isa = PBXFileReference; lastKnownFileType = text.html; path = "IndieAdsPlayer.html"; sourceTree = "<group>"; };
+		AD000000000000000000000F = {isa = PBXBuildFile; fileRef = AD000000000000000000000E; };
+		AD0000000000000000000010 = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Sample.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		AD0000000000000000000011 = {isa = PBXGroup; children = (AD0000000000000000000001, AD0000000000000000000003, AD0000000000000000000005); path = Sample; sourceTree = "<group>"; };
+		AD0000000000000000000012 = {isa = PBXGroup; children = (AD0000000000000000000006, AD0000000000000000000007, AD0000000000000000000008, AD000000000000000000000A, AD000000000000000000000C, AD000000000000000000000E); name = IndieAds; path = ../IndieAds; sourceTree = "<group>"; };
+		AD0000000000000000000013 = {isa = PBXGroup; children = (AD0000000000000000000010); name = Products; sourceTree = "<group>"; };
+		AD0000000000000000000014 = {isa = PBXGroup; children = (AD0000000000000000000012, AD0000000000000000000011, AD0000000000000000000013); sourceTree = "<group>"; };
+		AD0000000000000000000015 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (AD0000000000000000000002, AD0000000000000000000004, AD0000000000000000000009, AD000000000000000000000B, AD000000000000000000000D); runOnlyForDeploymentPostprocessing = 0; };
+		AD0000000000000000000016 = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (AD000000000000000000000F); runOnlyForDeploymentPostprocessing = 0; };
+		AD0000000000000000000017 = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+		AD0000000000000000000018 = {isa = XCBuildConfiguration; buildSettings = {ALWAYS_SEARCH_USER_PATHS = NO; CLANG_ENABLE_MODULES = YES; CLANG_ENABLE_OBJC_ARC = YES; CLANG_ENABLE_OBJC_WEAK = YES; CLANG_WARN_DOCUMENTATION_COMMENTS = NO; GCC_C_LANGUAGE_STANDARD = gnu11; IPHONEOS_DEPLOYMENT_TARGET = 15.0; SDKROOT = iphoneos; TARGETED_DEVICE_FAMILY = "1,2"; DEBUG_INFORMATION_FORMAT = dwarf; GCC_OPTIMIZATION_LEVEL = 0; GCC_PREPROCESSOR_DEFINITIONS = ("DEBUG=1", "$(inherited)"); ONLY_ACTIVE_ARCH = YES; ENABLE_TESTABILITY = YES;}; name = Debug; };
+		AD0000000000000000000019 = {isa = XCBuildConfiguration; buildSettings = {ALWAYS_SEARCH_USER_PATHS = NO; CLANG_ENABLE_MODULES = YES; CLANG_ENABLE_OBJC_ARC = YES; CLANG_ENABLE_OBJC_WEAK = YES; CLANG_WARN_DOCUMENTATION_COMMENTS = NO; GCC_C_LANGUAGE_STANDARD = gnu11; IPHONEOS_DEPLOYMENT_TARGET = 15.0; SDKROOT = iphoneos; TARGETED_DEVICE_FAMILY = "1,2"; DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym"; VALIDATE_PRODUCT = YES;}; name = Release; };
+		AD000000000000000000001A = {isa = XCBuildConfiguration; buildSettings = {CODE_SIGN_STYLE = Automatic; CURRENT_PROJECT_VERSION = 1; INFOPLIST_FILE = Sample/Info.plist; LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks"); MARKETING_VERSION = 0.6.23; PRODUCT_BUNDLE_IDENTIFIER = com.indieadnetwork.sample; PRODUCT_NAME = Sample;}; name = Debug; };
+		AD000000000000000000001B = {isa = XCBuildConfiguration; buildSettings = {CODE_SIGN_STYLE = Automatic; CURRENT_PROJECT_VERSION = 1; INFOPLIST_FILE = Sample/Info.plist; LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks"); MARKETING_VERSION = 0.6.23; PRODUCT_BUNDLE_IDENTIFIER = com.indieadnetwork.sample; PRODUCT_NAME = Sample;}; name = Release; };
+		AD000000000000000000001C = {isa = XCConfigurationList; buildConfigurations = (AD0000000000000000000018, AD0000000000000000000019); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+		AD000000000000000000001D = {isa = XCConfigurationList; buildConfigurations = (AD000000000000000000001A, AD000000000000000000001B); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+		AD000000000000000000001E = {isa = PBXNativeTarget; buildConfigurationList = AD000000000000000000001D; buildPhases = (AD0000000000000000000015, AD0000000000000000000017, AD0000000000000000000016); buildRules = (); dependencies = (); name = Sample; productName = Sample; productReference = AD0000000000000000000010; productType = "com.apple.product-type.application"; };
+		AD000000000000000000001F = {isa = PBXProject; attributes = {BuildIndependentTargetsInParallel = 1; LastUpgradeCheck = 1600; }; buildConfigurationList = AD000000000000000000001C; compatibilityVersion = "Xcode 14.0"; developmentRegion = en; hasScannedForEncodings = 0; knownRegions = (en, Base); mainGroup = AD0000000000000000000014; productRefGroup = AD0000000000000000000013; projectDirPath = ""; projectRoot = ""; targets = (AD000000000000000000001E); };
+	};
+	rootObject = AD000000000000000000001F;
+}

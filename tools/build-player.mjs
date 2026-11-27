@@ -1,7 +1,9 @@
 #!/usr/bin/env node
-// core/ and web/host.js as one page, for a game whose web view is handed HTML, not a server
-// (the Unity package): unity/Runtime/Resources/IndieAdsPlayer.html, which is committed, so a
-// game that takes the package needs no Node. Run after any change to core/ or web/:
+// core/ and web/host.js as one page, for a game whose web view is handed HTML, not a server:
+// unity/Runtime/Resources/IndieAdsPlayer.html (the Unity package, and the native Android SDK,
+// which copies it as it builds) and ios/IndieAds/IndieAdsPlayer.html (the native iOS SDK, whose
+// files a game drags in). Both are committed, so a game needs no Node. Run after any change to
+// core/ or web/:
 //
 //   node tools/build-player.mjs          (wants esbuild: `npx` fetches it, or ESBUILD=<path to its binary>)
 //
@@ -10,7 +12,7 @@ import { execFileSync } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
-const root = new URL('..', import.meta.url), out = new URL('unity/Runtime/Resources/IndieAdsPlayer.html', root);
+const root = new URL('..', import.meta.url), outs = ['unity/Runtime/Resources/IndieAdsPlayer.html', 'ios/IndieAds/IndieAdsPlayer.html'].map(path => new URL(path, root));
 // Embed the control font in the web player for offline playback.
 const fontModule = new URL('core/controlFont.js', root);
 const fontData = readFileSync(new URL('core/fonts/Cairo-Black.ttf', root)).toString('base64');
@@ -34,10 +36,12 @@ const html = `<!doctype html>
 ${js}
 </script></body></html>
 `;
-if (process.argv.includes('--check')) {
-  let now = ''; try { now = readFileSync(out, 'utf8'); } catch { /* not built yet */ }
-  if (now !== html) { console.error('unity/Runtime/Resources/IndieAdsPlayer.html is stale: run tools/build-player.mjs'); process.exit(1); }
-} else {
-  writeFileSync(out, html);
-  console.log(`${fileURLToPath(out)}  ${(html.length / 1024).toFixed(1)} KB`);
+for (const out of outs) {
+  if (process.argv.includes('--check')) {
+    let now = ''; try { now = readFileSync(out, 'utf8'); } catch { /* not built yet */ }
+    if (now !== html) { console.error(`${fileURLToPath(out)} is stale: run tools/build-player.mjs`); process.exit(1); }
+  } else {
+    writeFileSync(out, html);
+    console.log(`${fileURLToPath(out)}  ${(html.length / 1024).toFixed(1)} KB`);
+  }
 }

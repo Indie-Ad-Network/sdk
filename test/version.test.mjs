@@ -22,6 +22,11 @@ test("the native Android SDK is this version (its Gradle version, and IndieAds.V
   assert.equal(read('android/indieads/src/main/java/com/indieadnetwork/sdk/IndieAds.java').match(/VERSION = "([^"]+)"/)?.[1], version, 'IndieAds.java: VERSION');
 });
 
+test("the native iOS SDK is this version (IndieAds.version, and its sample's)", () => {
+  assert.equal(read('ios/IndieAds/IndieAds.m').match(/kVersion = @"([^"]+)"/)?.[1], version, 'ios/IndieAds/IndieAds.m: kVersion');
+  assert.equal(read('ios/Sample/Sample.xcodeproj/project.pbxproj').match(/MARKETING_VERSION = ([^;]+);/)?.[1], version, 'the iOS sample: MARKETING_VERSION');
+});
+
 test('the release the player says it is (core/wire.js SDK) is this version', async () => {
   assert.equal((await import('../core/wire.js')).SDK, version, 'core/wire.js: SDK');
 });
