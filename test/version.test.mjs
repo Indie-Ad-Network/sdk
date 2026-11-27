@@ -17,6 +17,11 @@ test('every package in the repository has the same version', () => {
   for (const path of ['unity/package.json', 'capacitor/package.json']) assert.equal(versionOf(path), version, path);
 });
 
+test("the native Android SDK is this version (its Gradle version, and IndieAds.VERSION)", () => {
+  assert.equal(read('android/indieads/build.gradle').match(/^version = '([^']+)'/m)?.[1], version, 'android/indieads/build.gradle: version');
+  assert.equal(read('android/indieads/src/main/java/com/indieadnetwork/sdk/IndieAds.java').match(/VERSION = "([^"]+)"/)?.[1], version, 'IndieAds.java: VERSION');
+});
+
 test('the release the player says it is (core/wire.js SDK) is this version', async () => {
   assert.equal((await import('../core/wire.js')).SDK, version, 'core/wire.js: SDK');
 });

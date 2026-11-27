@@ -1,0 +1,17 @@
+// The Indie Ad Network SDK for native Android games (indieads: an AAR), and a sample game to try it in (sample).
+pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+rootProject.name = 'indie-ads-android'
+include ':indieads', ':sample'

@@ -1,0 +1,22 @@
+apply plugin: 'com.android.application'
+
+android {
+    namespace = 'com.indieadnetwork.sample'
+    compileSdk = 36
+    buildToolsVersion = "36.0.0"
+    defaultConfig {
+        applicationId 'com.indieadnetwork.sample'
+        minSdk = 21
+        targetSdk = 36
+        versionCode 1
+        versionName rootProject.project(':indieads').version
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
+}
+
+dependencies {
+    implementation project(':indieads')
+}

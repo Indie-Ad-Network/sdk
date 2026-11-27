@@ -15,6 +15,7 @@ The open-source SDK for [Indie Ad Network](https://indieadnetwork.com): cross-pr
 |---|---|
 | Put ads in a web or Capacitor game | This page: [Use](#use), [In a Capacitor app](#in-a-capacitor-app) |
 | Put ads in a Unity game | [Unity](unity/README.md) |
+| Put ads in a native Android game (Java, Kotlin, C++) | [Android](android/README.md) |
 | Ask a player's consent, where the law wants it | [Consent](#consent) |
 | Make a video or a playable for your game | [Creatives](CREATIVES.md) |
 | Build a playable with a narrator | [The playable kit](playable-kit/README.md) |
@@ -50,6 +51,10 @@ Add `capacitor/` as a dependency (`"indie-ads-capacitor": "file:…/sdk/capacito
 ## In a Unity game
 
 `unity/` is a UPM package (add by git URL with `?path=/unity`): the same player, in the package's own web view (the system's, on iOS and Android: no web-view plugin to buy), with `IndieAds.Wants(placement)` to hand for mixing with a paid network. See [Unity](unity/README.md).
+
+## In a native Android game
+
+`android/` is the same player for a game with no Unity and no web view of its own: an AAR whose `IndieAds` is the Unity package's API in Java (`IndieAds.wants`, `IndieAds.show`), callable from any thread, with a sample game to try it in. See [Android](android/README.md).
 
 ## Interstitials
 

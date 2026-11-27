@@ -16,10 +16,11 @@ import android.os.Parcel;
  * else, after those days, or where Play can't be asked. It's asked of Play's own service, the one Google's Install
  * Referrer library binds to, so a game takes no library for it; nothing is kept, and it's asked each time.
  *
- * Play must be visible to the app (Android 11 on): the Capacitor plugin's manifest asks to see it, and unity/README.md
- * says when a Unity game must.
+ * Play must be visible to the app (Android 11 on): the Capacitor plugin's and the native SDK's manifests ask to see it,
+ * and unity/README.md says when a Unity game must.
  *
- * The same file is in capacitor/android/… and unity/Runtime/Plugins/Android/ (test/installReferrer.test.mjs keeps them so).
+ * The same file is in capacitor/android/…, android/indieads/… and unity/Runtime/Plugins/Android/ (test/installReferrer.test.mjs
+ * keeps them so).
  */
 final class InstallReferrer {
 

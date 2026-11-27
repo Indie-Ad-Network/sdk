@@ -1,0 +1,39 @@
+apply plugin: 'com.android.library'
+
+// The repository's one version (package.json; test/version.test.mjs keeps them the same)
+version = '0.6.23'
+
+android {
+    namespace = 'com.indieadnetwork.sdk'
+    compileSdk = 36
+    buildToolsVersion = "36.0.0"
+    defaultConfig {
+        minSdk = 21
+        consumerProguardFiles 'consumer-rules.pro'
+    }
+    compileOptions {
+        // what a game's build of the last years reads
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
+    sourceSets {
+        main {
+            assets.srcDirs += layout.buildDirectory.dir('generated/indieads-player').get().asFile
+        }
+    }
+    lint {
+        abortOnError = false
+    }
+}
+
+// The player is the page the Unity package plays, built by tools/build-player.mjs: taken from there as the AAR is built,
+// so there's one copy of it in the repository.
+def copyPlayer = tasks.register('copyPlayer', Copy) {
+    from(file('../../unity/Runtime/Resources')) { include 'IndieAdsPlayer.html' }
+    into layout.buildDirectory.dir('generated/indieads-player/indieads')
+}
+preBuild.dependsOn copyPlayer
+
+dependencies {
+    testImplementation 'junit:junit:4.13.2'
+}

@@ -6,6 +6,11 @@ The repository has one version, [Semantic Versioning](https://semver.org), and a
 
 Two numbers are not this one, and change only when a format does: `VERSION` in `core/wire.js` (what games send the ingest) and the catalogue's `version`. Games already released go on sending and reading the old ones.
 
+## [Unreleased]
+
+### Added
+- **An SDK for native Android games** (`android/`): the same player as the Unity package, in the system's web view over the game's activity, for a game written in Java, Kotlin or C++ with no Unity. `IndieAds` is the Unity package's API in Java, and keeps its page alive the same way; every method may be called from any thread (a C++ game's GL thread), and callbacks come on the main thread. It's an AAR with no dependencies, minSdk 21, and the player is taken from the Unity package's as it's built. `android/sample` is a game with three buttons (Interstitial, Rewarded, More games) in test mode. Tried on a Galaxy A16 (Android 16): both formats, the back button as the ad's ✕, More games and Google Play from it, going home mid-ad, and memory running low.
+
 ## [0.6.23] - 2026-11-24
 
 ### Changed
