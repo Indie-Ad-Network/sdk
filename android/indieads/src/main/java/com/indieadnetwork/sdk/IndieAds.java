@@ -417,6 +417,8 @@ public final class IndieAds {
         view = AdWebView.create(activity, views, config.log);
         if (view == null) {
             if (logging()) Log.w(TAG, "there's no web view on this device: no ads");
+            // No page will say where the page of more games is: the catalogue the game shipped says it, for the browser
+            if (moreGamesUrl == null) moreGamesUrl = Wire.moreGames(shippedMore(), config.host, config.age);
             return false;
         }
         pageLoaded = false;
@@ -550,6 +552,16 @@ public final class IndieAds {
                 break;
             default:   // 'banner', the App Store's: iOS's alone
                 break;
+        }
+    }
+
+    // The shipped catalogue's `more`: where the network's pages of games are, or null.
+    private String shippedMore() {
+        if (config.shippedCatalogueJson == null) return null;
+        try {
+            return text(new JSONObject(config.shippedCatalogueJson), "more");
+        } catch (JSONException e) {
+            return null;
         }
     }
 

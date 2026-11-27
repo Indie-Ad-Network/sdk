@@ -3,6 +3,7 @@ package com.indieadnetwork.sdk;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.util.Locale;
 
 /**
@@ -72,6 +73,20 @@ final class Wire {
         // the shipped catalogue is JSON already, and JSON is JavaScript
         json.append("},\"shipped\":").append(shipped == null ? "null" : shipped);   // IndieAds has made a blank one null
         return json.append("}").toString();
+    }
+
+    /**
+     * The address of the page of games this one shows, from a catalogue's `more`, as core/index.js moreGamesAt has it:
+     * null with none, and for a player under 13 (`age` 0: not known). Only an https address ending in a /, as
+     * core/catalogue.js takes it: a game's id after it is a page of that site's and no other's.
+     */
+    static String moreGames(String more, String host, int age) {
+        if (more == null || !more.matches("https://\\S+/") || host == null || (age > 0 && age < 13)) return null;
+        try {
+            return more + URLEncoder.encode(host, "UTF-8").replace("+", "%20");   // as encodeURIComponent has a space
+        } catch (UnsupportedEncodingException e) {
+            throw new AssertionError(e);
+        }
     }
 
     /** The origin of the catalogue's address, which is the page's: where its storage and downloads are kept. */

@@ -49,6 +49,17 @@ public class WireTest {
         assertEquals(true, Wire.startConfig(c, "k", false).endsWith("\"age\":null,\"test\":false,\"consent\":true,\"wide\":false,\"placements\":{},\"shipped\":null}"));
     }
 
+    // As core/index.js moreGamesAt: for a device with no web view, where no page will say it
+    @Test public void thePageOfMoreGames() {
+        assertEquals("https://indieadnetwork.com/games/duet", Wire.moreGames("https://indieadnetwork.com/games/", "duet", 0));
+        assertEquals("https://x.test/g/my%20game", Wire.moreGames("https://x.test/g/", "my game", 13));
+        assertNull(Wire.moreGames("https://indieadnetwork.com/games/", "duet", 12));   // not for a child
+        assertNull(Wire.moreGames(null, "duet", 0));
+        assertNull(Wire.moreGames("", "duet", 0));
+        assertNull(Wire.moreGames("http://indieadnetwork.com/games/", "duet", 0));   // https only
+        assertNull(Wire.moreGames("https://indieadnetwork.com/games", "duet", 0));   // and ending in a /
+    }
+
     @Test public void thePageOrigin() {
         assertEquals("https://indieadnetwork.com/", Wire.origin("https://indieadnetwork.com/catalogue.json"));
         assertEquals("https://play.example.com:8443/", Wire.origin("https://play.example.com:8443/a/b/catalogue.json?x=1"));
